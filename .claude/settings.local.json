@@ -20,7 +20,8 @@
       "WebFetch(domain:dnyuz.com)",
       "WebFetch(domain:www.jobscan.co)",
       "Bash(grep:*)",
-      "Bash(node scripts/generate-sample-report.js)"
+      "Bash(node scripts/generate-sample-report.js)",
+      "Bash(node --check src/services/claude.js)"
     ]
   }
 }
