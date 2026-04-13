@@ -44,6 +44,11 @@ webhooksRouter.post('/lemonsqueezy', async (req, res) => {
       // Stamp email first (awaited), then fire report — prevents race where
       // runFullReport reads job.email before the update commits
       const kickoff = async () => {
+        const job = await db.job.findUnique({ where: { id: jobId }, select: { status: true } }).catch(() => null);
+        if (job && (job.status === 'PROCESSING' || job.status === 'COMPLETE')) {
+          logger.info({ jobId, status: job.status }, 'Webhook duplicate — report already running or done, skipping');
+          return;
+        }
         if (email) {
           await db.job.update({ where: { id: jobId }, data: { email } }).catch((err) => {
             logger.error({ jobId, err }, 'Failed to update job email from webhook');

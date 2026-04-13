@@ -20,6 +20,9 @@ const SIGNED_URL_EXPIRY = 72 * 60 * 60;
 
 export async function uploadReport(jobId, pdfBuffer) {
   if (!s3) {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('R2 storage is not configured. Cannot upload report in production.');
+    }
     logger.warn({ jobId }, 'R2 not configured — skipping upload, returning placeholder URL');
     return `http://localhost:3000/dev-placeholder/${jobId}.pdf`;
   }

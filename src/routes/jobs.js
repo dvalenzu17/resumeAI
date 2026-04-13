@@ -81,6 +81,10 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
     const coverLetterContext = req.body?.coverLetterContext ?? null;
     const userEmail = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
 
+    if (userEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
+      throw AppError.badRequest('Invalid email address', 'INVALID_EMAIL');
+    }
+
     if (env.SKIP_PAYMENT) {
       logger.info({ jobId: job.id }, 'SKIP_PAYMENT=true, skipping checkout');
       await db.job.update({

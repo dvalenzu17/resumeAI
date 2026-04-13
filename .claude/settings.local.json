@@ -18,7 +18,8 @@
       "WebFetch(domain:optimcareers.com)",
       "WebFetch(domain:scale.jobs)",
       "WebFetch(domain:dnyuz.com)",
-      "WebFetch(domain:www.jobscan.co)"
+      "WebFetch(domain:www.jobscan.co)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger.js';
+import { env } from '../lib/env.js';
 
-const MOCK = process.env.MOCK_CLAUDE === 'true';
+const MOCK = env.MOCK_CLAUDE;
 const client = MOCK ? null : new Anthropic({ maxRetries: 0 }); // We handle retries ourselves
 const MODEL = 'claude-sonnet-4-5';
 
@@ -263,7 +264,11 @@ function validateAnalysis(obj) {
   if (!Array.isArray(obj.strengths)) throw new Error('strengths must be an array');
   if (!Array.isArray(obj.jd_red_flags)) throw new Error('jd_red_flags must be an array');
   if (!Array.isArray(obj.negotiation_tips)) throw new Error('negotiation_tips must be an array');
-  if (typeof obj.salary_range !== 'object') throw new Error('salary_range must be an object');
+  if (obj.negotiation_tips.length !== 3) throw new Error(`negotiation_tips must have 3 items, got ${obj.negotiation_tips.length}`);
+  if (typeof obj.salary_range !== 'object' || obj.salary_range === null) throw new Error('salary_range must be an object');
+  if (typeof obj.salary_range.low !== 'number') throw new Error('salary_range.low must be a number');
+  if (typeof obj.salary_range.mid !== 'number') throw new Error('salary_range.mid must be a number');
+  if (typeof obj.salary_range.high !== 'number') throw new Error('salary_range.high must be a number');
 }
 
 function validateRewrites(obj) {
@@ -274,4 +279,10 @@ function validateRewrites(obj) {
   if (!Array.isArray(obj.rewritten_bullets)) throw new Error('rewritten_bullets must be an array');
   if (obj.rewritten_bullets.length !== 5) throw new Error(`rewritten_bullets must have 5 items, got ${obj.rewritten_bullets.length}`);
   if (!Array.isArray(obj.interview_questions)) throw new Error('interview_questions must be an array');
+  if (obj.interview_questions.length !== 8) throw new Error(`interview_questions must have 8 items, got ${obj.interview_questions.length}`);
+  for (const q of obj.interview_questions) {
+    if (!q.question || !q.why_likely || !q.star_framework) {
+      throw new Error('Each interview_question must have question, why_likely, and star_framework fields');
+    }
+  }
 }

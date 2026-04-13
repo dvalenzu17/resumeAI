@@ -49,6 +49,7 @@ export default function ProcessingView() {
           return;
         }
         if (data.status === 'FAILED') return;
+        if (data.status === 'PENDING_PAYMENT') return;
         setTimeout(poll, POLL_INTERVAL);
       } catch {
         if (!stopped) setTimeout(poll, POLL_INTERVAL);
@@ -69,6 +70,23 @@ export default function ProcessingView() {
           <h1 className={styles.stateHeading}>Something's off</h1>
           <p className={styles.stateBody}>{error || 'Invalid page state.'}</p>
           <Link to="/" className={styles.btn}>Start over</Link>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (status === 'PENDING_PAYMENT') {
+    return (
+      <Shell>
+        <div className={styles.stateCard}>
+          <div className={`${styles.stateIcon} ${styles.success}`}>
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+          </div>
+          <h1 className={styles.stateHeading}>Confirming payment</h1>
+          <p className={styles.stateBody}>
+            Your payment is being confirmed. Your report will start generating shortly.
+          </p>
+          <p className={styles.stateHint}>You can close this tab. We will email you when the report is ready.</p>
         </div>
       </Shell>
     );
