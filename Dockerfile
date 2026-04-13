@@ -29,4 +29,4 @@ RUN cd client && npm run build
 COPY src ./src
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node --max-old-space-size=256 src/index.js"]
+CMD ["node", "--max-old-space-size=256", "src/index.js"]
