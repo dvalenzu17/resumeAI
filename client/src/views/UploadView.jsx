@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import styles from './UploadView.module.css';
 
 // ─────────────────────────────────────────────
@@ -476,13 +476,41 @@ export default function UploadView() {
       <Pricing />
       <FAQ />
 
+      {/* ── TESTIMONIAL ─────────────────────── */}
+      <section className={styles.testimonialSection}>
+        <div className={styles.sectionWrap}>
+          <p className={styles.eyebrow}>Why this exists</p>
+          <div className={styles.testimonialCard}>
+            <p className={styles.testimonialQuote}>
+              "I built Shortlisted after watching my own resume get filtered out for roles I was genuinely
+              qualified for. I had no idea which keywords I was missing or why the ATS kept rejecting me.
+              After fixing the gaps the tool identified, I started getting callbacks. That's the whole reason
+              this exists."
+            </p>
+            <div className={styles.testimonialAuthor}>
+              <div className={styles.testimonialAvatar}>DV</div>
+              <div>
+                <p className={styles.testimonialName}>Daniel Valenzuela</p>
+                <p className={styles.testimonialRole}>Founder, Shortlisted</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ──────────────────────────── */}
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <span className={styles.footerLogo}>short<span className={styles.logoAccent}>listed</span></span>
           <span className={styles.footerTagline}>Beat the bots. Get the interview.</span>
-          <span className={styles.footerMeta}>Built for job seekers who are done getting ghosted</span>
-          <a href="mailto:hello@getshortlisted.fyi" className={styles.footerContact}>hello@getshortlisted.fyi</a>
+          <div className={styles.footerLinks}>
+            <Link to="/privacy" className={styles.footerLink}>Privacy Policy</Link>
+            <span className={styles.footerDivider}>·</span>
+            <Link to="/terms" className={styles.footerLink}>Terms of Service</Link>
+            <span className={styles.footerDivider}>·</span>
+            <a href="mailto:hello@getshortlisted.fyi" className={styles.footerLink}>hello@getshortlisted.fyi</a>
+          </div>
+          <span className={styles.footerMeta}>Built by Daniel Valenzuela · Panama</span>
         </div>
       </footer>
 

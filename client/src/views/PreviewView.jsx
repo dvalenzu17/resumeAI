@@ -286,7 +286,11 @@ export default function PreviewView() {
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
                   {loading ? 'Redirecting…' : `Unlock ${tierLabel} for ${price}`}
                 </button>
-                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds</p>
+                <p className={styles.paywallNote}>
+                  One-time · No account · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds
+                  {' · '}<Link to="/terms" className={styles.paywallContact}>Terms</Link>
+                  {' · '}<Link to="/privacy" className={styles.paywallContact}>Privacy</Link>
+                </p>
               </>
             )}
 

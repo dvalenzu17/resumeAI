@@ -3,6 +3,8 @@ import UploadView from './views/UploadView.jsx';
 import ProcessingView from './views/ProcessingView.jsx';
 import PreviewView from './views/PreviewView.jsx';
 import SuccessView from './views/SuccessView.jsx';
+import PrivacyView from './views/PrivacyView.jsx';
+import TermsView from './views/TermsView.jsx';
 
 export default function App() {
   return (
@@ -11,6 +13,8 @@ export default function App() {
       <Route path="/processing" element={<ProcessingView />} />
       <Route path="/preview" element={<PreviewView />} />
       <Route path="/success" element={<SuccessView />} />
+      <Route path="/privacy" element={<PrivacyView />} />
+      <Route path="/terms" element={<TermsView />} />
     </Routes>
   );
 }

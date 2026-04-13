@@ -895,6 +895,67 @@
 }
 
 /* ─────────────────────────────────────────────
+   Testimonial
+───────────────────────────────────────────── */
+.testimonialSection {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 88px 24px;
+}
+
+.testimonialCard {
+  max-width: 680px;
+  margin: 0 auto;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 40px 32px;
+}
+
+.testimonialQuote {
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text);
+  margin-bottom: 28px;
+  font-style: italic;
+}
+
+.testimonialAuthor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.testimonialAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+.testimonialName {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin: 0;
+}
+
+.testimonialRole {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* ─────────────────────────────────────────────
    FAQ
 ───────────────────────────────────────────── */
 .faqSection {
@@ -973,15 +1034,28 @@
   margin-top: 4px;
 }
 
-.footerContact {
-  font-size: 12px;
-  color: var(--hero-muted);
-  text-decoration: none;
+.footerLinks {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
   margin-top: 4px;
 }
 
-.footerContact:hover {
+.footerLink {
+  font-size: 12px;
+  color: var(--hero-muted);
+  text-decoration: none;
+}
+
+.footerLink:hover {
   color: var(--accent);
+}
+
+.footerDivider {
+  font-size: 12px;
+  color: #3f3f3f;
 }
 
 .sampleLink {
