@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
+import { Reveal } from '../lib/Reveal.jsx';
 import styles from './UploadView.module.css';
 
 // ─────────────────────────────────────────────
@@ -29,12 +30,14 @@ function HowItWorks() {
               title: 'Get your score free',
               body: 'ATS compatibility score, keyword gaps, and experience match. Instant. No account. No card.',
             },
-          ].map((s) => (
-            <div key={s.n} className={styles.stepItem}>
-              <span className={styles.stepNum}>{s.n}</span>
-              <h3 className={styles.stepTitle}>{s.title}</h3>
-              <p className={styles.stepBody}>{s.body}</p>
-            </div>
+          ].map((s, i) => (
+            <Reveal key={s.n} delay={i * 120}>
+              <div className={styles.stepItem}>
+                <span className={styles.stepNum}>{s.n}</span>
+                <h3 className={styles.stepTitle}>{s.title}</h3>
+                <p className={styles.stepBody}>{s.body}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -55,6 +58,7 @@ function ResultsPreview() {
           You get a real ATS score and the first two keyword gaps before we ask for a cent.
           If the score surprises you, that's exactly the point.
         </p>
+        <Reveal>
         <div className={styles.mockup}>
           <div className={styles.mockupHeader}>
             <span className={styles.mockupPill}>Your free score</span>
@@ -108,6 +112,7 @@ function ResultsPreview() {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -143,6 +148,7 @@ function Pricing() {
         <h2 className={styles.sectionHeading}>Simple, one-time pricing.</h2>
         <p className={styles.pricingSub}>No subscription. No account. Pay once, get the PDF. That's it.</p>
         <div className={styles.pricingGrid}>
+          <Reveal delay={0}>
           <div className={styles.pricingCard}>
             <div className={styles.pricingTop}>
               <div>
@@ -163,7 +169,9 @@ function Pricing() {
             </ul>
             <p className={styles.pricingMeta}>One-time · No account · PDF in ~60s</p>
           </div>
+          </Reveal>
 
+          <Reveal delay={120}>
           <div className={`${styles.pricingCard} ${styles.pricingCardFeatured}`}>
             <div className={styles.featuredBadge}>Most popular</div>
             <div className={styles.pricingTop}>
@@ -185,6 +193,7 @@ function Pricing() {
             </ul>
             <p className={styles.pricingMeta}>One-time · No account · PDF in ~60s</p>
           </div>
+          </Reveal>
         </div>
         <p className={styles.pricingCoach}>
           A career coach charges $150+ for one hour. The Glow-Up costs less than a coffee meeting and delivers in 60 seconds.
@@ -198,6 +207,8 @@ function Pricing() {
 //  FAQ
 // ─────────────────────────────────────────────
 function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
+
   const faqs = [
     {
       q: 'Is my resume data safe?',
@@ -221,13 +232,35 @@ function FAQ() {
     <section className={styles.faqSection}>
       <div className={styles.sectionWrap}>
         <h2 className={styles.sectionHeading}>Questions</h2>
-        <div className={styles.faqGrid}>
-          {faqs.map((item) => (
-            <div key={item.q} className={styles.faqItem}>
-              <h3 className={styles.faqQ}>{item.q}</h3>
-              <p className={styles.faqA}>{item.a}</p>
-            </div>
-          ))}
+        <div className={styles.faqList}>
+          {faqs.map((item, i) => {
+            const isOpen = openIndex === i;
+            return (
+              <Reveal key={item.q} delay={i * 60}>
+                <div className={styles.faqItem}>
+                  <button
+                    className={styles.faqTrigger}
+                    onClick={() => setOpenIndex(isOpen ? null : i)}
+                    aria-expanded={isOpen}
+                  >
+                    <span className={styles.faqQ}>{item.q}</span>
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className={`${styles.faqChevron} ${isOpen ? styles.faqChevronOpen : ''}`}
+                    >
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  <div className={`${styles.faqBody} ${isOpen ? styles.faqBodyOpen : ''}`}>
+                    <div style={{ overflow: 'hidden' }}>
+                      <p className={styles.faqA}>{item.a}</p>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -471,6 +504,44 @@ export default function UploadView() {
 
       <Pricing />
       <FAQ />
+
+      {/* ── WHY THIS EXISTS ─────────────────── */}
+      <section className={styles.testimonialSection}>
+        <div className={styles.sectionWrap}>
+          <p className={styles.eyebrow}>Why this exists</p>
+          <div className={styles.testimonialCard}>
+            <p className={styles.testimonialQuote}>
+              "I built Shortlisted after watching my own resume get filtered out for roles I was genuinely
+              qualified for. I had no idea which keywords I was missing or why the ATS kept rejecting me.
+              After fixing the gaps the tool identified, I started getting callbacks. That's the whole reason
+              this exists."
+            </p>
+            <div className={styles.testimonialAuthor}>
+              <img
+                src="/images/daniel.jpg"
+                alt="Daniel"
+                className={styles.testimonialPhoto}
+                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              />
+              <div className={styles.testimonialAvatar} style={{ display: 'none' }}>D</div>
+              <div>
+                <p className={styles.testimonialName}>Daniel</p>
+                <p className={styles.testimonialRole}>
+                  Founder, Shortlisted ·{' '}
+                  <a
+                    href="https://www.linkedin.com/in/dvalenzu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.testimonialLinkedin}
+                  >
+                    LinkedIn
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── FOOTER ──────────────────────────── */}
       <footer className={styles.footer}>

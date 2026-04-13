@@ -56,6 +56,37 @@
     }
     </script>
 
+    <!-- Structured Data: HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to check your resume ATS score",
+      "description": "Score your resume against any job description in 30 seconds. See exactly which keywords the ATS is rejecting you for.",
+      "totalTime": "PT1M",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Upload your resume",
+          "text": "Upload your resume as a PDF file. We extract the text and read every line the way an ATS does."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Paste the job description",
+          "text": "Paste the full job posting including responsibilities and requirements. The more detail you provide, the more accurate the analysis."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Get your free ATS score",
+          "text": "Receive your ATS compatibility score, keyword gaps, and experience match in about 30 seconds. No account required."
+        }
+      ]
+    }
+    </script>
+
     <!-- Structured Data: FAQ -->
     <script type="application/ld+json">
     {
@@ -110,10 +141,11 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Fonts -->
+    <!-- Fonts — async to avoid render-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"></noscript>
   </head>
   <body>
     <div id="root"></div>

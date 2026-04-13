@@ -934,12 +934,11 @@
   color: #fff;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  letter-spacing: -0.5px;
 }
 
 .testimonialPhoto {
@@ -986,18 +985,40 @@
   color: var(--text);
 }
 
-.faqGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px 48px;
-  max-width: 960px;
+.faqList {
+  max-width: 680px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .faqItem {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.faqItem:last-child {
+  border-bottom: none;
+}
+
+.faqTrigger {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.faqTrigger:hover .faqQ {
+  color: var(--accent);
 }
 
 .faqQ {
@@ -1005,13 +1026,41 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
+  transition: color 0.15s;
+}
+
+.faqChevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-subtle);
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.faqChevronOpen {
+  transform: rotate(180deg);
+}
+
+.faqBody {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.faqBodyOpen {
+  grid-template-rows: 1fr;
+}
+
+.faqBody > div {
+  overflow: hidden;
 }
 
 .faqA {
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.75;
+  padding: 0 24px 20px;
 }
 
 /* ─────────────────────────────────────────────
@@ -1120,7 +1169,6 @@
 
   .pricingGrid { grid-template-columns: 1fr; }
 
-  .faqGrid { grid-template-columns: 1fr; gap: 28px; }
 
   .formCard {
     border-radius: 0;
