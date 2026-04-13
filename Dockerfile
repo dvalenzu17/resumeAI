@@ -29,3 +29,4 @@ RUN cd client && npm run build
 COPY src ./src
 
 EXPOSE 3000
+CMD ["sh", "-c", "npm run db:push && node --max-old-space-size=512 src/index.js"]
