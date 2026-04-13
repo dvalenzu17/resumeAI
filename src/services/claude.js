@@ -1,45 +1,34 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger.js';
 
-// ---------------------------------------------------------------------------
-// MOCK MODE — set MOCK_CLAUDE=true in .env to bypass the API (no credits needed)
-// ---------------------------------------------------------------------------
 const MOCK = process.env.MOCK_CLAUDE === 'true';
-
 const client = MOCK ? null : new Anthropic();
 const MODEL = 'claude-sonnet-4-5';
 
-const ANALYSIS_SCHEMA = {
-  ats_score: 'number 0-100',
-  keyword_gaps: 'string[]',
-  keyword_matches: 'string[]',
-  weaknesses: 'string[]',
-  strengths: 'string[]',
-  linkedin_headline: 'string',
-  experience_match: 'number 0-100',
-  experience_match_notes: 'string',
-};
-
-const REWRITE_SCHEMA = {
-  rewritten_bullets: 'string[] (exactly 5)',
-  summary_rewrite: 'string',
-  skills_section: 'string',
-};
-
 function buildAnalysisPrompt(resumeText, jobDescription) {
-  return `You are an expert ATS (Applicant Tracking System) analyst and resume coach.
+  return `You are an expert ATS analyst, resume coach, and career strategist.
 
-Analyse the resume below against the job description and return ONLY a JSON object matching this exact schema — no markdown, no explanation, no preamble:
+Analyse the resume against the job description and return ONLY a JSON object — no markdown, no explanation, no preamble:
 
 {
-  "ats_score": <integer 0-100, overall ATS compatibility>,
-  "experience_match": <integer 0-100, how well experience level matches role requirements>,
+  "ats_score": <integer 0-100, overall ATS keyword and formatting compatibility>,
+  "human_score": <integer 0-100, how compelling this resume is to a human recruiter with 7 seconds — considers narrative clarity, achievement specificity, absence of filler language, career story coherence>,
+  "human_score_notes": <string, 1-2 sentences on what most hurts human appeal>,
+  "experience_match": <integer 0-100, how well the candidate's experience level matches role requirements>,
   "experience_match_notes": <string, 1-2 sentences explaining the experience match rating>,
-  "keyword_gaps": <string array, important keywords in JD missing from resume>,
+  "keyword_gaps": <string array, important keywords/skills in JD missing from resume>,
   "keyword_matches": <string array, JD keywords already present in resume>,
-  "weaknesses": <string array, 3-5 specific weaknesses of this resume for this role>,
   "strengths": <string array, 3-5 specific strengths of this resume for this role>,
-  "linkedin_headline": <string, a strong LinkedIn headline for this candidate targeting this role, max 220 chars>
+  "weaknesses": <string array, 3-5 specific weaknesses of this resume for this role>,
+  "linkedin_headline": <string, a strong LinkedIn headline for this candidate targeting this role, max 220 chars>,
+  "jd_red_flags": <string array, 0-5 warning signals in the job description itself — e.g. "No salary range listed", "Uses 'rockstar' or 'ninja' language", "Entry-level title but requires 5+ years", "Vague or excessively long requirements list", "No company name visible". Return empty array if none found.>,
+  "salary_range": {
+    "low": <integer, lower market rate for this role in USD>,
+    "mid": <integer, midpoint market rate in USD>,
+    "high": <integer, upper market rate in USD>,
+    "notes": <string, 1-2 sentences on key factors affecting this range — seniority, industry, location signals from JD>
+  },
+  "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD — reference actual signals from the posting where possible>
 }
 
 RESUME:
@@ -51,16 +40,35 @@ ${jobDescription}
 Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }
 
-function buildRewritePrompt(resumeText, jobDescription, analysisResult) {
-  return `You are an expert resume writer specialising in ATS optimisation.
+function buildRewritePrompt(resumeText, jobDescription, analysisResult, coverLetterContext) {
+  const coverLetterGuidance = coverLetterContext
+    ? `
+COVER LETTER PERSONALISATION (use these to make the letter sound human and specific):
+- Why this company/role: ${coverLetterContext.companyWhy || 'not provided'}
+- Most relevant achievement: ${coverLetterContext.topAchievement || 'not provided'}
+- Non-obvious background angle: ${coverLetterContext.uniqueAngle || 'not provided'}
+`
+    : '';
 
-Given the resume, job description, and analysis below, produce rewritten content and return ONLY a JSON object matching this exact schema — no markdown, no explanation, no preamble:
+  return `You are an expert resume writer, career coach, and hiring strategist.
+
+Given the resume, job description, analysis, and personalisation context below, produce rewritten content and return ONLY a JSON object — no markdown, no explanation, no preamble:
 
 {
-  "rewritten_bullets": <string array of exactly 5 rewritten bullet points, each starting with a strong action verb, quantified where possible, optimised for ATS and the target role>,
-  "summary_rewrite": <string, a powerful 3-4 sentence professional summary targeting this specific role>,
-  "skills_section": <string, a comma-separated skills list optimised for this role's ATS keywords>
+  "rewritten_bullets": <string array of exactly 5 rewritten bullet points — each starts with a strong action verb, is quantified where possible, and is optimised for both ATS and human readers>,
+  "summary_rewrite": <string, a powerful 3-4 sentence professional summary targeting this specific role — specific, confident, no filler phrases like "results-driven" or "passionate about">,
+  "skills_section": <string, comma-separated skills list optimised for this role's ATS keywords>,
+  "cover_letter": <string, a complete 3-4 paragraph cover letter. Rules: (1) sounds like a specific human wrote it — not AI-generated, (2) references at least one concrete achievement from the resume with a real number or outcome, (3) includes one sentence that shows genuine knowledge of or interest in this company or role based on the JD, (4) never uses filler phrases like "I am writing to express my interest" or "I believe I would be a great fit", (5) closes with a specific ask, not "I look forward to hearing from you">,
+  "interview_questions": [
+    {
+      "question": <string, the likely interview question>,
+      "why_likely": <string, one sentence — why this question is likely based on the JD requirements or resume gaps>,
+      "star_framework": <string, a 2-3 sentence STAR answer outline using the candidate's actual background from the resume — Situation/Task/Action/Result>
+    }
+  ]
 }
+
+For interview_questions: provide exactly 8 questions. Mix: 3 role-specific technical/skills questions derived from JD requirements, 2 questions probing the resume gaps identified in the analysis, 2 behavioural questions based on culture signals in the JD, 1 "why this company/role" question.
 
 RESUME:
 ${resumeText}
@@ -68,29 +76,25 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription}
 
-ANALYSIS (use keyword_gaps to inform rewrites):
+ANALYSIS:
 ${JSON.stringify(analysisResult, null, 2)}
-
+${coverLetterGuidance}
 Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }
 
-async function callClaude(prompt, retryWithStricter = false) {
+async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
   const finalPrompt = retryWithStricter
-    ? prompt +
-      '\n\nCRITICAL: Your previous response was not valid JSON. Return ONLY raw JSON. No text before or after the opening { and closing }.'
+    ? prompt + '\n\nCRITICAL: Your previous response was not valid JSON. Return ONLY raw JSON. No text before or after the opening { and closing }.'
     : prompt;
 
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: maxTokens,
     messages: [{ role: 'user', content: finalPrompt }],
   });
 
   const text = message.content[0]?.text?.trim() ?? '';
-
-  // Strip markdown code fences if Claude added them despite instructions
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-
   return JSON.parse(cleaned);
 }
 
@@ -99,6 +103,8 @@ export async function runAnalysis(resumeText, jobDescription) {
     logger.warn('MOCK_CLAUDE=true — returning mock analysis');
     return {
       ats_score: 72,
+      human_score: 61,
+      human_score_notes: 'Bullet points list responsibilities rather than achievements. Recruiters want to see impact, not a job description.',
       experience_match: 65,
       experience_match_notes: 'Candidate has relevant experience but lacks some senior-level requirements listed in the job description.',
       keyword_gaps: ['Kubernetes', 'GraphQL', 'Redis', 'CI/CD', 'Agile'],
@@ -106,33 +112,47 @@ export async function runAnalysis(resumeText, jobDescription) {
       strengths: [
         'Strong React and Node.js experience aligns well with core stack',
         'PostgreSQL expertise directly relevant to the role',
-        "TypeScript proficiency matches the team's preferred language",
+        'TypeScript proficiency matches the team\'s preferred language',
       ],
       weaknesses: [
         'No mention of Kubernetes or container orchestration',
         'GraphQL not listed despite being a key requirement',
-        'Missing CI/CD pipeline experience (GitHub Actions, Jenkins)',
-        'No evidence of Agile/Scrum methodology',
+        'Missing CI/CD pipeline experience',
+        'Bullets describe duties, not outcomes — no quantified results',
       ],
       linkedin_headline: 'Full Stack Engineer | React · Node.js · TypeScript · PostgreSQL | Building scalable web applications',
+      jd_red_flags: [
+        'No salary range listed',
+        'Uses "rockstar" language — may signal poor culture fit for boundary-setters',
+      ],
+      salary_range: {
+        low: 95000,
+        mid: 120000,
+        high: 145000,
+        notes: 'Mid-level full stack role at a likely Series B/C tech company. Range based on skills required and typical market for Node.js/React engineers.',
+      },
+      negotiation_tips: [
+        'The JD lists no salary range — open the conversation by anchoring at $130k and let them respond first.',
+        'They emphasise "fast-paced environment" — use this to negotiate a 90-day performance review with a raise tied to clear goals.',
+        'If base salary is fixed, ask for a $5-10k signing bonus and an extra week of PTO — these are lower-friction concessions for employers.',
+      ],
     };
   }
 
   const prompt = buildAnalysisPrompt(resumeText, jobDescription);
-
   try {
-    const result = await callClaude(prompt);
+    const result = await callClaude(prompt, 3000);
     validateAnalysis(result);
     return result;
   } catch (err) {
     logger.warn({ err }, 'Claude analysis call 1 failed, retrying with stricter instruction');
-    const result = await callClaude(prompt, true);
+    const result = await callClaude(prompt, 3000, true);
     validateAnalysis(result);
     return result;
   }
 }
 
-export async function runRewrites(resumeText, jobDescription, analysisResult) {
+export async function runRewrites(resumeText, jobDescription, analysisResult, coverLetterContext = null) {
   if (MOCK) {
     logger.warn('MOCK_CLAUDE=true — returning mock rewrites');
     return {
@@ -140,30 +160,80 @@ export async function runRewrites(resumeText, jobDescription, analysisResult) {
         'Architected and deployed a React/Node.js/TypeScript SaaS platform serving 50,000+ monthly active users, reducing page load time by 40%',
         'Designed and optimised PostgreSQL schemas and query plans, cutting p99 API latency from 600ms to 95ms',
         'Built RESTful and GraphQL API layer integrating 5 third-party services, enabling 3x faster feature delivery',
-        'Established GitHub Actions CI/CD pipeline with automated testing and zero-downtime Railway deployments',
+        'Established GitHub Actions CI/CD pipeline with automated testing and zero-downtime deployments, reducing release time by 60%',
         'Led Agile sprint ceremonies for a cross-functional team of 6, consistently delivering features on schedule',
       ],
-      summary_rewrite: 'Full Stack Engineer with 5+ years building production React and Node.js applications at scale. Deep expertise in TypeScript, PostgreSQL, and cloud infrastructure with a track record of optimising performance and shipping reliable features. Experienced collaborator in Agile teams, passionate about clean architecture and developer experience.',
+      summary_rewrite: 'Full Stack Engineer with 5+ years shipping production React and Node.js applications at scale. Cut API latency by 85% and built the CI/CD pipeline that reduced release cycles from days to hours. Deep expertise in TypeScript, PostgreSQL, and cloud infrastructure — and a track record of making complex systems reliable.',
       skills_section: 'React, Next.js, Node.js, TypeScript, PostgreSQL, Redis, GraphQL, REST APIs, AWS (EC2, S3, RDS), Kubernetes, Docker, GitHub Actions, CI/CD, Agile/Scrum, Tailwind CSS',
+      cover_letter: `Dear Hiring Manager,
+
+When I saw the GraphQL and Kubernetes requirements in this posting, I knew this was the role I'd been looking for. At my current company, I built the GraphQL layer that replaced five separate REST endpoints — reducing client-side data fetching complexity by 70% and shaving 200ms off average page load times.
+
+I'm a full stack engineer with five years of production experience in exactly the stack you're hiring for: React, Node.js, TypeScript, and PostgreSQL. Beyond the technical match, I've led the Kubernetes migration that took our deployment from a fragile EC2 setup to a scalable, self-healing cluster — the kind of infrastructure work that lets the rest of the team ship without fear.
+
+What drew me specifically to this role was the emphasis on developer experience alongside product delivery. That's a balance most teams claim to prioritise but few actually do. I'd bring both the technical depth and the sprint discipline to help you maintain that standard.
+
+I'd welcome a conversation about how my background maps to what you're building. Would 30 minutes this week work?`,
+      interview_questions: [
+        {
+          question: 'Walk me through a time you optimised a slow database query or API endpoint.',
+          why_likely: 'The JD emphasises performance and scale — this is a near-universal probe for backend engineers.',
+          star_framework: 'Situation: p99 API latency was 600ms and degrading. Task: Diagnose and fix without a rewrite. Action: Profiled queries, added composite indexes, moved hot lookups to Redis. Result: Latency dropped to 95ms within a week.',
+        },
+        {
+          question: 'How have you handled a situation where a feature was poorly scoped and the timeline was at risk?',
+          why_likely: 'The JD mentions "fast-paced environment" — they want evidence you can manage ambiguity without escalating problems.',
+          star_framework: 'Situation: Requirements changed three days before sprint end. Task: Deliver something useful without blowing the deadline. Action: Negotiated scope with the PM, shipped a functional MVP, documented remaining work clearly. Result: Feature shipped on time, full version two weeks later.',
+        },
+        {
+          question: 'Describe your experience with Kubernetes or container orchestration.',
+          why_likely: 'Kubernetes is listed as a key requirement and is absent from the resume — expect direct probing here.',
+          star_framework: 'Situation: EC2 deployments were manual and error-prone. Task: Move to container orchestration. Action: Led Kubernetes migration, wrote Helm charts, set up autoscaling. Result: Zero-downtime deploys, 40% infra cost reduction.',
+        },
+        {
+          question: 'Tell me about a GraphQL implementation you\'ve built or maintained.',
+          why_likely: 'GraphQL is a specific JD requirement not present in the resume — this will come up.',
+          star_framework: 'Situation: Five REST endpoints with overlapping data were slowing clients. Task: Unify under a single query interface. Action: Designed schema, built resolvers, implemented DataLoader to avoid N+1. Result: Single endpoint replaced five, page load improved by 200ms.',
+        },
+        {
+          question: 'How do you approach code reviews — what do you look for and what do you flag?',
+          why_likely: 'Behavioural question common at teams that emphasise engineering culture and quality.',
+          star_framework: 'Focus on correctness first, then readability, then performance. Flag security issues immediately. Look for missing tests on edge cases. Give specific suggestions, never just "this is wrong."',
+        },
+        {
+          question: 'Describe a time you disagreed with a technical decision and how you handled it.',
+          why_likely: 'Culture signal question — the JD language suggests a collaborative but opinionated team.',
+          star_framework: 'Situation: Team wanted to use a NoSQL store for data with clear relational structure. Task: Make the case without damaging the relationship. Action: Wrote a short technical brief with tradeoffs, proposed a 2-hour spike to validate both options. Result: Team chose PostgreSQL after the spike confirmed the relational model was cleaner.',
+        },
+        {
+          question: 'What does your ideal CI/CD pipeline look like and what have you built previously?',
+          why_likely: 'CI/CD is listed as a gap — expect them to probe whether you can own this.',
+          star_framework: 'Ideal: fast lint + test on every PR, auto-deploy to staging on merge, one-click production release with rollback. Built: GitHub Actions pipeline with test parallelisation, Dockerfile caching to cut build time from 8 min to 90 seconds.',
+        },
+        {
+          question: 'Why this company and this role specifically?',
+          why_likely: 'Standard closing question — unprepared answers cost otherwise-strong candidates the offer.',
+          star_framework: 'Reference something specific from the JD or the company\'s public work. Connect it to a genuine technical interest. Tie it back to what you want to build next in your career. Avoid generic answers about "growth opportunities."',
+        },
+      ],
     };
   }
 
-  const prompt = buildRewritePrompt(resumeText, jobDescription, analysisResult);
-
+  const prompt = buildRewritePrompt(resumeText, jobDescription, analysisResult, coverLetterContext);
   try {
-    const result = await callClaude(prompt);
+    const result = await callClaude(prompt, 5000);
     validateRewrites(result);
     return result;
   } catch (err) {
-    logger.warn({ err }, 'Claude rewrite call 1 failed, retrying with stricter instruction');
-    const result = await callClaude(prompt, true);
+    logger.warn({ err }, 'Claude rewrite call failed, retrying with stricter instruction');
+    const result = await callClaude(prompt, 5000, true);
     validateRewrites(result);
     return result;
   }
 }
 
 function validateAnalysis(obj) {
-  const required = ['ats_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes'];
+  const required = ['ats_score', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
   for (const key of required) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
@@ -172,13 +242,17 @@ function validateAnalysis(obj) {
   if (!Array.isArray(obj.keyword_matches)) throw new Error('keyword_matches must be an array');
   if (!Array.isArray(obj.weaknesses)) throw new Error('weaknesses must be an array');
   if (!Array.isArray(obj.strengths)) throw new Error('strengths must be an array');
+  if (!Array.isArray(obj.jd_red_flags)) throw new Error('jd_red_flags must be an array');
+  if (!Array.isArray(obj.negotiation_tips)) throw new Error('negotiation_tips must be an array');
+  if (typeof obj.salary_range !== 'object') throw new Error('salary_range must be an object');
 }
 
 function validateRewrites(obj) {
-  const required = ['rewritten_bullets', 'summary_rewrite', 'skills_section'];
+  const required = ['rewritten_bullets', 'summary_rewrite', 'skills_section', 'cover_letter', 'interview_questions'];
   for (const key of required) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
   if (!Array.isArray(obj.rewritten_bullets)) throw new Error('rewritten_bullets must be an array');
   if (obj.rewritten_bullets.length !== 5) throw new Error(`rewritten_bullets must have 5 items, got ${obj.rewritten_bullets.length}`);
+  if (!Array.isArray(obj.interview_questions)) throw new Error('interview_questions must be an array');
 }

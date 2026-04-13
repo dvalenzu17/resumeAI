@@ -28,8 +28,9 @@ model Job {
   status            JobStatus @default(ANALYZING)
   resumeText        String?
   jobDescription    String
-  analysisResult    Json?
-  checkoutSessionId String?   @unique
+  analysisResult      Json?
+  coverLetterContext  Json?
+  checkoutSessionId   String?   @unique
   reportUrl         String?
   errorMessage      String?
   createdAt         DateTime  @default(now())

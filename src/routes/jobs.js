@@ -78,12 +78,13 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
 
     // Accept tier override from preview page (user may switch tiers before paying)
     const chosenTier = ['BASIC', 'FULL'].includes(req.body?.tier) ? req.body.tier : job.tier;
+    const coverLetterContext = req.body?.coverLetterContext ?? null;
 
     if (env.SKIP_PAYMENT) {
       logger.info({ jobId: job.id }, 'SKIP_PAYMENT=true, skipping checkout');
       await db.job.update({
         where: { id: job.id },
-        data: { status: 'PENDING_PAYMENT', tier: chosenTier, email: env.DEV_EMAIL },
+        data: { status: 'PENDING_PAYMENT', tier: chosenTier, email: env.DEV_EMAIL, ...(coverLetterContext ? { coverLetterContext } : {}) },
       });
       runFullReport(job.id).catch((err) => {
         logger.error({ jobId: job.id, err }, 'runFullReport uncaught error');
@@ -95,7 +96,7 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
 
     await db.job.update({
       where: { id: job.id },
-      data: { checkoutSessionId: session.id, status: 'PENDING_PAYMENT', tier: chosenTier },
+      data: { checkoutSessionId: session.id, status: 'PENDING_PAYMENT', tier: chosenTier, ...(coverLetterContext ? { coverLetterContext } : {}) },
     });
 
     logger.info({ jobId: job.id }, 'Checkout session created');
@@ -128,12 +129,13 @@ jobsRouter.get('/:id/status', async (req, res, next) => {
 
       response.preview = {
         ats_score: a.ats_score,
+        human_score: a.human_score,
         experience_match: a.experience_match,
         gap_count: gaps.length,
         match_count: matches.length,
         strengths_count: strengths.length,
         weaknesses_count: weaknesses.length,
-        // Expose only 2 gaps as the teaser — the hook
+        jd_red_flag_count: Array.isArray(a.jd_red_flags) ? a.jd_red_flags.length : 0,
         keyword_gaps_teaser: gaps.slice(0, 2),
       };
     }

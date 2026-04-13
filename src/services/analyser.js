@@ -74,7 +74,7 @@ export async function runFullReport(jobId) {
 
     let rewrites = null;
     if (job.tier === 'FULL') {
-      rewrites = await runRewrites(resumeText, jobDescription, analysis);
+      rewrites = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
       logger.info({ jobId }, 'Rewrites complete');
     }
 

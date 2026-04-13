@@ -50,6 +50,8 @@ export default function PreviewView() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState('FULL');
+  const [step, setStep] = useState('preview'); // 'preview' | 'personalise'
+  const [clContext, setClContext] = useState({ companyWhy: '', topAchievement: '', uniqueAngle: '' });
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -69,13 +71,23 @@ export default function PreviewView() {
   }, [jobId, navigate]);
 
   const handleUnlock = async () => {
+    // For FULL tier, show personalisation step first
+    if (selectedTier === 'FULL' && step === 'preview') {
+      setStep('personalise');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
+      const coverLetterContext = selectedTier === 'FULL'
+        ? { companyWhy: clContext.companyWhy || null, topAchievement: clContext.topAchievement || null, uniqueAngle: clContext.uniqueAngle || null }
+        : null;
+
       const res = await fetch(`/api/jobs/${jobId}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: selectedTier }),
+        body: JSON.stringify({ tier: selectedTier, coverLetterContext }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
@@ -144,6 +156,7 @@ export default function PreviewView() {
         {/* Score rings */}
         <div className={styles.scores}>
           <ScoreRing score={preview.ats_score} label="ATS Score" />
+          {preview.human_score != null && <ScoreRing score={preview.human_score} label="Human Readability" />}
           <ScoreRing score={preview.experience_match} label="Experience Match" />
         </div>
 
@@ -223,38 +236,86 @@ export default function PreviewView() {
               Your email is captured at checkout, no form needed.
             </p>
 
-            <div className={styles.tierPicker}>
-              <button
-                type="button"
-                className={`${styles.tierOption} ${selectedTier === 'BASIC' ? styles.tierSelected : ''}`}
-                onClick={() => setSelectedTier('BASIC')}
-              >
-                <div className={styles.tierName}>The Audit</div>
-                <div className={styles.tierDesc}>All {preview.gap_count} gaps · strengths & weaknesses · LinkedIn headline</div>
-                <div className={styles.tierPrice}>$12</div>
-              </button>
-              <button
-                type="button"
-                className={`${styles.tierOption} ${selectedTier === 'FULL' ? styles.tierSelected : ''}`}
-                onClick={() => setSelectedTier('FULL')}
-              >
-                <div className={styles.tierBadge}>Best value</div>
-                <div className={styles.tierName}>The Glow-Up</div>
-                <div className={styles.tierDesc}>Everything + AI-rewritten bullets + summary rewrite</div>
-                <div className={styles.tierPrice}>$29</div>
-              </button>
-            </div>
+            {step === 'preview' && (
+              <>
+                <div className={styles.tierPicker}>
+                  <button
+                    type="button"
+                    className={`${styles.tierOption} ${selectedTier === 'BASIC' ? styles.tierSelected : ''}`}
+                    onClick={() => setSelectedTier('BASIC')}
+                  >
+                    <div className={styles.tierName}>The Audit</div>
+                    <div className={styles.tierDesc}>All {preview.gap_count} gaps · JD red flags · salary range · LinkedIn headline</div>
+                    <div className={styles.tierPrice}>$12</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.tierOption} ${selectedTier === 'FULL' ? styles.tierSelected : ''}`}
+                    onClick={() => setSelectedTier('FULL')}
+                  >
+                    <div className={styles.tierBadge}>Best value</div>
+                    <div className={styles.tierName}>The Glow-Up</div>
+                    <div className={styles.tierDesc}>Everything + AI bullet rewrites · cover letter · 8 interview questions with STAR answers</div>
+                    <div className={styles.tierPrice}>$29</div>
+                  </button>
+                </div>
 
-            {error && <p className={styles.errorMsg}>{error}</p>}
+                {error && <p className={styles.errorMsg}>{error}</p>}
 
-            <button
-              className={styles.unlockBtn}
-              onClick={handleUnlock}
-              disabled={loading}
-            >
-              {loading ? 'Redirecting…' : `Unlock ${tierLabel} — ${price}`}
-            </button>
-            <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
+                <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
+                  {loading ? 'Redirecting…' : `Unlock ${tierLabel} — ${price}`}
+                </button>
+                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
+              </>
+            )}
+
+            {step === 'personalise' && (
+              <>
+                <div className={styles.personaliseHeader}>
+                  <p className={styles.personaliseTitle}>Make your cover letter sound like <em>you</em></p>
+                  <p className={styles.personaliseNote}>3 quick questions. All optional — skip any you'd rather leave out. Your answers make the difference between AI-sounding and actually compelling.</p>
+                </div>
+                <div className={styles.personaliseForm}>
+                  <label className={styles.personaliseLabel}>
+                    What's one specific thing about this company or role that made you apply?
+                    <textarea
+                      className={styles.personaliseInput}
+                      rows={2}
+                      placeholder="e.g. Their engineering blog on distributed systems, or the focus on developer tooling"
+                      value={clContext.companyWhy}
+                      onChange={(e) => setClContext((c) => ({ ...c, companyWhy: e.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.personaliseLabel}>
+                    What's the one achievement from your career most relevant to this role?
+                    <textarea
+                      className={styles.personaliseInput}
+                      rows={2}
+                      placeholder="e.g. Cut API latency by 80% by rewriting the query layer — went from 600ms to 95ms"
+                      value={clContext.topAchievement}
+                      onChange={(e) => setClContext((c) => ({ ...c, topAchievement: e.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.personaliseLabel}>
+                    Anything non-obvious about your background that's relevant here?
+                    <textarea
+                      className={styles.personaliseInput}
+                      rows={2}
+                      placeholder="e.g. I ran a 3-person freelance agency before joining my current company — so I've done every part of the stack"
+                      value={clContext.uniqueAngle}
+                      onChange={(e) => setClContext((c) => ({ ...c, uniqueAngle: e.target.value }))}
+                    />
+                  </label>
+                </div>
+
+                {error && <p className={styles.errorMsg}>{error}</p>}
+
+                <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
+                  {loading ? 'Redirecting…' : 'Continue to checkout — $29'}
+                </button>
+                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
+              </>
+            )}
           </div>
         </div>
 

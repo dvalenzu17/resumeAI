@@ -11,7 +11,14 @@
       "Bash(taskkill:*)",
       "Bash(node --env-file=.env scripts/test-chain.js)",
       "Bash(JD=\"We are looking for a Senior Software Engineer with 5+ years of experience with React, Node.js, TypeScript, PostgreSQL, Redis, GraphQL, Kubernetes, Docker, AWS, CI/CD pipelines using GitHub Actions, and Agile/Scrum methodology. You will build scalable distributed systems and lead engineering teams. Strong communication skills required.\")",
-      "Bash(__NEW_LINE_58b4a4a768624e0a__ curl:*)"
+      "Bash(__NEW_LINE_58b4a4a768624e0a__ curl:*)",
+      "WebSearch",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:www.remotejobassistant.com)",
+      "WebFetch(domain:optimcareers.com)",
+      "WebFetch(domain:scale.jobs)",
+      "WebFetch(domain:dnyuz.com)",
+      "WebFetch(domain:www.jobscan.co)"
     ]
   }
 }

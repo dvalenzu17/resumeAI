@@ -408,6 +408,50 @@
   color: var(--accent);
 }
 
+/* ── Personalise step ────────────────────────── */
+.personaliseHeader { margin-bottom: 20px; }
+.personaliseTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.personaliseNote {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.personaliseForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.personaliseLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.personaliseInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  resize: vertical;
+  line-height: 1.5;
+}
+.personaliseInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* ── Mobile ──────────────────────────────────── */
 @media (max-width: 480px) {
   .scores { gap: 16px; }
