@@ -17,7 +17,7 @@ RUN npm ci
 
 # Prisma
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
 
 # Frontend dependencies + build
 COPY client/package*.json ./client/
