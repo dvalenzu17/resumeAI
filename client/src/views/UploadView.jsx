@@ -494,7 +494,7 @@ export default function UploadView() {
                 <p className={styles.testimonialRole}>
                   Founder, Shortlisted ·{' '}
                   <a
-                    href="www.linkedin.com/in/dvalenzu"
+                    href="https://www.linkedin.com/in/dvalenzu"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.testimonialLinkedin}
