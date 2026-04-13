@@ -57,6 +57,9 @@ RESEND_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 - The Glow-Up $29: Call 1 + Call 2 → PDF with analysis + rewrites
 - Credit bundle $49/2000 URLs — add in v2 only
 
+## Writing style
+- Never use em dashes (—) in UI copy, error messages, placeholders, or AI-generated content (PDF reports, cover letters, bullet rewrites). Use a period, comma, or reword instead.
+
 ## What not to build in v1
 - User accounts / auth
 - Subscription billing

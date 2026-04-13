@@ -126,9 +126,9 @@ export default function PreviewView() {
   const tierLabel = selectedTier === 'FULL' ? 'The Glow-Up' : 'The Audit';
   const scoreVerdict =
     preview.ats_score >= 75
-      ? 'Strong resume — a few tweaks will make it airtight.'
+      ? 'Strong resume. A few tweaks will make it airtight.'
       : preview.ats_score >= 50
-      ? 'Room for improvement — keyword gaps are costing you callbacks.'
+      ? 'Room for improvement. Keyword gaps are costing you callbacks.'
       : "The bots are filtering you out before a human ever sees this.";
 
   const placeholderGaps = Array(Math.max(0, preview.gap_count - preview.keyword_gaps_teaser.length))
@@ -232,7 +232,7 @@ export default function PreviewView() {
           <div className={styles.paywallInner}>
             <h2 className={styles.paywallHeading}>Get the full breakdown.</h2>
             <p className={styles.paywallSub}>
-              Every gap, every fix, every rewrite — in a PDF in your inbox in ~60 seconds.
+              Every gap, every fix, every rewrite. In a PDF in your inbox in ~60 seconds.
               Your email is captured at checkout, no form needed.
             </p>
 
@@ -263,7 +263,7 @@ export default function PreviewView() {
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? 'Redirecting…' : `Unlock ${tierLabel} — ${price}`}
+                  {loading ? 'Redirecting…' : `Unlock ${tierLabel} for ${price}`}
                 </button>
                 <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
               </>
@@ -273,7 +273,7 @@ export default function PreviewView() {
               <>
                 <div className={styles.personaliseHeader}>
                   <p className={styles.personaliseTitle}>Make your cover letter sound like <em>you</em></p>
-                  <p className={styles.personaliseNote}>3 quick questions. All optional — skip any you'd rather leave out. Your answers make the difference between AI-sounding and actually compelling.</p>
+                  <p className={styles.personaliseNote}>3 quick questions. All optional. Skip any you'd rather leave out. Your answers make the difference between AI-sounding and actually compelling.</p>
                 </div>
                 <div className={styles.personaliseForm}>
                   <label className={styles.personaliseLabel}>
@@ -291,7 +291,7 @@ export default function PreviewView() {
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
-                      placeholder="e.g. Cut API latency by 80% by rewriting the query layer — went from 600ms to 95ms"
+                      placeholder="e.g. Cut API latency by 80% by rewriting the query layer. Went from 600ms to 95ms"
                       value={clContext.topAchievement}
                       onChange={(e) => setClContext((c) => ({ ...c, topAchievement: e.target.value }))}
                     />
@@ -301,7 +301,7 @@ export default function PreviewView() {
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
-                      placeholder="e.g. I ran a 3-person freelance agency before joining my current company — so I've done every part of the stack"
+                      placeholder="e.g. I ran a 3-person freelance agency before joining my current company, so I've done every part of the stack"
                       value={clContext.uniqueAngle}
                       onChange={(e) => setClContext((c) => ({ ...c, uniqueAngle: e.target.value }))}
                     />
@@ -311,7 +311,7 @@ export default function PreviewView() {
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? 'Redirecting…' : 'Continue to checkout — $29'}
+                  {loading ? 'Redirecting…' : 'Continue to checkout for $29'}
                 </button>
                 <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
               </>

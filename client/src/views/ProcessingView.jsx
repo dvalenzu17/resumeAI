@@ -83,7 +83,7 @@ export default function ProcessingView() {
           </div>
           <h1 className={styles.stateHeading}>Your report is ready</h1>
           <p className={styles.stateBody}>
-            Check your inbox — the PDF is waiting for you. If it's not there, check your spam. It happens to the best of us.
+            Check your inbox. The PDF is waiting for you. If it's not there, check your spam. It happens to the best of us.
           </p>
           <p className={styles.stateHint}>Download link expires in 72 hours.</p>
           <Link to="/" className={styles.btn}>Analyse another resume</Link>
@@ -101,7 +101,7 @@ export default function ProcessingView() {
           </div>
           <h1 className={styles.stateHeading}>Analysis failed</h1>
           <p className={styles.stateBody}>
-            Something went wrong on our end. Try again — it usually works the second time.
+            Something went wrong on our end. Try again, it usually works the second time.
           </p>
           <Link to="/" className={styles.btn}>Try again</Link>
         </div>
@@ -119,7 +119,7 @@ export default function ProcessingView() {
 
         <h1 className={styles.processingHeading}>Reading every line. Judging accordingly.</h1>
         <p className={styles.processingBody}>
-          Comparing your resume against the job description word by word —
+          Comparing your resume against the job description word by word,
           scoring keywords, experience fit, and every gap the ATS would catch.
           About 15–25 seconds.
         </p>

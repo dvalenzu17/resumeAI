@@ -28,7 +28,7 @@ export default function SuccessView() {
           </h1>
 
           <p className={styles.body}>
-            Generating your full PDF now — it'll be in your inbox in about <strong>60 seconds</strong>.
+            Generating your full PDF now. It'll be in your inbox in about <strong>60 seconds</strong>.
             Download link is valid for 72 hours.
           </p>
 
