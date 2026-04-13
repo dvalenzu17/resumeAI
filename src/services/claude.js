@@ -80,7 +80,14 @@ JOB DESCRIPTION:
 ${jobDescription}
 
 ANALYSIS:
-${JSON.stringify(analysisResult, null, 2)}
+${JSON.stringify({
+  ats_score: analysisResult.ats_score,
+  experience_match: analysisResult.experience_match,
+  keyword_gaps: analysisResult.keyword_gaps,
+  keyword_matches: analysisResult.keyword_matches,
+  weaknesses: analysisResult.weaknesses,
+  experience_match_notes: analysisResult.experience_match_notes,
+}, null, 2)}
 ${coverLetterGuidance}
 Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }

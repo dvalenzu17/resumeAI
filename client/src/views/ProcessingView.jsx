@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './ProcessingView.module.css';
 
 const POLL_INTERVAL = 3000;
@@ -17,6 +18,7 @@ export default function ProcessingView() {
   const [status, setStatus] = useState('ANALYZING');
   const [error, setError] = useState('');
   const [activeStep, setActiveStep] = useState(1);
+  const { t } = useT();
 
   // Simulate step progression — teaser analysis is ~15-25s
   useEffect(() => {
@@ -67,9 +69,9 @@ export default function ProcessingView() {
           <div className={`${styles.stateIcon} ${styles.fail}`}>
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
-          <h1 className={styles.stateHeading}>Something's off</h1>
+          <h1 className={styles.stateHeading}>{t('processing_failed')}</h1>
           <p className={styles.stateBody}>{error || 'Invalid page state.'}</p>
-          <Link to="/" className={styles.btn}>Start over</Link>
+          <Link to="/" className={styles.btn}>{t('processing_start_over')}</Link>
         </div>
       </Shell>
     );
@@ -82,11 +84,8 @@ export default function ProcessingView() {
           <div className={`${styles.stateIcon} ${styles.success}`}>
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
-          <h1 className={styles.stateHeading}>Confirming payment</h1>
-          <p className={styles.stateBody}>
-            Your payment is being confirmed. Your report will start generating shortly.
-          </p>
-          <p className={styles.stateHint}>You can close this tab. We will email you when the report is ready.</p>
+          <h1 className={styles.stateHeading}>{t('processing_confirming')}</h1>
+          <p className={styles.stateBody}>{t('processing_confirming_sub')}</p>
         </div>
       </Shell>
     );
@@ -99,12 +98,11 @@ export default function ProcessingView() {
           <div className={`${styles.stateIcon} ${styles.success}`}>
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <h1 className={styles.stateHeading}>Your report is ready</h1>
+          <h1 className={styles.stateHeading}>{t('processing_done')}</h1>
           <p className={styles.stateBody}>
             Check your inbox. The PDF is waiting for you. If it's not there, check your spam. It happens to the best of us.
           </p>
-          <p className={styles.stateHint}>Download link expires in 72 hours.</p>
-          <Link to="/" className={styles.btn}>Analyse another resume</Link>
+          <Link to="/" className={styles.btn}>{t('success_another')}</Link>
         </div>
       </Shell>
     );
@@ -117,11 +115,9 @@ export default function ProcessingView() {
           <div className={`${styles.stateIcon} ${styles.fail}`}>
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
-          <h1 className={styles.stateHeading}>Analysis failed</h1>
-          <p className={styles.stateBody}>
-            Something went wrong on our end. Try again, it usually works the second time.
-          </p>
-          <Link to="/" className={styles.btn}>Try again</Link>
+          <h1 className={styles.stateHeading}>{t('processing_failed')}</h1>
+          <p className={styles.stateBody}>{t('processing_failed_sub')}</p>
+          <Link to="/" className={styles.btn}>{t('processing_start_over')}</Link>
         </div>
       </Shell>
     );
@@ -180,6 +176,7 @@ function Shell({ children }) {
     <div className={styles.page}>
       <nav className={styles.nav}>
         <Link to="/" className={styles.logo}>short<span className={styles.logoAccent}>listed</span></Link>
+        <LangSwitcher className={styles.langSwitcher} />
       </nav>
       <main className={styles.main}>{children}</main>
     </div>

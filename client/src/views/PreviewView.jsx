@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted } from '../lib/analytics.js';
+import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './PreviewView.module.css';
 
 function ScoreRing({ score, label }) {
@@ -45,6 +46,7 @@ function BlurredBadge({ text }) {
 export default function PreviewView() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useT();
   const jobId = params.get('jobId');
   const [preview, setPreview] = useState(null);
   const [tier, setTier] = useState('FULL');
@@ -135,10 +137,10 @@ export default function PreviewView() {
   const tierLabel = selectedTier === 'FULL' ? 'The Glow-Up' : 'The Audit';
   const scoreVerdict =
     preview.ats_score >= 75
-      ? 'Strong resume. A few tweaks will make it airtight.'
+      ? t('preview_verdict_high')
       : preview.ats_score >= 50
-      ? 'Room for improvement. Keyword gaps are costing you callbacks.'
-      : "The bots are filtering you out before a human ever sees this.";
+      ? t('preview_verdict_mid')
+      : t('preview_verdict_low');
 
   const placeholderGaps = Array(Math.max(0, preview.gap_count - preview.keyword_gaps_teaser.length))
     .fill(null)
@@ -150,13 +152,13 @@ export default function PreviewView() {
 
         {/* Header */}
         <div className={styles.header}>
-          <div className={styles.headerPill}>Your free score</div>
+          <div className={styles.headerPill}>{t('preview_score_header')}</div>
           <h1 className={styles.heading}>
             {preview.ats_score >= 75
-              ? <>You're in the top tier.<br /><span className={styles.headingAccent}>Now let's make it airtight.</span></>
+              ? <>{t('preview_heading_high')}<br /><span className={styles.headingAccent}>{t('preview_heading_high_accent')}</span></>
               : preview.ats_score >= 50
-              ? <>You're close.<br /><span className={styles.headingAccent}>The gaps are fixable.</span></>
-              : <>The bots filtered you out.<br /><span className={styles.headingAccent}>Here's the full damage report.</span></>
+              ? <>{t('preview_heading_mid')}<br /><span className={styles.headingAccent}>{t('preview_heading_mid_accent')}</span></>
+              : <>{t('preview_heading_low')}<br /><span className={styles.headingAccent}>{t('preview_heading_low_accent')}</span></>
             }
           </h1>
           <p className={styles.verdict}>{scoreVerdict}</p>
@@ -172,12 +174,10 @@ export default function PreviewView() {
         {/* Keyword gaps — 2 visible, rest blurred */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Keyword Gaps</h2>
-            <span className={styles.sectionCount}>{preview.gap_count} found</span>
+            <h2 className={styles.sectionTitle}>{t('preview_section_gaps')}</h2>
+            <span className={styles.sectionCount}>{preview.gap_count} {t('preview_gap_found')}</span>
           </div>
-          <p className={styles.sectionNote}>
-            These are the exact keywords the ATS is looking for that aren't in your resume.
-          </p>
+          <p className={styles.sectionNote}>{t('preview_section_gaps_note')}</p>
           <div className={styles.tagGrid}>
             {preview.keyword_gaps_teaser.map((gap) => (
               <span key={gap} className={styles.gapTag}>{gap}</span>
@@ -192,7 +192,7 @@ export default function PreviewView() {
         <div className={styles.lockedGrid}>
           <div className={styles.lockedCard}>
             <div className={styles.lockedHeader}>
-              <span className={styles.lockedTitle}>Keyword Matches</span>
+              <span className={styles.lockedTitle}>{t('preview_section_matches')}</span>
               <span className={styles.lockedCount}>{preview.match_count}</span>
             </div>
             <div className={styles.lockedBlur}>
@@ -204,7 +204,7 @@ export default function PreviewView() {
 
           <div className={styles.lockedCard}>
             <div className={styles.lockedHeader}>
-              <span className={styles.lockedTitle}>Strengths</span>
+              <span className={styles.lockedTitle}>{t('preview_section_strengths')}</span>
               <span className={styles.lockedCount}>{preview.strengths_count}</span>
             </div>
             <div className={styles.lockedLines}>
@@ -216,7 +216,7 @@ export default function PreviewView() {
 
           <div className={styles.lockedCard}>
             <div className={styles.lockedHeader}>
-              <span className={styles.lockedTitle}>Weaknesses</span>
+              <span className={styles.lockedTitle}>{t('preview_section_weaknesses')}</span>
               <span className={styles.lockedCount}>{preview.weaknesses_count}</span>
             </div>
             <div className={styles.lockedLines}>
@@ -228,7 +228,7 @@ export default function PreviewView() {
 
           <div className={styles.lockedCard}>
             <div className={styles.lockedHeader}>
-              <span className={styles.lockedTitle}>LinkedIn Headline</span>
+              <span className={styles.lockedTitle}>{t('preview_section_linkedin')}</span>
             </div>
             <div className={styles.lockedLines}>
               <div className={styles.lockedLine} style={{ width: '90%' }} />
@@ -238,15 +238,14 @@ export default function PreviewView() {
 
         {/* Tier picker + CTA */}
         <div className={styles.paywall}>
+          <div className={styles.urgencyStrip}>
+            {t('preview_urgency')}
+          </div>
           <div className={styles.paywallInner}>
             <h2 className={styles.paywallHeading}>
-              {preview.gap_count} keyword {preview.gap_count === 1 ? 'gap' : 'gaps'} found.
-              Here's the full picture.
+              {preview.gap_count} {t('preview_paywall_heading_suffix')}
             </h2>
-            <p className={styles.paywallSub}>
-              Every gap, every match, every fix. Delivered as a PDF in about 60 seconds.
-              Apply to the same role tomorrow with a resume that actually passes.
-            </p>
+            <p className={styles.paywallSub}>{t('preview_paywall_sub')}</p>
 
             {step === 'preview' && (
               <>
@@ -256,7 +255,7 @@ export default function PreviewView() {
                     className={`${styles.tierOption} ${selectedTier === 'BASIC' ? styles.tierSelected : ''}`}
                     onClick={() => { setSelectedTier('BASIC'); trackTierSelected({ tier: 'BASIC' }); }}
                   >
-                    <div className={styles.tierName}>The Audit</div>
+                    <div className={styles.tierName}>{t('tier_basic_name')}</div>
                     <div className={styles.tierDesc}>All {preview.gap_count} gaps · JD red flags · salary range · LinkedIn headline</div>
                     <div className={styles.tierPrice}>$12</div>
                   </button>
@@ -265,8 +264,8 @@ export default function PreviewView() {
                     className={`${styles.tierOption} ${selectedTier === 'FULL' ? styles.tierSelected : ''}`}
                     onClick={() => { setSelectedTier('FULL'); trackTierSelected({ tier: 'FULL' }); }}
                   >
-                    <div className={styles.tierBadge}>Best value</div>
-                    <div className={styles.tierName}>The Glow-Up</div>
+                    <div className={styles.tierBadge}>{t('preview_tier_badge')}</div>
+                    <div className={styles.tierName}>{t('tier_full_name')}</div>
                     <div className={styles.tierDesc}>Everything + AI bullet rewrites · cover letter · 8 interview questions with STAR answers</div>
                     <div className={styles.tierPrice}>$29</div>
                   </button>
@@ -274,13 +273,13 @@ export default function PreviewView() {
 
                 <div className={styles.emailCapture}>
                   <label htmlFor="report-email" className={styles.emailLabel}>
-                    Where should we send your report?
+                    {t('preview_email_label')}
                   </label>
                   <input
                     id="report-email"
                     type="email"
                     className={styles.emailInput}
-                    placeholder="you@example.com"
+                    placeholder={t('preview_email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -290,10 +289,10 @@ export default function PreviewView() {
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? 'Redirecting…' : `Unlock ${tierLabel} for ${price}`}
+                  {loading ? t('preview_redirecting') : `${t('preview_unlock_btn')} ${tierLabel} ${t('preview_unlock_for')} ${price}`}
                 </button>
                 <p className={styles.paywallNote}>
-                  One-time · No account · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds
+                  {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a>
                   {' · '}<Link to="/terms" className={styles.paywallContact}>Terms</Link>
                   {' · '}<Link to="/privacy" className={styles.paywallContact}>Privacy</Link>
                 </p>
@@ -303,36 +302,36 @@ export default function PreviewView() {
             {step === 'personalise' && (
               <>
                 <div className={styles.personaliseHeader}>
-                  <p className={styles.personaliseTitle}>Make your cover letter sound like <em>you</em></p>
-                  <p className={styles.personaliseNote}>3 quick questions. All optional. Skip any you'd rather leave out. Your answers make the difference between AI-sounding and actually compelling.</p>
+                  <p className={styles.personaliseTitle}>{t('preview_personalise_title')} <em>{t('preview_personalise_you')}</em></p>
+                  <p className={styles.personaliseNote}>{t('preview_personalise_note')}</p>
                 </div>
                 <div className={styles.personaliseForm}>
                   <label className={styles.personaliseLabel}>
-                    What's one specific thing about this company or role that made you apply?
+                    {t('preview_cl_q1')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
-                      placeholder="e.g. Their engineering blog on distributed systems, or the focus on developer tooling"
+                      placeholder={t('preview_cl_q1_ph')}
                       value={clContext.companyWhy}
                       onChange={(e) => setClContext((c) => ({ ...c, companyWhy: e.target.value }))}
                     />
                   </label>
                   <label className={styles.personaliseLabel}>
-                    What's the one achievement from your career most relevant to this role?
+                    {t('preview_cl_q2')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
-                      placeholder="e.g. Cut API latency by 80% by rewriting the query layer. Went from 600ms to 95ms"
+                      placeholder={t('preview_cl_q2_ph')}
                       value={clContext.topAchievement}
                       onChange={(e) => setClContext((c) => ({ ...c, topAchievement: e.target.value }))}
                     />
                   </label>
                   <label className={styles.personaliseLabel}>
-                    Anything non-obvious about your background that's relevant here?
+                    {t('preview_cl_q3')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
-                      placeholder="e.g. I ran a 3-person freelance agency before joining my current company, so I've done every part of the stack"
+                      placeholder={t('preview_cl_q3_ph')}
                       value={clContext.uniqueAngle}
                       onChange={(e) => setClContext((c) => ({ ...c, uniqueAngle: e.target.value }))}
                     />
@@ -342,9 +341,9 @@ export default function PreviewView() {
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? 'Redirecting…' : 'Continue to checkout for $29'}
+                  {loading ? t('preview_redirecting') : t('preview_continue_checkout')}
                 </button>
-                <p className={styles.paywallNote}>Sending to {email} · One-time · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds</p>
+                <p className={styles.paywallNote}>{t('preview_sending_to')} {email} · {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a></p>
               </>
             )}
           </div>
@@ -360,6 +359,7 @@ function Shell({ children }) {
     <div className={styles.shell}>
       <nav className={styles.nav}>
         <Link to="/" className={styles.logo}>short<span className={styles.logoAccent}>listed</span></Link>
+        <LangSwitcher className={styles.langSwitcher} />
       </nav>
       <main className={styles.main}>{children}</main>
     </div>

@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { trackPurchaseComplete } from '../lib/analytics.js';
+import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './SuccessView.module.css';
 
 export default function SuccessView() {
   const [params] = useSearchParams();
   const jobId = params.get('jobId');
   const tier = params.get('tier') ?? 'FULL';
+
+  const { t } = useT();
 
   useEffect(() => {
     trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
@@ -16,6 +19,7 @@ export default function SuccessView() {
     <div className={styles.page}>
       <nav className={styles.nav}>
         <Link to="/" className={styles.logo}>short<span className={styles.logoAccent}>listed</span></Link>
+        <LangSwitcher className={styles.langSwitcher} />
       </nav>
 
       <main className={styles.main}>

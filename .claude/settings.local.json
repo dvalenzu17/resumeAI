@@ -21,7 +21,10 @@
       "WebFetch(domain:www.jobscan.co)",
       "Bash(grep:*)",
       "Bash(node scripts/generate-sample-report.js)",
-      "Bash(node --check src/services/claude.js)"
+      "Bash(node --check src/services/claude.js)",
+      "Bash(npm run:*)",
+      "Bash(node --check src/services/analyser.js)",
+      "Bash(git add:*)"
     ]
   }
 }

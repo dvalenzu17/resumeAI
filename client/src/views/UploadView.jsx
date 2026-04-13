@@ -3,40 +3,31 @@ import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
 import { Reveal } from '../lib/Reveal.jsx';
 import { useStats } from '../lib/useStats.js';
+import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './UploadView.module.css';
 
 // ─────────────────────────────────────────────
 //  How It Works
 // ─────────────────────────────────────────────
 function HowItWorks() {
+  const { t } = useT();
+  const steps = [
+    { n: '01', titleKey: 'step1_title', bodyKey: 'step1_body' },
+    { n: '02', titleKey: 'step2_title', bodyKey: 'step2_body' },
+    { n: '03', titleKey: 'step3_title', bodyKey: 'step3_body' },
+  ];
   return (
     <section className={styles.howSection}>
       <div className={styles.sectionWrap}>
-        <p className={styles.eyebrow}>How it works</p>
-        <h2 className={styles.sectionHeading}>Three steps. Thirty seconds.</h2>
+        <p className={styles.eyebrow}>{t('how_eyebrow')}</p>
+        <h2 className={styles.sectionHeading}>{t('how_heading')}</h2>
         <div className={styles.stepsGrid}>
-          {[
-            {
-              n: '01',
-              title: 'Upload your resume',
-              body: 'PDF only. We extract the text and read every line the way an ATS does — no OCR, no guessing.',
-            },
-            {
-              n: '02',
-              title: 'Paste the job posting',
-              body: 'The full thing. Responsibilities, requirements, all of it. More detail means a more precise match.',
-            },
-            {
-              n: '03',
-              title: 'Get your score free',
-              body: 'ATS compatibility score, keyword gaps, and experience match. Instant. No account. No card.',
-            },
-          ].map((s, i) => (
+          {steps.map((s, i) => (
             <Reveal key={s.n} delay={i * 120}>
               <div className={styles.stepItem}>
                 <span className={styles.stepNum}>{s.n}</span>
-                <h3 className={styles.stepTitle}>{s.title}</h3>
-                <p className={styles.stepBody}>{s.body}</p>
+                <h3 className={styles.stepTitle}>{t(s.titleKey)}</h3>
+                <p className={styles.stepBody}>{t(s.bodyKey)}</p>
               </div>
             </Reveal>
           ))}
@@ -50,19 +41,17 @@ function HowItWorks() {
 //  Results Preview (static mockup)
 // ─────────────────────────────────────────────
 function ResultsPreview() {
+  const { t } = useT();
   return (
     <section className={styles.previewSection}>
       <div className={styles.sectionWrap}>
-        <p className={styles.eyebrow}>Free before you pay anything</p>
-        <h2 className={styles.sectionHeading}>See your score. Then decide.</h2>
-        <p className={styles.previewSub}>
-          You get a real ATS score and your first two keyword gaps before we ask for a cent.
-          Most people are surprised. That surprise is the point.
-        </p>
+        <p className={styles.eyebrow}>{t('preview_eyebrow')}</p>
+        <h2 className={styles.sectionHeading}>{t('preview_heading')}</h2>
+        <p className={styles.previewSub}>{t('preview_sub')}</p>
         <Reveal>
         <div className={styles.mockup}>
           <div className={styles.mockupHeader}>
-            <span className={styles.mockupPill}>Your free score</span>
+            <span className={styles.mockupPill}>{t('preview_free_score')}</span>
           </div>
           <div className={styles.mockupBody}>
             <div className={styles.mockupScores}>
@@ -92,8 +81,8 @@ function ResultsPreview() {
 
             <div className={styles.mockupGaps}>
               <div className={styles.mockupGapsHeader}>
-                <span className={styles.mockupGapsTitle}>Keyword Gaps</span>
-                <span className={styles.mockupGapsCount}>8 found</span>
+                <span className={styles.mockupGapsTitle}>{t('preview_keyword_gaps')}</span>
+                <span className={styles.mockupGapsCount}>{t('preview_gaps_found')}</span>
               </div>
               <div className={styles.mockupTags}>
                 <span className={styles.mockupTag}>cross-functional collaboration</span>
@@ -108,7 +97,7 @@ function ResultsPreview() {
                   <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
                   <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                6 more gaps revealed after upgrade
+                {t('preview_blur_note')}
               </p>
             </div>
           </div>
@@ -123,6 +112,7 @@ function ResultsPreview() {
 //  Pricing
 // ─────────────────────────────────────────────
 function Pricing() {
+  const { t } = useT();
   const audit = [
     'All keyword gaps (not just the first 2)',
     'Keyword matches you already have',
@@ -145,16 +135,16 @@ function Pricing() {
   return (
     <section className={styles.pricingSection}>
       <div className={styles.sectionWrap}>
-        <p className={styles.eyebrow}>After your free preview</p>
-        <h2 className={styles.sectionHeading}>Simple, one-time pricing.</h2>
-        <p className={styles.pricingSub}>No subscription. No account. Pay once, get the PDF. That's it.</p>
+        <p className={styles.eyebrow}>{t('pricing_eyebrow')}</p>
+        <h2 className={styles.sectionHeading}>{t('pricing_heading')}</h2>
+        <p className={styles.pricingSub}>{t('pricing_sub')}</p>
         <div className={styles.pricingGrid}>
           <Reveal delay={0}>
           <div className={styles.pricingCard}>
             <div className={styles.pricingTop}>
               <div>
-                <p className={styles.pricingName}>The Audit</p>
-                <p className={styles.pricingDesc}>Everything wrong with your resume, and exactly how to fix it.</p>
+                <p className={styles.pricingName}>{t('tier_basic_name')}</p>
+                <p className={styles.pricingDesc}>{t('tier_basic_desc')}</p>
               </div>
               <p className={styles.pricingPrice}>$12</p>
             </div>
@@ -168,17 +158,17 @@ function Pricing() {
                 </li>
               ))}
             </ul>
-            <p className={styles.pricingMeta}>One-time · No account · PDF in ~60s</p>
+            <p className={styles.pricingMeta}>{t('pricing_meta')}</p>
           </div>
           </Reveal>
 
           <Reveal delay={120}>
           <div className={`${styles.pricingCard} ${styles.pricingCardFeatured}`}>
-            <div className={styles.featuredBadge}>Most popular</div>
+            <div className={styles.featuredBadge}>{t('tier_most_popular')}</div>
             <div className={styles.pricingTop}>
               <div>
-                <p className={styles.pricingName}>The Glow-Up</p>
-                <p className={styles.pricingDesc}>Not just the analysis. The actual rewrites. Ready to paste in.</p>
+                <p className={styles.pricingName}>{t('tier_full_name')}</p>
+                <p className={styles.pricingDesc}>{t('tier_full_desc')}</p>
               </div>
               <p className={styles.pricingPrice}>$29</p>
             </div>
@@ -192,19 +182,17 @@ function Pricing() {
                 </li>
               ))}
             </ul>
-            <p className={styles.pricingMeta}>One-time · No account · PDF in ~60s</p>
+            <p className={styles.pricingMeta}>{t('pricing_meta')}</p>
           </div>
           </Reveal>
         </div>
-        <p className={styles.pricingCoach}>
-          A career coach charges $150+ per hour and books two weeks out. The Glow-Up costs less and delivers in 60 seconds.
-        </p>
+        <p className={styles.pricingCoach}>{t('pricing_coach')}</p>
         <p className={styles.sampleLink}>
-          Not sure what you get?{' '}
+          {t('pricing_sample')}{' '}
           <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
-            See a real sample report
+            {t('pricing_sample_link')}
           </a>
-          {' '}before you decide.
+          {' '}{t('pricing_sample_suffix')}
         </p>
       </div>
     </section>
@@ -216,30 +204,19 @@ function Pricing() {
 // ─────────────────────────────────────────────
 function FAQ() {
   const [openIndex, setOpenIndex] = useState(null);
+  const { t } = useT();
 
   const faqs = [
-    {
-      q: 'Is my resume data safe?',
-      a: "Your resume is processed server-side to generate your report. It's never sold, shared, or used to train AI models. We store the text temporarily to run the analysis — that's it.",
-    },
-    {
-      q: 'How accurate is the ATS score?',
-      a: "We use the same keyword-matching logic most corporate ATS systems use, plus an AI layer that catches semantic gaps the basic systems miss. It correlates well with what Workday, Greenhouse, and Lever flag, but no third-party tool can replicate the exact same software.",
-    },
-    {
-      q: "What if I'm not happy with the report?",
-      a: "Email hello@getshortlisted.fyi and we'll refund you. No questions asked. If the report doesn't work for your situation, you shouldn't pay for it.",
-    },
-    {
-      q: 'Do I need an account?',
-      a: "No. You submit, you pay, you get the PDF. We only collect your email at checkout so we can send you the report link. That's the only reason.",
-    },
+    { q: t('faq1_q'), a: t('faq1_a') },
+    { q: t('faq2_q'), a: t('faq2_a') },
+    { q: t('faq3_q'), a: t('faq3_a') },
+    { q: t('faq4_q'), a: t('faq4_a') },
   ];
 
   return (
     <section className={styles.faqSection}>
       <div className={styles.sectionWrap}>
-        <h2 className={styles.sectionHeading}>Questions</h2>
+        <h2 className={styles.sectionHeading}>{t('faq_heading')}</h2>
         <div className={styles.faqList}>
           {faqs.map((item, i) => {
             const isOpen = openIndex === i;
@@ -287,15 +264,16 @@ export default function UploadView() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const total = useStats();
+  const { t } = useT();
 
   const handleFile = (f) => {
     if (!f) return;
     if (f.type !== 'application/pdf') {
-      setError('PDF files only. Not a JPEG of your resume.');
+      setError(t('form_err_pdf'));
       return;
     }
     if (f.size > 10 * 1024 * 1024) {
-      setError('File must be under 10 MB.');
+      setError(t('form_err_size'));
       return;
     }
     setError('');
@@ -314,8 +292,8 @@ export default function UploadView() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!file) return setError('Drop your resume first.');
-    if (jobDescription.length < 100) return setError('Need more of the job description. Paste the whole thing.');
+    if (!file) return setError(t('form_err_file'));
+    if (jobDescription.length < 100) return setError(t('form_err_jd'));
     setLoading(true);
     try {
       const formData = new FormData();
@@ -339,7 +317,10 @@ export default function UploadView() {
       {/* ── NAV ─────────────────────────────── */}
       <nav className={styles.nav}>
         <span className={styles.logo}>short<span className={styles.logoAccent}>listed</span></span>
-        <a href="#analyse" className={styles.navCta}>Get free score</a>
+        <div className={styles.navRight}>
+          <LangSwitcher className={styles.langSwitcher} />
+          <a href="#analyse" className={styles.navCta}>{t('nav_cta')}</a>
+        </div>
       </nav>
 
       {/* ── HERO ────────────────────────────── */}
@@ -349,48 +330,46 @@ export default function UploadView() {
 
           <div className={styles.trustBadge}>
             <span className={styles.trustDot} />
-            {total > 0 ? `${total.toLocaleString()}+ resumes scored · ` : ''}Free · No account · ~30 seconds
+            {total > 0 ? `${total.toLocaleString()}+ resumes scored · ` : ''}{t('hero_badge')}
           </div>
 
           <div className={styles.rejectCard}>
             <div className={styles.rejectTop}>
               <span className={styles.inBadge}>in</span>
-              <span className={styles.rejectSource}>linkedin.com · just now</span>
+              <span className={styles.rejectSource}>{t('hero_reject_source')}</span>
             </div>
-            <p className={styles.rejectQuote}>
-              "After careful consideration, we've decided to move forward with other candidates."
-            </p>
-            <p className={styles.rejectCaption}>
-              The recruiter never read your resume. The ATS filtered it out in under a second.
-            </p>
+            <p className={styles.rejectQuote}>{t('hero_reject_quote')}</p>
+            <p className={styles.rejectCaption}>{t('hero_reject_caption')}</p>
           </div>
 
           <h1 className={styles.headline}>
-            Stop losing to<br />
-            an algorithm<br />
-            <span className={styles.accentText}>you can't even see.</span>
+            {t('hero_headline_line1')}<br />
+            {t('hero_headline_line2')}<br />
+            <span className={styles.accentText}>{t('hero_headline_accent')}</span>
           </h1>
 
-          <p className={styles.sub}>
-            We score your resume against the job description, find every keyword the
-            ATS is penalising you for, and tell you exactly what to fix.
-          </p>
+          <p className={styles.sub}>{t('hero_sub')}</p>
 
-          <a href="#analyse" className={styles.heroCta}>
-            Get my free score
-            <svg viewBox="0 0 20 20" fill="none" className={styles.heroCtaIcon} aria-hidden="true">
-              <path d="M10 4v12M4 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </a>
+          <div className={styles.heroCtaGroup}>
+            <a href="#analyse" className={styles.heroCta}>
+              {t('hero_cta')}
+              <svg viewBox="0 0 20 20" fill="none" className={styles.heroCtaIcon} aria-hidden="true">
+                <path d="M10 4v12M4 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </a>
+            <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.heroSampleLink}>
+              {t('pricing_sample_link')} →
+            </a>
+          </div>
 
           <div className={styles.statGrid}>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>75%</span>
-              <span className={styles.statDesc}>of resumes filtered before a human sees them</span>
+              <span className={styles.statNum}>{t('stat1_num')}</span>
+              <span className={styles.statDesc}>{t('stat1_desc')}</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>7s</span>
-              <span className={styles.statDesc}>average recruiter time per resume, if it gets through</span>
+              <span className={styles.statNum}>{t('stat2_num')}</span>
+              <span className={styles.statDesc}>{t('stat2_desc')}</span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statNum}>
@@ -411,13 +390,13 @@ export default function UploadView() {
       <main id="analyse" className={styles.main}>
         <div className={styles.formCard}>
           <div className={styles.formCardHeader}>
-            <h2 className={styles.formCardTitle}>Analyse your resume</h2>
-            <p className={styles.formCardSub}>Free score in ~30 seconds. No account required.</p>
+            <h2 className={styles.formCardTitle}>{t('form_title')}</h2>
+            <p className={styles.formCardSub}>{t('form_sub')}</p>
           </div>
 
           <form className={styles.form} onSubmit={handleSubmit} noValidate>
             <div className={styles.section}>
-              <p className={styles.sectionLabel}>Your resume</p>
+              <p className={styles.sectionLabel}>{t('form_resume_label')}</p>
               <div
                 className={`${styles.dropzone} ${dragging ? styles.dropzoneDragging : ''} ${file ? styles.dropzoneHasFile : ''}`}
                 onDrop={onDrop}
@@ -443,7 +422,7 @@ export default function UploadView() {
                     </svg>
                     <div>
                       <p className={styles.fileName}>{file.name}</p>
-                      <p className={styles.fileSize}>{(file.size / 1024).toFixed(0)} KB · ready to analyse</p>
+                      <p className={styles.fileSize}>{(file.size / 1024).toFixed(0)} KB · {t('form_ready')}</p>
                     </div>
                   </div>
                 ) : (
@@ -453,16 +432,16 @@ export default function UploadView() {
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
-                    <p className={styles.dropzoneText}>Drop your resume here</p>
+                    <p className={styles.dropzoneText}>{t('form_drop_text')}</p>
                     <p className={styles.dropzoneHint}>
                       or{' '}
                       <span
                         className={styles.browseLink}
                         onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                       >
-                        browse files
+                        {t('form_browse')}
                       </span>
-                      {' '}· PDF · max 10 MB
+                      {' '}· {t('form_drop_hint_suffix')}
                     </p>
                   </>
                 )}
@@ -470,11 +449,11 @@ export default function UploadView() {
             </div>
 
             <div className={styles.section}>
-              <p className={styles.sectionLabel}>The job description</p>
+              <p className={styles.sectionLabel}>{t('form_jd_label')}</p>
               <textarea
                 id="jd"
                 className={styles.textarea}
-                placeholder="Paste the full job posting here: responsibilities, requirements, the whole thing. The more you give us, the more accurate the analysis. Don't just paste the title."
+                placeholder={t('form_jd_placeholder')}
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 rows={8}
@@ -482,10 +461,10 @@ export default function UploadView() {
               />
               <p className={`${styles.hint} ${jobDescription.length > 0 && jobDescription.length < 100 ? styles.hintWarn : ''}`}>
                 {jobDescription.length === 0
-                  ? 'Paste the full posting, not just the title'
+                  ? t('form_jd_hint_empty')
                   : jobDescription.length < 100
-                  ? `${100 - jobDescription.length} more characters needed`
-                  : `${jobDescription.length.toLocaleString()} characters · good`}
+                  ? `${100 - jobDescription.length} ${t('form_jd_hint_more')}`
+                  : `${jobDescription.length.toLocaleString()} ${t('form_jd_hint_good')}`}
               </p>
             </div>
 
@@ -503,14 +482,16 @@ export default function UploadView() {
               {loading ? (
                 <span className={styles.btnLoading}>
                   <span className={styles.btnDot} /><span className={styles.btnDot} /><span className={styles.btnDot} />
-                  Analysing…
+                  {t('form_submitting')}
                 </span>
-              ) : 'Get My Free Score'}
+              ) : t('form_submit')}
             </button>
 
-            <p className={styles.secureNote}>
-              No account · No card · Your data is never sold or shared
-            </p>
+            {file && (
+              <p className={styles.privacyNote}>{t('form_privacy')}</p>
+            )}
+
+            <p className={styles.secureNote}>{t('form_secure')}</p>
           </form>
         </div>
       </main>
@@ -521,14 +502,9 @@ export default function UploadView() {
       {/* ── WHY THIS EXISTS ─────────────────── */}
       <section className={styles.testimonialSection}>
         <div className={styles.sectionWrap}>
-          <p className={styles.eyebrow}>Why this exists</p>
+          <p className={styles.eyebrow}>{t('founder_eyebrow')}</p>
           <div className={styles.testimonialCard}>
-            <p className={styles.testimonialQuote}>
-              "I built Shortlisted after watching my own resume get filtered out for roles I was genuinely
-              qualified for. I had no idea which keywords I was missing or why the ATS kept rejecting me.
-              After fixing the gaps the tool identified, I started getting callbacks. That's the whole reason
-              this exists."
-            </p>
+            <p className={styles.testimonialQuote}>{t('founder_quote')}</p>
             <div className={styles.testimonialAuthor}>
               <img
                 src="/images/daniel.jpg"
@@ -538,9 +514,9 @@ export default function UploadView() {
               />
               <div className={styles.testimonialAvatar} style={{ display: 'none' }}>D</div>
               <div>
-                <p className={styles.testimonialName}>Daniel</p>
+                <p className={styles.testimonialName}>{t('founder_name')}</p>
                 <p className={styles.testimonialRole}>
-                  Founder, Shortlisted ·{' '}
+                  {t('founder_role')} ·{' '}
                   <a
                     href="https://www.linkedin.com/in/dvalenzu"
                     target="_blank"
@@ -560,15 +536,15 @@ export default function UploadView() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <span className={styles.footerLogo}>short<span className={styles.logoAccent}>listed</span></span>
-          <span className={styles.footerTagline}>Beat the bots. Get the interview.</span>
+          <span className={styles.footerTagline}>{t('footer_tagline')}</span>
           <div className={styles.footerLinks}>
-            <Link to="/privacy" className={styles.footerLink}>Privacy Policy</Link>
+            <Link to="/privacy" className={styles.footerLink}>{t('footer_privacy')}</Link>
             <span className={styles.footerDivider}>·</span>
-            <Link to="/terms" className={styles.footerLink}>Terms of Service</Link>
+            <Link to="/terms" className={styles.footerLink}>{t('footer_terms')}</Link>
             <span className={styles.footerDivider}>·</span>
             <a href="mailto:hello@getshortlisted.fyi" className={styles.footerLink}>hello@getshortlisted.fyi</a>
           </div>
-          <span className={styles.footerMeta}>Built by Daniel Valenzuela · Panama</span>
+          <span className={styles.footerMeta}>{t('footer_built')}</span>
         </div>
       </footer>
 

@@ -8,8 +8,10 @@ import { generateReport } from '../src/services/report.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Generate a BASIC-tier sample so the free preview shows what The Audit delivers
+// without giving away The Glow-Up content (rewrites, cover letter, interview questions).
 const job = {
-  tier: 'FULL',
+  tier: 'BASIC',
   email: 'sample@example.com',
 };
 
@@ -115,7 +117,8 @@ I would welcome a conversation about how my background maps to what you are buil
   ],
 };
 
-const pdfBuffer = await generateReport(job, analysis, rewrites);
+// Pass null for rewrites — BASIC tier sample only shows analysis sections
+const pdfBuffer = await generateReport(job, analysis, null);
 
 const outPath = join(__dirname, '..', 'client', 'public', 'sample-report.pdf');
 writeFileSync(outPath, pdfBuffer);

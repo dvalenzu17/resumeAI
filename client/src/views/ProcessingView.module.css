@@ -8,8 +8,20 @@
 .nav {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
+}
+
+.langSwitcher {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
 }
 
 .logo {

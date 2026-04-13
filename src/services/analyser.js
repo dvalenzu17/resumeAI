@@ -59,12 +59,15 @@ export async function runFullReport(jobId) {
     return;
   }
 
-  if (job.status === 'PROCESSING' || job.status === 'COMPLETE') {
+  const claimed = await db.job.updateMany({
+    where: { id: jobId, status: { in: ['PENDING_PAYMENT', 'PREVIEW_READY'] } },
+    data: { status: 'PROCESSING' },
+  });
+
+  if (claimed.count === 0) {
     logger.info({ jobId, status: job.status }, 'runFullReport: skipping duplicate run');
     return;
   }
-
-  await db.job.update({ where: { id: jobId }, data: { status: 'PROCESSING' } });
 
   try {
     const resumeText = (job.resumeText ?? '').slice(0, MAX_RESUME_CHARS);
