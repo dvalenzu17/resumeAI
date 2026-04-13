@@ -80,6 +80,14 @@ export default function SuccessView() {
           </div>
         </div>
       </main>
+
+      <footer className={styles.footer}>
+        <Link to="/privacy" className={styles.footerLink}>Privacy</Link>
+        <span className={styles.footerDot}>·</span>
+        <Link to="/terms" className={styles.footerLink}>Terms</Link>
+        <span className={styles.footerDot}>·</span>
+        <a href="mailto:hello@getshortlisted.fyi" className={styles.footerLink}>hello@getshortlisted.fyi</a>
+      </footer>
     </div>
   );
 }

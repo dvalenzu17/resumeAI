@@ -181,3 +181,28 @@
   padding: 0;
   text-decoration: none;
 }
+
+.footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footerLink {
+  font-size: 12px;
+  color: var(--text-subtle);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: var(--text-muted);
+}
+
+.footerDot {
+  font-size: 12px;
+  color: var(--text-subtle);
+}

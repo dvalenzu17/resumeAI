@@ -1199,3 +1199,11 @@
 
   .mockupScores { flex-wrap: wrap; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .trustBadge, .rejectCard, .headline, .sub, .heroCta, .statGrid {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

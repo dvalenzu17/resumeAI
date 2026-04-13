@@ -243,3 +243,10 @@
   transform: translateY(-1px);
   text-decoration: none;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .spinnerInner {
+    animation: none;
+    border-top-color: var(--accent);
+  }
+}

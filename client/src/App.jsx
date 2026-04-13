@@ -5,6 +5,7 @@ import PreviewView from './views/PreviewView.jsx';
 import SuccessView from './views/SuccessView.jsx';
 import PrivacyView from './views/PrivacyView.jsx';
 import TermsView from './views/TermsView.jsx';
+import NotFoundView from './views/NotFoundView.jsx';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/success" element={<SuccessView />} />
       <Route path="/privacy" element={<PrivacyView />} />
       <Route path="/terms" element={<TermsView />} />
+      <Route path="*" element={<NotFoundView />} />
     </Routes>
   );
 }

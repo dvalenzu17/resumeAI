@@ -1,5 +1,6 @@
 import './lib/env.js'; // validate env first
 import express from 'express';
+import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
@@ -28,6 +29,11 @@ if (env.NODE_ENV === 'production') {
 const app = express();
 app.set('trust proxy', 1);
 
+app.use(helmet({
+  contentSecurityPolicy: false, // CSP would break inline scripts and Google Fonts
+  crossOriginEmbedderPolicy: false, // would break Lemon Squeezy checkout redirect
+}));
+
 // Rate limiter for job submissions — 5 per IP per 10 minutes
 const jobRateLimit = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -35,6 +41,14 @@ const jobRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a few minutes before trying again.', code: 'RATE_LIMITED' },
+});
+
+// Rate limiter for stats — 60 per IP per minute
+const statsRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Lemon Squeezy webhook needs raw body before JSON parsing
@@ -45,7 +59,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use(express.json());
 
 app.use('/api', healthRouter);
-app.use('/api/stats', statsRouter);
+app.use('/api/stats', statsRateLimit, statsRouter);
 app.use('/api/jobs', jobRateLimit, jobsRouter);
 
 app.use(errorHandler);
