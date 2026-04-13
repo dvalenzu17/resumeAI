@@ -179,7 +179,7 @@ export async function runAnalysis(resumeText, jobDescription) {
 export async function runRewrites(resumeText, jobDescription, analysisResult, coverLetterContext = null) {
   if (MOCK) {
     logger.warn('MOCK_CLAUDE=true — returning mock rewrites');
-    return {
+    return { inputTokens: 0, outputTokens: 0, result: {
       rewritten_bullets: [
         'Architected and deployed a React/Node.js/TypeScript SaaS platform serving 50,000+ monthly active users, reducing page load time by 40%',
         'Designed and optimised PostgreSQL schemas and query plans, cutting p99 API latency from 600ms to 95ms',
