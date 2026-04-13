@@ -3,7 +3,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "node --max-old-space-size=256 src/index.js"
+startCommand = "npm install && npx prisma generate && npx prisma db push --accept-data-loss && node --max-old-space-size=256 src/index.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
