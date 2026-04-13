@@ -1,3 +1,4 @@
+console.log('Node process starting...');
 import './lib/env.js'; // validate env first
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
