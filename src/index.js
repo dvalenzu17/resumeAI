@@ -25,6 +25,7 @@ if (env.NODE_ENV === 'production') {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Rate limiter for job submissions — 5 per IP per 10 minutes
 const jobRateLimit = rateLimit({
