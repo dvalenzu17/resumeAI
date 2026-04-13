@@ -239,10 +239,13 @@ export default function PreviewView() {
         {/* Tier picker + CTA */}
         <div className={styles.paywall}>
           <div className={styles.paywallInner}>
-            <h2 className={styles.paywallHeading}>Get the full breakdown.</h2>
+            <h2 className={styles.paywallHeading}>
+              {preview.gap_count} keyword {preview.gap_count === 1 ? 'gap' : 'gaps'} found.
+              Here's the full picture.
+            </h2>
             <p className={styles.paywallSub}>
-              Every gap, every fix, every rewrite. In a PDF in your inbox in ~60 seconds.
-              Your email is captured at checkout, no form needed.
+              Every gap, every match, every fix. Delivered as a PDF in about 60 seconds.
+              Apply to the same role tomorrow with a resume that actually passes.
             </p>
 
             {step === 'preview' && (

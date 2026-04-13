@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
 import { Reveal } from '../lib/Reveal.jsx';
+import { useStats } from '../lib/useStats.js';
 import styles from './UploadView.module.css';
 
 // ─────────────────────────────────────────────
@@ -11,7 +12,7 @@ function HowItWorks() {
   return (
     <section className={styles.howSection}>
       <div className={styles.sectionWrap}>
-        <p className={styles.eyebrow}>Simple by design</p>
+        <p className={styles.eyebrow}>How it works</p>
         <h2 className={styles.sectionHeading}>Three steps. Thirty seconds.</h2>
         <div className={styles.stepsGrid}>
           {[
@@ -52,11 +53,11 @@ function ResultsPreview() {
   return (
     <section className={styles.previewSection}>
       <div className={styles.sectionWrap}>
-        <p className={styles.eyebrow}>What you see first, free</p>
-        <h2 className={styles.sectionHeading}>Your score before you pay anything.</h2>
+        <p className={styles.eyebrow}>Free before you pay anything</p>
+        <h2 className={styles.sectionHeading}>See your score. Then decide.</h2>
         <p className={styles.previewSub}>
-          You get a real ATS score and the first two keyword gaps before we ask for a cent.
-          If the score surprises you, that's exactly the point.
+          You get a real ATS score and your first two keyword gaps before we ask for a cent.
+          Most people are surprised. That surprise is the point.
         </p>
         <Reveal>
         <div className={styles.mockup}>
@@ -196,7 +197,7 @@ function Pricing() {
           </Reveal>
         </div>
         <p className={styles.pricingCoach}>
-          A career coach charges $150+ for one hour. The Glow-Up costs less than a coffee meeting and delivers in 60 seconds.
+          A career coach charges $150+ per hour and books two weeks out. The Glow-Up costs less and delivers in 60 seconds.
         </p>
       </div>
     </section>
@@ -278,6 +279,7 @@ export default function UploadView() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const total = useStats();
 
   const handleFile = (f) => {
     if (!f) return;
@@ -340,7 +342,7 @@ export default function UploadView() {
 
           <div className={styles.trustBadge}>
             <span className={styles.trustDot} />
-            Free ATS analysis · No account · Results in ~30 seconds
+            {total > 0 ? `${total.toLocaleString()}+ resumes scored · ` : ''}Free · No account · ~30 seconds
           </div>
 
           <div className={styles.rejectCard}>
@@ -384,8 +386,12 @@ export default function UploadView() {
               <span className={styles.statDesc}>average recruiter time per resume, if it gets through</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>Free</span>
-              <span className={styles.statDesc}>your ATS score, keyword gaps, and experience match</span>
+              <span className={styles.statNum}>
+                {total > 0 ? `${total.toLocaleString()}+` : 'Free'}
+              </span>
+              <span className={styles.statDesc}>
+                {total > 0 ? 'resumes scored and counting' : 'your ATS score, keyword gaps, and experience match'}
+              </span>
             </div>
           </div>
         </div>

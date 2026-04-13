@@ -5,6 +5,7 @@ const schema = z.object({
   PORT: z.coerce.number().default(3000),
   SKIP_PAYMENT: z.coerce.boolean().default(false),
   MOCK_CLAUDE: z.coerce.boolean().default(false),
+  STATS_SEED: z.coerce.number().default(0),
   // Used in dev when SKIP_PAYMENT=true (no LS checkout to capture email)
   DEV_EMAIL: z.string().default('dev@localhost'),
   DATABASE_URL: z.string().min(1),

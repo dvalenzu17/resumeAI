@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
 import { jobsRouter } from './routes/jobs.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { statsRouter } from './routes/stats.js';
 
 // Production safety guard
 if (env.NODE_ENV === 'production') {
@@ -44,6 +45,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use(express.json());
 
 app.use('/api', healthRouter);
+app.use('/api/stats', statsRouter);
 app.use('/api/jobs', jobRateLimit, jobsRouter);
 
 app.use(errorHandler);
