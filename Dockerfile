@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Backend dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Prisma
 COPY prisma ./prisma
