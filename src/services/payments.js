@@ -18,7 +18,7 @@ export async function createCheckoutSession({ jobId, tier, email }) {
       media: false,
     },
     checkoutData: {
-      email,
+      ...(email ? { email } : {}),
       custom: {
         job_id: jobId,
       },
