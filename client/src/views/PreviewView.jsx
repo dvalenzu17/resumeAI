@@ -52,6 +52,7 @@ export default function PreviewView() {
   const [selectedTier, setSelectedTier] = useState('FULL');
   const [step, setStep] = useState('preview'); // 'preview' | 'personalise'
   const [clContext, setClContext] = useState({ companyWhy: '', topAchievement: '', uniqueAngle: '' });
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -71,6 +72,11 @@ export default function PreviewView() {
   }, [jobId, navigate]);
 
   const handleUnlock = async () => {
+    if (!email || !email.includes('@')) {
+      setError('Enter your email so we can send the report.');
+      return;
+    }
+
     // For FULL tier, show personalisation step first
     if (selectedTier === 'FULL' && step === 'preview') {
       setStep('personalise');
@@ -87,7 +93,7 @@ export default function PreviewView() {
       const res = await fetch(`/api/jobs/${jobId}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: selectedTier, coverLetterContext }),
+        body: JSON.stringify({ tier: selectedTier, coverLetterContext, email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
@@ -260,12 +266,27 @@ export default function PreviewView() {
                   </button>
                 </div>
 
+                <div className={styles.emailCapture}>
+                  <label htmlFor="report-email" className={styles.emailLabel}>
+                    Where should we send your report?
+                  </label>
+                  <input
+                    id="report-email"
+                    type="email"
+                    className={styles.emailInput}
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
                   {loading ? 'Redirecting…' : `Unlock ${tierLabel} for ${price}`}
                 </button>
-                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
+                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds</p>
               </>
             )}
 
@@ -313,7 +334,7 @@ export default function PreviewView() {
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
                   {loading ? 'Redirecting…' : 'Continue to checkout for $29'}
                 </button>
-                <p className={styles.paywallNote}>One-time · No account · PDF link valid 72h · Reply for refunds</p>
+                <p className={styles.paywallNote}>Sending to {email} · One-time · PDF link valid 72h · <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>hello@getshortlisted.fyi</a> for refunds</p>
               </>
             )}
           </div>

@@ -94,6 +94,23 @@
   font-weight: 600;
 }
 
+.spamNote {
+  font-size: 13px;
+  color: var(--text-subtle);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.contactLink {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.contactLink:hover {
+  text-decoration: underline;
+}
+
 .body2 {
   font-size: 14px;
   color: var(--text-subtle);

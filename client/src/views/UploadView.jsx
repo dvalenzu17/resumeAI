@@ -188,6 +188,12 @@ function Pricing() {
         <p className={styles.pricingCoach}>
           A career coach charges $150+ for one hour. The Glow-Up costs less than a coffee meeting and delivers in 60 seconds.
         </p>
+        <p className={styles.sampleLink}>
+          Not sure what you're getting?{' '}
+          <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
+            See a sample report
+          </a>
+        </p>
       </div>
     </section>
   );
@@ -208,7 +214,7 @@ function FAQ() {
     },
     {
       q: "What if I'm not happy with the report?",
-      a: "Email us and we'll refund you. No questions asked. If the report doesn't work for your situation, you shouldn't pay for it.",
+      a: "Email hello@getshortlisted.fyi and we'll refund you. No questions asked. If the report doesn't work for your situation, you shouldn't pay for it.",
     },
     {
       q: 'Do I need an account?',
@@ -476,6 +482,7 @@ export default function UploadView() {
           <span className={styles.footerLogo}>short<span className={styles.logoAccent}>listed</span></span>
           <span className={styles.footerTagline}>Beat the bots. Get the interview.</span>
           <span className={styles.footerMeta}>Built for job seekers who are done getting ghosted</span>
+          <a href="mailto:hello@getshortlisted.fyi" className={styles.footerContact}>hello@getshortlisted.fyi</a>
         </div>
       </footer>
 

@@ -79,6 +79,7 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
     // Accept tier override from preview page (user may switch tiers before paying)
     const chosenTier = ['BASIC', 'FULL'].includes(req.body?.tier) ? req.body.tier : job.tier;
     const coverLetterContext = req.body?.coverLetterContext ?? null;
+    const userEmail = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
 
     if (env.SKIP_PAYMENT) {
       logger.info({ jobId: job.id }, 'SKIP_PAYMENT=true, skipping checkout');
@@ -92,7 +93,12 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
       return res.json({ jobId: job.id, checkoutUrl: null });
     }
 
-    const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier, email: job.email });
+    // Save email before checkout so abandonment can be tracked even if user doesn't complete payment
+    if (userEmail) {
+      await db.job.update({ where: { id: job.id }, data: { email: userEmail } });
+    }
+
+    const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier, email: userEmail || job.email });
 
     await db.job.update({
       where: { id: job.id },

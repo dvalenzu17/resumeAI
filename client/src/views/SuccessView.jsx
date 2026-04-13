@@ -32,6 +32,13 @@ export default function SuccessView() {
             Download link is valid for 72 hours.
           </p>
 
+          <p className={styles.spamNote}>
+            Nothing after 3 minutes? Check spam. Still missing?{' '}
+            <a href="mailto:hello@getshortlisted.fyi" className={styles.contactLink}>
+              hello@getshortlisted.fyi
+            </a>
+          </p>
+
           <p className={styles.body2}>
             Go touch grass. You've done the hard part.
           </p>

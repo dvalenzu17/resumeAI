@@ -378,6 +378,53 @@
   color: var(--hero-muted);
 }
 
+.paywallContact {
+  color: var(--hero-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.paywallContact:hover {
+  color: var(--accent);
+}
+
+/* ── Email capture ───────────────────────────── */
+.emailCapture {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.emailLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hero-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.emailInput {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #2a2a2a;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: inherit;
+  color: #f5f5f5;
+  background: #1a1a1a;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.emailInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.emailInput::placeholder {
+  color: #525252;
+}
+
 /* ── Misc ────────────────────────────────────── */
 .errorMsg {
   font-size: 13px;
