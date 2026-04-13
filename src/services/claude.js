@@ -2,8 +2,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger.js';
 
 const MOCK = process.env.MOCK_CLAUDE === 'true';
-const client = MOCK ? null : new Anthropic();
+const client = MOCK ? null : new Anthropic({ maxRetries: 0 }); // We handle retries ourselves
 const MODEL = 'claude-sonnet-4-5';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function buildAnalysisPrompt(resumeText, jobDescription) {
   return `You are an expert ATS analyst, resume coach, and career strategist.
@@ -87,15 +89,32 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
     ? prompt + '\n\nCRITICAL: Your previous response was not valid JSON. Return ONLY raw JSON. No text before or after the opening { and closing }.'
     : prompt;
 
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
-    messages: [{ role: 'user', content: finalPrompt }],
-  });
+  const RATE_LIMIT_DELAYS = [15000, 30000, 60000]; // 15s, 30s, 60s
 
-  const text = message.content[0]?.text?.trim() ?? '';
-  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-  return JSON.parse(cleaned);
+  let lastErr;
+  for (let attempt = 0; attempt <= RATE_LIMIT_DELAYS.length; attempt++) {
+    try {
+      const message = await client.messages.create({
+        model: MODEL,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: finalPrompt }],
+      });
+      const text = message.content[0]?.text?.trim() ?? '';
+      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      return JSON.parse(cleaned);
+    } catch (err) {
+      lastErr = err;
+      const isRateLimit = err?.status === 429 || err?.message?.toLowerCase().includes('too many requests');
+      if (isRateLimit && attempt < RATE_LIMIT_DELAYS.length) {
+        const delay = RATE_LIMIT_DELAYS[attempt];
+        logger.warn({ attempt: attempt + 1, delayMs: delay }, 'Claude rate limited, retrying after delay');
+        await sleep(delay);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
 }
 
 export async function runAnalysis(resumeText, jobDescription) {
