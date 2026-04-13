@@ -188,12 +188,6 @@ function Pricing() {
         <p className={styles.pricingCoach}>
           A career coach charges $150+ for one hour. The Glow-Up costs less than a coffee meeting and delivers in 60 seconds.
         </p>
-        <p className={styles.sampleLink}>
-          Not sure what you're getting?{' '}
-          <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
-            See a sample report
-          </a>
-        </p>
       </div>
     </section>
   );
@@ -488,10 +482,26 @@ export default function UploadView() {
               this exists."
             </p>
             <div className={styles.testimonialAuthor}>
-              <div className={styles.testimonialAvatar}>DV</div>
+              <img
+                src="/images/daniel.jpg"
+                alt="Daniel Valenzuela"
+                className={styles.testimonialPhoto}
+                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              />
+              <div className={styles.testimonialAvatar} style={{ display: 'none' }}>DV</div>
               <div>
                 <p className={styles.testimonialName}>Daniel Valenzuela</p>
-                <p className={styles.testimonialRole}>Founder, Shortlisted</p>
+                <p className={styles.testimonialRole}>
+                  Founder, Shortlisted ·{' '}
+                  <a
+                    href="www.linkedin.com/in/dvalenzu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.testimonialLinkedin}
+                  >
+                    LinkedIn
+                  </a>
+                </p>
               </div>
             </div>
           </div>

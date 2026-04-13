@@ -942,6 +942,14 @@
   letter-spacing: -0.5px;
 }
 
+.testimonialPhoto {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .testimonialName {
   font-weight: 700;
   font-size: 14px;
@@ -953,6 +961,16 @@
   font-size: 13px;
   color: var(--text-muted);
   margin: 2px 0 0;
+}
+
+.testimonialLinkedin {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.testimonialLinkedin:hover {
+  text-decoration: underline;
 }
 
 /* ─────────────────────────────────────────────
