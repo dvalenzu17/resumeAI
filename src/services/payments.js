@@ -27,7 +27,7 @@ export async function createCheckoutSession({ jobId, tier, email }) {
       },
     },
     productOptions: {
-      redirectUrl: `${env.APP_URL}/success?jobId=${jobId}`,
+      redirectUrl: `${env.APP_URL}/success?jobId=${jobId}&tier=${tier}`,
     },
   });
 

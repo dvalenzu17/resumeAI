@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted } from '../lib/analytics.js';
 import styles from './PreviewView.module.css';
 
 function ScoreRing({ score, label }) {
@@ -67,6 +68,7 @@ export default function PreviewView() {
         setPreview(data.preview);
         setTier(data.tier);
         setSelectedTier(data.tier);
+        trackPreviewViewed({ ats_score: data.preview?.ats_score, tier: data.tier });
       })
       .catch(() => setError('Could not load your preview.'));
   }, [jobId, navigate]);
@@ -85,6 +87,7 @@ export default function PreviewView() {
 
     setLoading(true);
     setError('');
+    trackCheckoutStarted({ tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 });
     try {
       const coverLetterContext = selectedTier === 'FULL'
         ? { companyWhy: clContext.companyWhy || null, topAchievement: clContext.topAchievement || null, uniqueAngle: clContext.uniqueAngle || null }
@@ -248,7 +251,7 @@ export default function PreviewView() {
                   <button
                     type="button"
                     className={`${styles.tierOption} ${selectedTier === 'BASIC' ? styles.tierSelected : ''}`}
-                    onClick={() => setSelectedTier('BASIC')}
+                    onClick={() => { setSelectedTier('BASIC'); trackTierSelected({ tier: 'BASIC' }); }}
                   >
                     <div className={styles.tierName}>The Audit</div>
                     <div className={styles.tierDesc}>All {preview.gap_count} gaps · JD red flags · salary range · LinkedIn headline</div>
@@ -257,7 +260,7 @@ export default function PreviewView() {
                   <button
                     type="button"
                     className={`${styles.tierOption} ${selectedTier === 'FULL' ? styles.tierSelected : ''}`}
-                    onClick={() => setSelectedTier('FULL')}
+                    onClick={() => { setSelectedTier('FULL'); trackTierSelected({ tier: 'FULL' }); }}
                   >
                     <div className={styles.tierBadge}>Best value</div>
                     <div className={styles.tierName}>The Glow-Up</div>

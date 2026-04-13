@@ -1,9 +1,16 @@
+import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { trackPurchaseComplete } from '../lib/analytics.js';
 import styles from './SuccessView.module.css';
 
 export default function SuccessView() {
   const [params] = useSearchParams();
   const jobId = params.get('jobId');
+  const tier = params.get('tier') ?? 'FULL';
+
+  useEffect(() => {
+    trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
+  }, []);
 
   return (
     <div className={styles.page}>

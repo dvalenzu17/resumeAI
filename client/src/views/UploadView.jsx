@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { trackResumeSubmitted } from '../lib/analytics.js';
 import styles from './UploadView.module.css';
 
 // ─────────────────────────────────────────────
@@ -282,6 +283,7 @@ export default function UploadView() {
       const res = await fetch('/api/jobs', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      trackResumeSubmitted({ tier: 'FULL' });
       navigate(`/processing?jobId=${data.jobId}`);
     } catch (err) {
       setError(err.message);
@@ -469,44 +471,6 @@ export default function UploadView() {
 
       <Pricing />
       <FAQ />
-
-      {/* ── TESTIMONIAL ─────────────────────── */}
-      <section className={styles.testimonialSection}>
-        <div className={styles.sectionWrap}>
-          <p className={styles.eyebrow}>Why this exists</p>
-          <div className={styles.testimonialCard}>
-            <p className={styles.testimonialQuote}>
-              "I built Shortlisted after watching my own resume get filtered out for roles I was genuinely
-              qualified for. I had no idea which keywords I was missing or why the ATS kept rejecting me.
-              After fixing the gaps the tool identified, I started getting callbacks. That's the whole reason
-              this exists."
-            </p>
-            <div className={styles.testimonialAuthor}>
-              <img
-                src="/images/daniel.jpg"
-                alt="Daniel Valenzuela"
-                className={styles.testimonialPhoto}
-                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-              />
-              <div className={styles.testimonialAvatar} style={{ display: 'none' }}>DV</div>
-              <div>
-                <p className={styles.testimonialName}>Daniel Valenzuela</p>
-                <p className={styles.testimonialRole}>
-                  Founder, Shortlisted ·{' '}
-                  <a
-                    href="https://www.linkedin.com/in/dvalenzu"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.testimonialLinkedin}
-                  >
-                    LinkedIn
-                  </a>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ── FOOTER ──────────────────────────── */}
       <footer className={styles.footer}>

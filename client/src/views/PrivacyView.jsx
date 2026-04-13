@@ -60,7 +60,7 @@ export default function PrivacyView() {
             <li>We do not use your resume or job description to train AI models.</li>
             <li>We do not share your data with third parties except as described in this policy.</li>
             <li>We do not send marketing emails.</li>
-            <li>We do not use tracking cookies or third-party advertising pixels.</li>
+            <li>We do not use advertising pixels or sell data to advertisers.</li>
           </ul>
 
           <h2>Third-party services we use</h2>
@@ -133,11 +133,27 @@ export default function PrivacyView() {
             of location.
           </p>
 
+          <h2>Analytics</h2>
+          <p>
+            We use Google Analytics 4 to understand how visitors use the site — which pages are visited,
+            where users drop off in the flow, and which features are used most. This helps us improve
+            the product. Google Analytics sets cookies in your browser to distinguish visits. The data
+            collected is aggregated and does not identify you personally. You can opt out using the{' '}
+            <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">
+              Google Analytics opt-out browser add-on
+            </a>.
+          </p>
+          <p>
+            We also track anonymised product events (for example: resume submitted, checkout started,
+            purchase completed) to understand our conversion funnel. No resume content, job descriptions,
+            or personal data are included in these events.
+          </p>
+
           <h2>Cookies</h2>
           <p>
-            We do not use tracking cookies or advertising cookies. The service may use session storage
-            in your browser to remember your job ID between page loads. This data stays in your browser
-            and is not sent to any third party.
+            Google Analytics sets cookies to measure site usage as described above. The service may also
+            use session storage in your browser to remember your job ID between page loads. This data
+            stays in your browser and is not shared with advertisers.
           </p>
 
           <h2>Children</h2>
