@@ -13,6 +13,8 @@ import { healthRouter } from './routes/health.js';
 import { jobsRouter } from './routes/jobs.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { statsRouter } from './routes/stats.js';
+import { cronRouter } from './routes/cron.js';
+import { feedbackRouter } from './routes/feedback.js';
 
 // Production safety guard
 if (env.NODE_ENV === 'production') {
@@ -61,6 +63,8 @@ app.use(express.json());
 app.use('/api', healthRouter);
 app.use('/api/stats', statsRateLimit, statsRouter);
 app.use('/api/jobs', jobRateLimit, jobsRouter);
+app.use('/api/cron', cronRouter);
+app.use('/api/feedback', feedbackRouter);
 
 app.use(errorHandler);
 

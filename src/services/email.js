@@ -62,6 +62,78 @@ export async function sendReportEmail(to, jobId, downloadUrl, tier) {
   });
 }
 
+export async function sendFollowUp1Email(to, jobId, appUrl) {
+  if (!resend) {
+    logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping follow-up 1 email');
+    return;
+  }
+
+  const yesUrl = `${appUrl}/feedback?jobId=${jobId}&v=yes`;
+  const noUrl = `${appUrl}/feedback?jobId=${jobId}&v=no`;
+
+  const content = `
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;letter-spacing:-0.3px;">Quick question.</h1>
+    <p style="line-height:1.75;margin:0 0 24px;color:#374151;">
+      Did the Shortlisted report help with your application?
+      One click is all we need.
+    </p>
+    <div style="display:flex;gap:12px;margin-bottom:28px;">
+      <a href="${yesUrl}"
+         style="background:#0f0f0f;color:#fff;text-decoration:none;padding:13px 24px;
+                border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
+        Yes, it helped
+      </a>
+      <a href="${noUrl}"
+         style="color:#6b7280;text-decoration:none;padding:13px 16px;
+                font-size:14px;display:inline-block;">
+        Not really
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;margin:0;line-height:1.6;">
+      Your answer helps us improve the reports. Takes one second.
+    </p>`;
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: 'Quick question about your report',
+    html: EMAIL_BASE(content),
+  });
+}
+
+export async function sendFollowUp2Email(to, appUrl) {
+  if (!resend) {
+    logger.warn({ to }, 'RESEND_API_KEY not set — skipping follow-up 2 email');
+    return;
+  }
+
+  const content = `
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;letter-spacing:-0.3px;">One last thing.</h1>
+    <p style="line-height:1.75;margin:0 0 12px;color:#374151;">
+      If the report saved you hours of guessing which keywords to add, the best thing
+      you can do is send someone else here.
+    </p>
+    <p style="line-height:1.75;margin:0 0 28px;color:#374151;">
+      Job hunting is brutal. Most people don't even know their resume is getting
+      filtered before a human ever sees it.
+    </p>
+    <a href="${appUrl}"
+       style="background:#e85d04;color:#fff;text-decoration:none;
+              padding:14px 28px;border-radius:8px;font-weight:700;display:inline-block;font-size:15px;">
+      Share Shortlisted
+    </a>
+    <p style="font-size:13px;color:#9ca3af;margin:20px 0 0;line-height:1.6;">
+      ${appUrl}
+    </p>`;
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: 'Know anyone else job hunting?',
+    html: EMAIL_BASE(content),
+  });
+}
+
 export async function sendFailureEmail(to, jobId) {
   if (!resend) {
     logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping failure email');

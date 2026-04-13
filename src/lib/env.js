@@ -24,6 +24,7 @@ const schema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().default(''),
   R2_BUCKET_NAME: z.string().default(''),
   APP_URL: z.string().url().default('http://localhost:5173'),
+  CRON_SECRET: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

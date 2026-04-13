@@ -33,6 +33,9 @@ model Job {
   checkoutSessionId   String?   @unique
   reportUrl         String?
   errorMessage      String?
+  followUp1SentAt   DateTime?
+  followUp2SentAt   DateTime?
+  feedbackResult    String?   // 'yes' | 'no'
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

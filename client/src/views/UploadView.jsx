@@ -199,6 +199,13 @@ function Pricing() {
         <p className={styles.pricingCoach}>
           A career coach charges $150+ per hour and books two weeks out. The Glow-Up costs less and delivers in 60 seconds.
         </p>
+        <p className={styles.sampleLink}>
+          Not sure what you get?{' '}
+          <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
+            See a real sample report
+          </a>
+          {' '}before you decide.
+        </p>
       </div>
     </section>
   );

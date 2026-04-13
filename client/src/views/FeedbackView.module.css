@@ -1,0 +1,126 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logoAccent {
+  color: var(--accent);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.iconMuted {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-muted);
+}
+
+.heading {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.75px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.body {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--text-subtle);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 13px 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(232, 93, 4, 0.25);
+  transition: background 0.15s, transform 0.1s;
+  margin-bottom: 24px;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.emailLink {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.emailLink:hover {
+  text-decoration: underline;
+}
+
+.homeLink {
+  display: block;
+  font-size: 13px;
+  color: var(--text-subtle);
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+.homeLink:hover {
+  color: var(--text-muted);
+}

@@ -19,7 +19,8 @@
       "WebFetch(domain:scale.jobs)",
       "WebFetch(domain:dnyuz.com)",
       "WebFetch(domain:www.jobscan.co)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(node scripts/generate-sample-report.js)"
     ]
   }
 }

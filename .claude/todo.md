@@ -89,6 +89,17 @@
 - [ ] Confirm /api/health returns { status: 'ok', db: 'connected' }
 - [ ] Run live end-to-end test with real purchase
 
+### Manual — requires domain to be live first
+- [ ] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
+- [ ] Set CRON_SECRET env var in Railway (any long random string)
+- [ ] Go to cron-job.org (free), create job: POST https://getshortlisted.fyi/api/cron/followups every hour, header X-Cron-Secret: <your CRON_SECRET> — CRON_SECRET is already set
+- [ ] Set up Google Search Console and verify domain
+- [ ] Set STATS_SEED in Railway env once you have real completed jobs (seed the counter)
+- [ ] Drop daniel.jpg into client/public/images/daniel.jpg (founder photo on homepage)
+- [ ] Screenshot og-template.html at 1200x630 and save as client/public/og-image.png
+- [ ] Verify getshortlisted.fyi domain in Resend dashboard
+- [ ] Update Lemon Squeezy webhook URL to https://getshortlisted.fyi/api/webhooks/lemonsqueezy
+
 ---
 
 ## PRD Notes (from Market Analysis)
