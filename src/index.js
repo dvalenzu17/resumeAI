@@ -15,6 +15,7 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { statsRouter } from './routes/stats.js';
 import { cronRouter } from './routes/cron.js';
 import { feedbackRouter } from './routes/feedback.js';
+import { adminRouter } from './routes/admin.js';
 
 // Production safety guard
 if (env.NODE_ENV === 'production') {
@@ -65,6 +66,7 @@ app.use('/api/stats', statsRateLimit, statsRouter);
 app.use('/api/jobs', jobRateLimit, jobsRouter);
 app.use('/api/cron', cronRouter);
 app.use('/api/feedback', feedbackRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(errorHandler);
 

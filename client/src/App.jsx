@@ -7,6 +7,7 @@ import PrivacyView from './views/PrivacyView.jsx';
 import TermsView from './views/TermsView.jsx';
 import NotFoundView from './views/NotFoundView.jsx';
 import FeedbackView from './views/FeedbackView.jsx';
+import AdminView from './views/AdminView.jsx';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/privacy" element={<PrivacyView />} />
       <Route path="/terms" element={<TermsView />} />
       <Route path="/feedback" element={<FeedbackView />} />
+      <Route path="/admin" element={<AdminView />} />
       <Route path="*" element={<NotFoundView />} />
     </Routes>
   );

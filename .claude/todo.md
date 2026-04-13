@@ -92,6 +92,7 @@
 ### Manual — requires domain to be live first
 - [ ] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
 - [ ] Set CRON_SECRET env var in Railway (any long random string)
+- [ ] Set ADMIN_SECRET env var in Railway (any long random string) — dashboard at /admin
 - [ ] Go to cron-job.org (free), create job: POST https://getshortlisted.fyi/api/cron/followups every hour, header X-Cron-Secret: <your CRON_SECRET> — CRON_SECRET is already set
 - [ ] Set up Google Search Console and verify domain
 - [ ] Set STATS_SEED in Railway env once you have real completed jobs (seed the counter)

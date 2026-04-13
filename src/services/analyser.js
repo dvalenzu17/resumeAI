@@ -27,12 +27,17 @@ export async function runTeaserAnalysis(jobId) {
     const resumeText = (job.resumeText ?? '').slice(0, MAX_RESUME_CHARS);
     const jobDescription = job.jobDescription.slice(0, MAX_JD_CHARS);
 
-    const analysis = await runAnalysis(resumeText, jobDescription);
+    const { result: analysis, inputTokens, outputTokens } = await runAnalysis(resumeText, jobDescription);
     logger.info({ jobId, ats_score: analysis.ats_score }, 'Teaser analysis complete');
 
     await db.job.update({
       where: { id: jobId },
-      data: { status: 'PREVIEW_READY', analysisResult: analysis },
+      data: {
+        status: 'PREVIEW_READY',
+        analysisResult: analysis,
+        tokensInCall1: { increment: inputTokens },
+        tokensOutCall1: { increment: outputTokens },
+      },
     });
   } catch (err) {
     logger.error({ jobId, err }, 'runTeaserAnalysis failed');
@@ -73,8 +78,13 @@ export async function runFullReport(jobId) {
     }
 
     let rewrites = null;
+    let tokensIn2 = 0;
+    let tokensOut2 = 0;
     if (job.tier === 'FULL') {
-      rewrites = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
+      const { result: rewriteResult, inputTokens: in2, outputTokens: out2 } = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
+      rewrites = rewriteResult;
+      tokensIn2 = in2;
+      tokensOut2 = out2;
       logger.info({ jobId }, 'Rewrites complete');
     }
 
@@ -89,7 +99,12 @@ export async function runFullReport(jobId) {
 
     await db.job.update({
       where: { id: jobId },
-      data: { status: 'COMPLETE', reportUrl },
+      data: {
+        status: 'COMPLETE',
+        reportUrl,
+        tokensInCall2: { increment: tokensIn2 },
+        tokensOutCall2: { increment: tokensOut2 },
+      },
     });
 
     logger.info({ jobId }, 'Full report complete');

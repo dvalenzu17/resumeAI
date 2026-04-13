@@ -36,6 +36,10 @@ model Job {
   followUp1SentAt   DateTime?
   followUp2SentAt   DateTime?
   feedbackResult    String?   // 'yes' | 'no'
+  tokensInCall1     Int       @default(0)
+  tokensOutCall1    Int       @default(0)
+  tokensInCall2     Int       @default(0)
+  tokensOutCall2    Int       @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

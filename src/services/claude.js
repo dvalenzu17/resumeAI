@@ -102,7 +102,11 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
       });
       const text = message.content[0]?.text?.trim() ?? '';
       const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-      return JSON.parse(cleaned);
+      return {
+        result: JSON.parse(cleaned),
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0,
+      };
     } catch (err) {
       lastErr = err;
       const isRateLimit = err?.status === 429 || err?.message?.toLowerCase().includes('too many requests');
@@ -121,7 +125,7 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
 export async function runAnalysis(resumeText, jobDescription) {
   if (MOCK) {
     logger.warn('MOCK_CLAUDE=true — returning mock analysis');
-    return {
+    return { inputTokens: 0, outputTokens: 0, result: {
       ats_score: 72,
       human_score: 61,
       human_score_notes: 'Bullet points list responsibilities rather than achievements. Recruiters want to see impact, not a job description.',
@@ -156,19 +160,19 @@ export async function runAnalysis(resumeText, jobDescription) {
         'They emphasise "fast-paced environment" — use this to negotiate a 90-day performance review with a raise tied to clear goals.',
         'If base salary is fixed, ask for a $5-10k signing bonus and an extra week of PTO — these are lower-friction concessions for employers.',
       ],
-    };
+    } };
   }
 
   const prompt = buildAnalysisPrompt(resumeText, jobDescription);
   try {
-    const result = await callClaude(prompt, 3000);
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000);
     validateAnalysis(result);
-    return result;
+    return { result, inputTokens, outputTokens };
   } catch (err) {
     logger.warn({ err }, 'Claude analysis call 1 failed, retrying with stricter instruction');
-    const result = await callClaude(prompt, 3000, true);
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000, true);
     validateAnalysis(result);
-    return result;
+    return { result, inputTokens, outputTokens };
   }
 }
 
@@ -236,19 +240,19 @@ I'd welcome a conversation about how my background maps to what you're building.
           star_framework: 'Reference something specific from the JD or the company\'s public work. Connect it to a genuine technical interest. Tie it back to what you want to build next in your career. Avoid generic answers about "growth opportunities."',
         },
       ],
-    };
+    } };
   }
 
   const prompt = buildRewritePrompt(resumeText, jobDescription, analysisResult, coverLetterContext);
   try {
-    const result = await callClaude(prompt, 5000);
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 5000);
     validateRewrites(result);
-    return result;
+    return { result, inputTokens, outputTokens };
   } catch (err) {
     logger.warn({ err }, 'Claude rewrite call failed, retrying with stricter instruction');
-    const result = await callClaude(prompt, 5000, true);
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 5000, true);
     validateRewrites(result);
-    return result;
+    return { result, inputTokens, outputTokens };
   }
 }
 
