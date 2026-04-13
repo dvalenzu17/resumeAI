@@ -9,7 +9,7 @@ Two tiers: The Audit ($12) and The Glow-Up ($29). No accounts. Email delivery of
 - **Backend:** Node.js + Express, TypeScript
 - **Database:** PostgreSQL via Prisma ORM
 - **AI:** Anthropic Claude API (claude-sonnet-4-5) — two-call prompt chain
-- **Payments:** Stripe Checkout (one-time, no subscriptions in v1)
+- **Payments:** Lemon Squeezy (one-time, no subscriptions in v1)
 - **PDF parsing:** pdf-parse
 - **PDF generation:** Puppeteer → HTML template → PDF
 - **File storage:** Cloudflare R2 (S3-compatible)
@@ -21,9 +21,9 @@ Two tiers: The Audit ($12) and The Glow-Up ($29). No accounts. Email delivery of
 resumeai/
   src/
     routes/         # Express route handlers
-    services/       # Business logic (claude, stripe, pdf, email, storage)
+    services/       # Business logic (claude, payments, pdf, email, storage)
     lib/            # DB client, config, logger
-    middleware/      # Error handler, raw body parser for Stripe
+    middleware/      # Error handler, raw body parser for Lemon Squeezy
   prisma/
     schema.prisma
   .claude/
@@ -33,20 +33,20 @@ resumeai/
 ```
 
 ## Key constraints
-- Stripe webhook handler must respond 200 in < 5s. Fire analysis in background, never await it in the handler.
+- Lemon Squeezy webhook handler must respond 200 in < 5s. Fire analysis in background, never await it in the handler.
 - pdf-parse returns empty string on scanned/image PDFs. Detect: if extracted text < 200 chars, reject with clear user error.
 - Claude must return strict JSON. Always validate with JSON.parse(). Retry once on failure before marking job failed.
 - Puppeteer needs bundled Chromium on Railway. Use `puppeteer` (not `puppeteer-core`). Set PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false.
 - R2 signed URLs expire in 72 hours. Set on job completion, store in DB.
-- Make analyseJob idempotent — check job status before re-running (Stripe retries webhooks).
+- Make analyseJob idempotent — check job status before re-running (Lemon Squeezy retries webhooks).
 
 ## Job status flow
 pending_payment → processing → complete | failed
 
 ## Environment variables required
-DATABASE_URL, ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-STRIPE_PRICE_ID_BASIC, STRIPE_PRICE_ID_FULL, RESEND_API_KEY,
-R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, APP_URL
+DATABASE_URL, ANTHROPIC_API_KEY, LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_WEBHOOK_SECRET,
+LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID_BASIC, LEMONSQUEEZY_VARIANT_ID_FULL,
+RESEND_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, APP_URL
 
 ## Prompt chain
 - Call 1 (both tiers): analysis JSON — ats_score, keyword_gaps, keyword_matches, weaknesses, strengths, linkedin_headline

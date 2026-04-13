@@ -143,6 +143,7 @@ export async function generateReport(job, analysis, rewrites) {
   const html = buildHtml(job, analysis, rewrites);
 
   const browser = await puppeteer.launch({
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
