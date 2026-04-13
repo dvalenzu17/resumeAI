@@ -1,7 +1,9 @@
-console.log('Node process starting...');
 import './lib/env.js'; // validate env first
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { env } from './lib/env.js';
 import { logger } from './lib/logger.js';
 import { rawBody } from './middleware/rawBody.js';
@@ -44,6 +46,14 @@ app.use('/api', healthRouter);
 app.use('/api/jobs', jobRateLimit, jobsRouter);
 
 app.use(errorHandler);
+
+// Serve built React frontend in production
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const clientDist = join(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientDist));
+app.get('*', (req, res) => {
+  res.sendFile(join(clientDist, 'index.html'));
+});
 
 app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, mock: env.MOCK_CLAUDE, skipPayment: env.SKIP_PAYMENT }, 'ResumeAI server started');
