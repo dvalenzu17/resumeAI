@@ -1,0 +1,7 @@
+node_modules/
+client/node_modules/
+.env
+*.pdf
+dist/
+client/dist/
+.DS_Store

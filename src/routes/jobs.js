@@ -1,0 +1,145 @@
+import { Router } from 'express';
+import multer from 'multer';
+import { db } from '../lib/db.js';
+import { AppError } from '../lib/errors.js';
+import { extractText } from '../services/pdf.js';
+import { createCheckoutSession } from '../services/payments.js';
+import { runTeaserAnalysis, runFullReport } from '../services/analyser.js';
+import { env } from '../lib/env.js';
+import { logger } from '../lib/logger.js';
+
+export const jobsRouter = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+      cb(AppError.badRequest('Only PDF files are accepted', 'INVALID_FILE_TYPE'));
+    } else {
+      cb(null, true);
+    }
+  },
+});
+
+// POST /api/jobs
+// Creates the job and fires the free teaser analysis. No payment at this stage.
+jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
+  try {
+    const { jobDescription, tier } = req.body;
+
+    if (!jobDescription || !tier) {
+      throw AppError.badRequest('jobDescription and tier are required');
+    }
+    if (!['BASIC', 'FULL'].includes(tier)) {
+      throw AppError.badRequest('tier must be BASIC or FULL');
+    }
+    if (jobDescription.length < 100) {
+      throw AppError.badRequest('Job description must be at least 100 characters');
+    }
+    if (!req.file) {
+      throw AppError.badRequest('Resume PDF is required');
+    }
+
+    const resumeText = await extractText(req.file.buffer);
+
+    // Email is not collected here — it comes from the Lemon Squeezy checkout webhook
+    const job = await db.job.create({
+      data: { tier, jobDescription, resumeText, status: 'ANALYZING' },
+    });
+
+    // Fire teaser analysis — always runs before payment
+    runTeaserAnalysis(job.id).catch((err) => {
+      logger.error({ jobId: job.id, err }, 'runTeaserAnalysis uncaught error');
+    });
+
+    logger.info({ jobId: job.id, tier }, 'Job created, teaser analysis started');
+    res.status(201).json({ jobId: job.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/jobs/:id/checkout
+// Called from the preview page when the user clicks "Unlock". Creates a Lemon Squeezy
+// checkout session for an existing PREVIEW_READY job.
+jobsRouter.post('/:id/checkout', async (req, res, next) => {
+  try {
+    const job = await db.job.findUnique({ where: { id: req.params.id } });
+
+    if (!job) throw AppError.notFound('Job not found');
+
+    if (job.status !== 'PREVIEW_READY') {
+      throw AppError.badRequest(
+        `Job is not in a payable state (current status: ${job.status})`,
+        'INVALID_JOB_STATE'
+      );
+    }
+
+    // Accept tier override from preview page (user may switch tiers before paying)
+    const chosenTier = ['BASIC', 'FULL'].includes(req.body?.tier) ? req.body.tier : job.tier;
+
+    if (env.SKIP_PAYMENT) {
+      logger.info({ jobId: job.id }, 'SKIP_PAYMENT=true, skipping checkout');
+      await db.job.update({
+        where: { id: job.id },
+        data: { status: 'PENDING_PAYMENT', tier: chosenTier, email: env.DEV_EMAIL },
+      });
+      runFullReport(job.id).catch((err) => {
+        logger.error({ jobId: job.id, err }, 'runFullReport uncaught error');
+      });
+      return res.json({ jobId: job.id, checkoutUrl: null });
+    }
+
+    const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier, email: job.email });
+
+    await db.job.update({
+      where: { id: job.id },
+      data: { checkoutSessionId: session.id, status: 'PENDING_PAYMENT', tier: chosenTier },
+    });
+
+    logger.info({ jobId: job.id }, 'Checkout session created');
+    res.json({ jobId: job.id, checkoutUrl: session.url });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/jobs/:id/status
+// Returns job status. When PREVIEW_READY, includes sanitised preview data
+// (real score + 2 gap teasers — enough to hook, not enough to spoil).
+jobsRouter.get('/:id/status', async (req, res, next) => {
+  try {
+    const job = await db.job.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, status: true, tier: true, analysisResult: true, createdAt: true },
+    });
+
+    if (!job) throw AppError.notFound('Job not found');
+
+    const response = { id: job.id, status: job.status, tier: job.tier, createdAt: job.createdAt };
+
+    if (job.status === 'PREVIEW_READY' && job.analysisResult) {
+      const a = job.analysisResult;
+      const gaps = Array.isArray(a.keyword_gaps) ? a.keyword_gaps : [];
+      const matches = Array.isArray(a.keyword_matches) ? a.keyword_matches : [];
+      const strengths = Array.isArray(a.strengths) ? a.strengths : [];
+      const weaknesses = Array.isArray(a.weaknesses) ? a.weaknesses : [];
+
+      response.preview = {
+        ats_score: a.ats_score,
+        experience_match: a.experience_match,
+        gap_count: gaps.length,
+        match_count: matches.length,
+        strengths_count: strengths.length,
+        weaknesses_count: weaknesses.length,
+        // Expose only 2 gaps as the teaser — the hook
+        keyword_gaps_teaser: gaps.slice(0, 2),
+      };
+    }
+
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
+});

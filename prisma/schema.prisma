@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Tier {
+  BASIC
+  FULL
+}
+
+enum JobStatus {
+  ANALYZING
+  PREVIEW_READY
+  PENDING_PAYMENT
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+model Job {
+  id                String    @id @default(cuid())
+  email             String    @default("")
+  tier              Tier
+  status            JobStatus @default(ANALYZING)
+  resumeText        String?
+  jobDescription    String
+  analysisResult    Json?
+  checkoutSessionId String?   @unique
+  reportUrl         String?
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
