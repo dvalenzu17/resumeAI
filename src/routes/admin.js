@@ -12,6 +12,8 @@ const CLAUDE_OUTPUT_PRICE = 15 / 1_000_000;  // $15 per million output tokens
 const RAILWAY_MONTHLY     = 10;              // approximate fixed monthly cost
 const RESEND_FREE_TIER    = 3000;            // emails/month included free
 const RESEND_OVERAGE_COST = 1 / 1000;        // $1 per 1000 emails over free tier
+const PROCESSOR_FEE_PCT   = 0.05;            // Lemon Squeezy 5% per transaction
+const PROCESSOR_FEE_FLAT  = 0.50;            // Lemon Squeezy $0.50 flat per transaction
 
 function r4(n) { return Math.round(n * 10000) / 10000; }
 function r2(n) { return Math.round(n * 100) / 100; }
@@ -25,6 +27,10 @@ function claudeCostForJob(j) {
 
 function revenueForJob(j) {
   return j.tier === 'FULL' ? FULL_PRICE : BASIC_PRICE;
+}
+
+function processorFeeForJob(j) {
+  return revenueForJob(j) * PROCESSOR_FEE_PCT + PROCESSOR_FEE_FLAT;
 }
 
 function toDateStr(date) {
@@ -139,7 +145,9 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     const daysRunning = firstJob ? Math.max(1, Math.ceil((now - new Date(firstJob)) / (1000 * 60 * 60 * 24))) : 1;
     const totalRailwayCost = r2((RAILWAY_MONTHLY / 30) * daysRunning);
 
-    const totalCost = r4(totalClaudeCost + totalEmailCost + totalRailwayCost);
+    const totalProcessorFee = r4(completeJobs.reduce((s, j) => s + processorFeeForJob(j), 0));
+
+    const totalCost = r4(totalClaudeCost + totalEmailCost + totalRailwayCost + totalProcessorFee);
     const avgCostPerJob = completeJobs.length > 0 ? r4(totalCost / completeJobs.length) : 0;
 
     const costs = {
@@ -148,6 +156,11 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
         totalOutputTokens: totalOut,
         totalCost: totalClaudeCost,
         avgCostPerJob: completeJobs.length > 0 ? r4(totalClaudeCost / completeJobs.length) : 0,
+      },
+      processor: {
+        totalCost: totalProcessorFee,
+        avgCostPerJob: completeJobs.length > 0 ? r4(totalProcessorFee / completeJobs.length) : 0,
+        feeStructure: `${PROCESSOR_FEE_PCT * 100}% + $${PROCESSOR_FEE_FLAT.toFixed(2)} per transaction`,
       },
       email: {
         estimatedEmailsSent: estimatedEmails,
@@ -166,9 +179,9 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
 
     // ── Profit ────────────────────────────────────────────────────────────
     const totalRevenue    = revenue.allTime.revenue;
-    const grossProfit     = r4(totalRevenue - totalClaudeCost - totalEmailCost);
+    const grossProfit     = r4(totalRevenue - totalClaudeCost - totalEmailCost - totalProcessorFee);
     const netProfit       = r4(totalRevenue - totalCost);
-    const grossMarginPct  = totalRevenue > 0 ? pct((totalRevenue - totalClaudeCost - totalEmailCost) / totalRevenue) : 0;
+    const grossMarginPct  = totalRevenue > 0 ? pct((totalRevenue - totalClaudeCost - totalEmailCost - totalProcessorFee) / totalRevenue) : 0;
     const avgRevPerJob    = completeJobs.length > 0 ? r2(totalRevenue / completeJobs.length) : 0;
     const avgProfitPerJob = completeJobs.length > 0 ? r4(netProfit / completeJobs.length) : 0;
 
@@ -181,6 +194,31 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
       avgRevenuePerJob: avgRevPerJob,
       avgCostPerJob,
       avgProfitPerJob,
+    };
+
+    // ── Unit economics (per tier) ─────────────────────────────────────────
+    const basicJobs = completeJobs.filter(j => j.tier === 'BASIC');
+    const fullJobs  = completeJobs.filter(j => j.tier === 'FULL');
+
+    function tierUnitEcon(jobs, price) {
+      const processorFee = r4(price * PROCESSOR_FEE_PCT + PROCESSOR_FEE_FLAT);
+      const avgClaude    = jobs.length > 0
+        ? r4(jobs.reduce((s, j) => s + claudeCostForJob(j), 0) / jobs.length)
+        : 0;
+      const netPerJob    = r4(price - processorFee - avgClaude);
+      return {
+        price,
+        processorFee,
+        avgClaudeCost: avgClaude,
+        netPerJob,
+        marginPct: pct(netPerJob / price),
+        jobCount: jobs.length,
+      };
+    }
+
+    const unitEconomics = {
+      BASIC: tierUnitEcon(basicJobs, BASIC_PRICE),
+      FULL:  tierUnitEcon(fullJobs,  FULL_PRICE),
     };
 
     // ── Daily revenue (last 30 days) ──────────────────────────────────────
@@ -220,8 +258,10 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     const annualRunRate = r2(dailyRunRate * 365);
 
     // Estimate monthly variable cost from last 30 days
-    const claudeCost30 = r4(completeJobs.filter(j => j.createdAt >= ago30).reduce((s, j) => s + claudeCostForJob(j), 0));
-    const projectedMonthlyProfit = r2(monthlyRunRate - claudeCost30 - RAILWAY_MONTHLY);
+    const jobs30 = completeJobs.filter(j => j.createdAt >= ago30);
+    const claudeCost30    = r4(jobs30.reduce((s, j) => s + claudeCostForJob(j), 0));
+    const processorCost30 = r4(jobs30.reduce((s, j) => s + processorFeeForJob(j), 0));
+    const projectedMonthlyProfit = r2(monthlyRunRate - claudeCost30 - processorCost30 - RAILWAY_MONTHLY);
 
     const projections = {
       dailyRevenueRunRate: dailyRunRate,
@@ -250,6 +290,7 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
       funnel,
       costs,
       profit,
+      unitEconomics,
       dailyRevenue,
       feedback,
       projections,
