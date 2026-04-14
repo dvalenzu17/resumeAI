@@ -574,6 +574,274 @@
   padding: 12px 0;
 }
 
+/* ── P&L Simulator ─────────────────────────────────────────────────────────── */
+.simInputRow {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.simInputCard {
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.simTotalCard {
+  background: var(--bg-subtle);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 20px 28px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.simTotalLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.simTotalAmount {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--accent);
+}
+
+.simTotalJobs {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.simInputLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.simPrice {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-left: 6px;
+}
+
+.simInputControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simBtn {
+  width: 36px;
+  height: 36px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+.simBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.simInput {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  width: 0;
+}
+.simInput:focus { border-color: var(--accent); }
+.simInput::-webkit-outer-spin-button,
+.simInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.simSubtotal {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+/* Per-job cards */
+.simJobGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.simJobCard {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.simJobTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.simJobRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simJobRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.simJobRowTotal {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.simJobLabel { color: var(--text-muted); }
+
+.simJobVal {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.simJobMargin {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 700;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Where the money goes */
+.simDestStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.simDestRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.simDestLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 180px;
+}
+
+.simDestDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.simDestBarWrap {
+  flex: 1;
+  height: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.simDestBar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.25s ease;
+}
+
+.simDestAmt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 120px;
+  justify-content: flex-end;
+}
+
+.simDestPct {
+  color: var(--text-subtle);
+  font-size: 11px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.simNetBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--bg-subtle);
+  border: 2px solid;
+  border-radius: var(--radius-lg);
+}
+
+.simNetLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.simNetAmt {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-family: 'Courier New', monospace;
+}
+
+.simNetPct {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.simNote {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin: 8px 0 0;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .body { padding: 20px 16px 48px; }
@@ -584,4 +852,7 @@
   .funnelArrow { flex-direction: row; transform: rotate(90deg); }
   .funnelRow { flex-wrap: wrap; }
   .funnelStep2 { min-width: 100%; }
+  .simJobGrid { grid-template-columns: 1fr; }
+  .simDestLabel { min-width: 120px; font-size: 12px; }
+  .simNetBanner { flex-direction: column; gap: 8px; text-align: center; }
 }

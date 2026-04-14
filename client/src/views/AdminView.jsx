@@ -90,6 +90,8 @@ export default function AdminView() {
   const [nicheData, setNicheData] = useState(null);
   const [healthData, setHealthData] = useState(null);
   const [attrData, setAttrData] = useState(null);
+  const [simBasic, setSimBasic] = useState(10);
+  const [simFull, setSimFull] = useState(5);
 
   const fetchDashboard = useCallback(async (s) => {
     setLoading(true);
@@ -191,7 +193,46 @@ export default function AdminView() {
 
   if (!data) return null;
 
-  const { revenue, funnel, costs, profit, dailyRevenue, feedback, projections, recentJobs, generatedAt } = data;
+  const { revenue, funnel, costs, profit, unitEconomics, dailyRevenue, feedback, projections, recentJobs, generatedAt } = data;
+
+  // ── P&L simulator (client-side, instant) ──────────────────────────────────
+  const RAILWAY_MONTHLY = 10;
+  function r2(n) { return Math.round(n * 100) / 100; }
+  function r4(n) { return Math.round(n * 10000) / 10000; }
+  function simCalc(basic, full) {
+    if (!unitEconomics) return null;
+    const b = unitEconomics.BASIC;
+    const f = unitEconomics.FULL;
+    const totalJobs    = basic + full;
+    const gross        = basic * 12 + full * 29;
+    const toProcessor  = r4(basic * b.processorFee + full * f.processorFee);
+    const toClaude     = r4(basic * b.avgClaudeCost + full * f.avgClaudeCost);
+    const toRailway    = RAILWAY_MONTHLY;
+    const toResend     = 0;
+    const totalCosts   = r4(toProcessor + toClaude + toRailway + toResend);
+    const netProfit    = r4(gross - totalCosts);
+    const pct = (n) => gross > 0 ? r2(n / gross * 100) : 0;
+    const scaleSteps = [1, 5, 10, 25, 50, 100].map(n => {
+      const ratio = totalJobs > 0 ? n / totalJobs : n / 15;
+      const rev   = r2(gross * ratio);
+      const vc    = r4((toProcessor + toClaude) * ratio);
+      return { jobs: n, revenue: rev, variableCosts: vc, railway: RAILWAY_MONTHLY, net: r4(rev - vc - RAILWAY_MONTHLY) };
+    });
+    return {
+      totalJobs, gross,
+      toProcessor, toClaude, toRailway, toResend, totalCosts, netProfit,
+      netMarginPct: pct(netProfit),
+      railwayPerJob: totalJobs > 0 ? r4(RAILWAY_MONTHLY / totalJobs) : RAILWAY_MONTHLY,
+      destinations: gross > 0 ? [
+        { label: 'Lemon Squeezy', amount: toProcessor, pct: pct(toProcessor), color: '#f59e0b' },
+        { label: 'Claude API',    amount: toClaude,    pct: pct(toClaude),    color: '#8b5cf6' },
+        { label: 'Railway',       amount: toRailway,   pct: pct(toRailway),   color: '#6b7280' },
+        { label: 'You keep',      amount: netProfit,   pct: pct(netProfit),   color: '#059669' },
+      ] : [],
+      scaleSteps,
+    };
+  }
+  const sim = simCalc(simBasic, simFull);
 
   return (
     <div className={styles.page}>
@@ -202,13 +243,13 @@ export default function AdminView() {
         </div>
         <div className={styles.headerRight}>
           <div className={styles.tabs}>
-            {['dashboard', 'funnel', 'niche', 'health'].map(tab => (
+            {['dashboard', 'funnel', 'niche', 'health', 'simulator'].map(tab => (
               <button
                 key={tab}
                 className={`${styles.tabBtn} ${activeTab === tab ? styles.tabActive : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : tab === 'niche' ? 'Niche Finder' : 'Health'}
+                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : tab === 'niche' ? 'Niche Finder' : tab === 'health' ? 'Health' : 'P&L Sim'}
               </button>
             ))}
           </div>
@@ -448,6 +489,155 @@ export default function AdminView() {
               </div>
             )}
           </Section>
+        </div>
+      )}
+
+      {activeTab === 'simulator' && (
+        <div className={styles.body}>
+
+          {/* Inputs */}
+          <Section title="P&L Simulator — try any combination">
+            <div className={styles.simInputRow}>
+              <div className={styles.simInputCard}>
+                <div className={styles.simInputLabel}>The Audit <span className={styles.simPrice}>$12 each</span></div>
+                <div className={styles.simInputControls}>
+                  <button className={styles.simBtn} onClick={() => setSimBasic(Math.max(0, simBasic - 1))}>-</button>
+                  <input
+                    type="number"
+                    className={styles.simInput}
+                    value={simBasic}
+                    min={0}
+                    onChange={e => setSimBasic(Math.max(0, parseInt(e.target.value) || 0))}
+                  />
+                  <button className={styles.simBtn} onClick={() => setSimBasic(simBasic + 1)}>+</button>
+                </div>
+                <div className={styles.simSubtotal}>{fmt$(simBasic * 12)} gross</div>
+              </div>
+              <div className={styles.simInputCard}>
+                <div className={styles.simInputLabel}>The Glow-Up <span className={styles.simPrice}>$29 each</span></div>
+                <div className={styles.simInputControls}>
+                  <button className={styles.simBtn} onClick={() => setSimFull(Math.max(0, simFull - 1))}>-</button>
+                  <input
+                    type="number"
+                    className={styles.simInput}
+                    value={simFull}
+                    min={0}
+                    onChange={e => setSimFull(Math.max(0, parseInt(e.target.value) || 0))}
+                  />
+                  <button className={styles.simBtn} onClick={() => setSimFull(simFull + 1)}>+</button>
+                </div>
+                <div className={styles.simSubtotal}>{fmt$(simFull * 29)} gross</div>
+              </div>
+              <div className={styles.simTotalCard}>
+                <div className={styles.simTotalLabel}>Total gross</div>
+                <div className={styles.simTotalAmount}>{fmt$(sim?.gross ?? 0)}</div>
+                <div className={styles.simTotalJobs}>{sim?.totalJobs ?? 0} jobs</div>
+              </div>
+            </div>
+          </Section>
+
+          {/* Per-job breakdown */}
+          {unitEconomics && (
+            <Section title="Per-job cost breakdown (based on your real averages)">
+              <div className={styles.simJobGrid}>
+                {[
+                  { tier: 'The Audit', price: 12, u: unitEconomics.BASIC },
+                  { tier: 'The Glow-Up', price: 29, u: unitEconomics.FULL },
+                ].map(({ tier, price, u }) => (
+                  <div key={tier} className={styles.simJobCard}>
+                    <div className={styles.simJobTitle}>{tier} <span className={styles.simPrice}>{fmt$(price)}</span></div>
+                    <div className={styles.simJobRows}>
+                      <div className={styles.simJobRow}>
+                        <span className={styles.simJobLabel}>Gross revenue</span>
+                        <span className={styles.simJobVal} style={{ color: 'var(--text)' }}>{fmt$(price)}</span>
+                      </div>
+                      <div className={styles.simJobRow}>
+                        <span className={styles.simJobLabel}>Lemon Squeezy (5% + $0.50)</span>
+                        <span className={styles.simJobVal} style={{ color: '#f59e0b' }}>-{fmt$(u.processorFee)}</span>
+                      </div>
+                      <div className={styles.simJobRow}>
+                        <span className={styles.simJobLabel}>Claude API</span>
+                        <span className={styles.simJobVal} style={{ color: '#8b5cf6' }}>-{fmt$4(u.avgClaudeCost)}</span>
+                      </div>
+                      <div className={styles.simJobRow}>
+                        <span className={styles.simJobLabel}>Resend email</span>
+                        <span className={styles.simJobVal} style={{ color: 'var(--text-subtle)' }}>$0.00</span>
+                      </div>
+                      <div className={`${styles.simJobRow} ${styles.simJobRowTotal}`}>
+                        <span className={styles.simJobLabel}>You keep (before Railway)</span>
+                        <span className={styles.simJobVal} style={{ color: '#059669' }}>{fmt$(u.netPerJob)}</span>
+                      </div>
+                      <div className={styles.simJobMargin}>{u.marginPct}% margin</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className={styles.simNote}>Railway is a fixed $10/month — it does not appear per-job above. It is included in the batch totals below.</p>
+            </Section>
+          )}
+
+          {/* Where the money goes */}
+          {sim && sim.gross > 0 && (
+            <Section title={`Where your ${fmt$(sim.gross)} goes`}>
+              <div className={styles.simDestStack}>
+                {sim.destinations.map(d => (
+                  <div key={d.label} className={styles.simDestRow}>
+                    <div className={styles.simDestLabel}>
+                      <span className={styles.simDestDot} style={{ background: d.color }} />
+                      {d.label}
+                    </div>
+                    <div className={styles.simDestBarWrap}>
+                      <div className={styles.simDestBar} style={{ width: `${Math.max(0.5, d.pct)}%`, background: d.color }} />
+                    </div>
+                    <div className={styles.simDestAmt}>
+                      <span style={{ color: d.color }}>{fmt$(d.amount)}</span>
+                      <span className={styles.simDestPct}>{d.pct}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className={styles.simNetBanner} style={{ borderColor: sim.netProfit >= 0 ? '#059669' : '#dc2626' }}>
+                <span className={styles.simNetLabel}>Net profit after all costs</span>
+                <span className={styles.simNetAmt} style={{ color: sim.netProfit >= 0 ? '#059669' : '#dc2626' }}>
+                  {fmt$(sim.netProfit)} <span className={styles.simNetPct}>({sim.netMarginPct}% margin)</span>
+                </span>
+              </div>
+              <p className={styles.simNote}>Railway at {sim.totalJobs} jobs = {fmt$(sim.railwayPerJob)} per job amortized.</p>
+            </Section>
+          )}
+
+          {/* Scale table */}
+          {sim && sim.totalJobs > 0 && (
+            <Section title="How profit scales at this Audit/Glow-Up mix">
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Jobs</th>
+                      <th>Gross revenue</th>
+                      <th>Variable costs</th>
+                      <th>Railway (fixed)</th>
+                      <th>Net profit</th>
+                      <th>Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sim.scaleSteps.map(row => (
+                      <tr key={row.jobs} style={row.jobs === sim.totalJobs ? { background: 'color-mix(in srgb, var(--accent) 8%, transparent)' } : {}}>
+                        <td className={styles.mono}>{row.jobs}{row.jobs === sim.totalJobs ? ' ← you' : ''}</td>
+                        <td className={styles.mono}>{fmt$(row.revenue)}</td>
+                        <td className={styles.mono}>{fmt$(row.variableCosts)}</td>
+                        <td className={styles.mono}>{fmt$(row.railway)}</td>
+                        <td className={styles.mono} style={{ color: row.net >= 0 ? '#059669' : '#dc2626', fontWeight: 700 }}>{fmt$(row.net)}</td>
+                        <td className={styles.mono}>{row.revenue > 0 ? `${Math.round(row.net / row.revenue * 100)}%` : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          )}
+
         </div>
       )}
 
