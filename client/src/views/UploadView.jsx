@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
 import { Reveal } from '../lib/Reveal.jsx';
