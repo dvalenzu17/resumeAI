@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// z.coerce.boolean() treats "false" as true (non-empty string). Use this instead.
-const envBool = z.string().optional().transform((v) => v === 'true' || v === '1').pipe(z.boolean());
+// z.coerce.boolean() treats "false" as true (non-empty string). Handle string and native boolean.
+const envBool = z.union([z.boolean(), z.string()]).transform((v) => v === true || v === 'true' || v === '1').pipe(z.boolean());
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
