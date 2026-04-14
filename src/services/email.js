@@ -26,7 +26,7 @@ const EMAIL_BASE = (content) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-export async function sendReportEmail(to, jobId, downloadUrl, tier) {
+export async function sendReportEmail(to, jobId, downloadUrl, tier, cvUrl = null) {
   if (!resend) {
     logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping report email');
     return;
@@ -34,24 +34,42 @@ export async function sendReportEmail(to, jobId, downloadUrl, tier) {
 
   const tierLabel = tier === 'FULL' ? 'The Glow-Up ($29)' : 'The Audit ($12)';
 
+  const cvButton = cvUrl
+    ? `<a href="${cvUrl}"
+         style="background:#0f172a;color:#fff;text-decoration:none;
+                padding:14px 28px;border-radius:8px;font-weight:700;display:inline-block;font-size:15px;
+                letter-spacing:-0.2px;margin-top:12px;">
+        Download Your Tailored CV →
+      </a>`
+    : '';
+
+  const bodyText = tier === 'FULL'
+    ? `<p style="line-height:1.75;margin:0 0 12px;color:#374151;">
+        Two files are ready for you. The analysis report shows your ATS score, every keyword gap, salary intel, cover letter, and interview prep. The tailored CV is a fully rewritten version of your resume, personalised to this specific role.
+      </p>
+      <p style="line-height:1.75;margin:0 0 28px;color:#374151;">
+        Download the CV, submit it. That's it. You're done.
+      </p>`
+    : `<p style="line-height:1.75;margin:0 0 12px;color:#374151;">
+        Your report is ready. It's got your ATS compatibility score, every keyword gap the bots are penalising you for, and salary intel for this role.
+      </p>
+      <p style="line-height:1.75;margin:0 0 28px;color:#374151;">
+        Download it, fix your resume, send the application. That's the whole game.
+      </p>`;
+
   const content = `
     <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;letter-spacing:-0.3px;">You're shortlisted.</h1>
     <p style="color:#6b7280;font-size:13px;margin:0 0 24px;">Plan: ${tierLabel}</p>
-    <p style="line-height:1.75;margin:0 0 12px;color:#374151;">
-      Your report is ready. It's got your ATS compatibility score, every keyword gap the bots are
-      penalising you for, and — if you got the Glow-Up — rewritten bullets that actually land.
-    </p>
-    <p style="line-height:1.75;margin:0 0 28px;color:#374151;">
-      Download it, fix your resume, send the application. That's the whole game.
-    </p>
+    ${bodyText}
     <a href="${downloadUrl}"
        style="background:linear-gradient(135deg,#e85d04,#06b6d4);color:#fff;text-decoration:none;
               padding:14px 28px;border-radius:8px;font-weight:700;display:inline-block;font-size:15px;
               letter-spacing:-0.2px;">
-      Download Your Report →
+      Download Analysis Report →
     </a>
+    ${cvButton}
     <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
-      Link expires in 72 hours · Job ID: ${jobId}
+      Links expire in 72 hours · Job ID: ${jobId}
     </p>`;
 
   await resend.emails.send({

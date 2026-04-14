@@ -262,6 +262,247 @@ function buildHtml(job, analysis, rewrites) {
 </html>`;
 }
 
+function buildCvHtml(cvData) {
+  const { name, title, contact, profile, experience, education, skills, certifications, languages } = cvData;
+
+  const contactParts = [
+    contact.phone,
+    contact.email,
+    contact.location,
+    contact.linkedin,
+  ].filter(Boolean);
+
+  const experienceHtml = (experience || []).map(exp => `
+    <div class="cv-role">
+      <div class="cv-role-header">
+        <div>
+          <div class="cv-role-title">${exp.title}</div>
+          <div class="cv-role-company">${exp.company}${exp.location ? ` &middot; ${exp.location}` : ''}</div>
+        </div>
+        <div class="cv-role-dates">${exp.dates || ''}</div>
+      </div>
+      <ul class="cv-bullets">
+        ${(exp.bullets || []).map(b => `<li>${b}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  const educationHtml = (education || []).map(edu => `
+    <div class="cv-edu-row">
+      <div>
+        <div class="cv-edu-degree">${edu.degree}</div>
+        <div class="cv-edu-school">${edu.school}</div>
+      </div>
+      ${edu.dates ? `<div class="cv-role-dates">${edu.dates}</div>` : ''}
+    </div>
+  `).join('');
+
+  const certHtml = (certifications || []).length > 0
+    ? `<div class="cv-section">
+        <div class="cv-section-title">Certifications</div>
+        ${certifications.map(c => `
+          <div class="cv-cert-row">
+            <span class="cv-cert-name">${c.name}</span>
+            ${c.issuer ? `<span class="cv-cert-issuer">${c.issuer}${c.year ? ` &middot; ${c.year}` : ''}</span>` : ''}
+          </div>
+        `).join('')}
+      </div>`
+    : '';
+
+  const langHtml = (languages || []).length > 0
+    ? `<div class="cv-section">
+        <div class="cv-section-title">Languages</div>
+        <p class="cv-skills-list">${languages.join(' &middot; ')}</p>
+      </div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    color: #1a1a1a;
+    font-size: 13px;
+    line-height: 1.55;
+    background: #fff;
+  }
+  .cv-header {
+    background: #0f172a;
+    color: #fff;
+    padding: 36px 56px 28px;
+  }
+  .cv-name {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    font-family: system-ui, sans-serif;
+  }
+  .cv-title {
+    font-size: 13px;
+    color: #e85d04;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    font-family: system-ui, sans-serif;
+    margin-bottom: 12px;
+  }
+  .cv-contact {
+    font-size: 11.5px;
+    color: #94a3b8;
+    font-family: system-ui, sans-serif;
+  }
+  .cv-contact span { margin-right: 16px; }
+  .cv-body { padding: 32px 56px 48px; }
+  .cv-section { margin-bottom: 24px; }
+  .cv-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #e85d04;
+    font-family: system-ui, sans-serif;
+    border-bottom: 1.5px solid #e85d04;
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+  }
+  .cv-profile {
+    color: #374151;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .cv-role { margin-bottom: 18px; }
+  .cv-role-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .cv-role-title {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: system-ui, sans-serif;
+    color: #0f172a;
+  }
+  .cv-role-company {
+    font-size: 12px;
+    color: #6b7280;
+    font-family: system-ui, sans-serif;
+    margin-top: 2px;
+  }
+  .cv-role-dates {
+    font-size: 11.5px;
+    color: #6b7280;
+    font-family: system-ui, sans-serif;
+    white-space: nowrap;
+    margin-left: 12px;
+    margin-top: 2px;
+  }
+  .cv-bullets {
+    padding-left: 18px;
+    color: #374151;
+  }
+  .cv-bullets li { margin-bottom: 4px; font-size: 12.5px; }
+  .cv-edu-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .cv-edu-degree {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: system-ui, sans-serif;
+    color: #0f172a;
+  }
+  .cv-edu-school {
+    font-size: 12px;
+    color: #6b7280;
+    font-family: system-ui, sans-serif;
+  }
+  .cv-skills-list {
+    font-family: system-ui, sans-serif;
+    font-size: 12.5px;
+    color: #374151;
+    line-height: 1.8;
+  }
+  .cv-cert-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-family: system-ui, sans-serif;
+  }
+  .cv-cert-name { font-size: 12.5px; color: #1a1a1a; }
+  .cv-cert-issuer { font-size: 11.5px; color: #6b7280; }
+  .cv-watermark {
+    text-align: center;
+    font-size: 10px;
+    color: #d1d5db;
+    font-family: system-ui, sans-serif;
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+  }
+</style>
+</head>
+<body>
+  <div class="cv-header">
+    <div class="cv-name">${name}</div>
+    <div class="cv-title">${title}</div>
+    <div class="cv-contact">
+      ${contactParts.map(p => `<span>${p}</span>`).join('')}
+    </div>
+  </div>
+  <div class="cv-body">
+    <div class="cv-section">
+      <div class="cv-section-title">Profile</div>
+      <p class="cv-profile">${profile}</p>
+    </div>
+    <div class="cv-section">
+      <div class="cv-section-title">Experience</div>
+      ${experienceHtml}
+    </div>
+    <div class="cv-section">
+      <div class="cv-section-title">Education</div>
+      ${educationHtml}
+    </div>
+    <div class="cv-section">
+      <div class="cv-section-title">Skills</div>
+      <p class="cv-skills-list">${(skills || []).join(' &middot; ')}</p>
+    </div>
+    ${certHtml}
+    ${langHtml}
+    <div class="cv-watermark">Tailored by Shortlisted &middot; getshortlisted.fyi</div>
+  </div>
+</body>
+</html>`;
+}
+
+export async function generateCv(cvData) {
+  const html = buildCvHtml(cvData);
+
+  const browser = await puppeteer.launch({
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      printBackground: true,
+    });
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function generateReport(job, analysis, rewrites) {
   const html = buildHtml(job, analysis, rewrites);
 

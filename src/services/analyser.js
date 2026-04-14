@@ -1,8 +1,8 @@
 import { db } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { runAnalysis, runRewrites } from './claude.js';
-import { generateReport } from './report.js';
-import { uploadReport } from './storage.js';
+import { runAnalysis, runRewrites, runCvRewrite } from './claude.js';
+import { generateReport, generateCv } from './report.js';
+import { uploadReport, uploadCv } from './storage.js';
 import { sendReportEmail, sendFailureEmail } from './email.js';
 import { logEvent } from './analytics.js';
 
@@ -90,6 +90,8 @@ export async function runFullReport(jobId) {
     let rewrites = null;
     let tokensIn2 = 0;
     let tokensOut2 = 0;
+    let tokensIn3 = 0;
+    let tokensOut3 = 0;
     const t0 = Date.now();
     if (job.tier === 'FULL') {
       const { result: rewriteResult, inputTokens: in2, outputTokens: out2 } = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
@@ -100,12 +102,26 @@ export async function runFullReport(jobId) {
     }
 
     const pdfBuffer = await generateReport(job, analysis, rewrites);
-    logger.info({ jobId }, 'PDF generated');
+    logger.info({ jobId }, 'Report PDF generated');
 
     const reportUrl = await uploadReport(jobId, pdfBuffer);
-    logger.info({ jobId }, 'PDF uploaded to R2');
+    logger.info({ jobId }, 'Report PDF uploaded to R2');
 
-    await sendReportEmail(job.email, jobId, reportUrl, job.tier);
+    let cvUrl = null;
+    if (job.tier === 'FULL' && rewrites) {
+      const { result: cvData, inputTokens: in3, outputTokens: out3 } = await runCvRewrite(resumeText, jobDescription, analysis, rewrites);
+      tokensIn3 = in3;
+      tokensOut3 = out3;
+      logger.info({ jobId }, 'CV rewrite complete');
+
+      const cvBuffer = await generateCv(cvData);
+      logger.info({ jobId }, 'CV PDF generated');
+
+      cvUrl = await uploadCv(jobId, cvBuffer);
+      logger.info({ jobId }, 'CV PDF uploaded to R2');
+    }
+
+    await sendReportEmail(job.email, jobId, reportUrl, job.tier, cvUrl);
     logger.info({ jobId }, 'Email sent');
 
     await db.job.update({
@@ -113,8 +129,11 @@ export async function runFullReport(jobId) {
       data: {
         status: 'COMPLETE',
         reportUrl,
+        cvUrl,
         tokensInCall2: { increment: tokensIn2 },
         tokensOutCall2: { increment: tokensOut2 },
+        tokensInCall3: { increment: tokensIn3 },
+        tokensOutCall3: { increment: tokensOut3 },
       },
     });
 

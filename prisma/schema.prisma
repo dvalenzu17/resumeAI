@@ -55,6 +55,7 @@ model Job {
   coverLetterContext  Json?
   checkoutSessionId   String?   @unique
   reportUrl         String?
+  cvUrl             String?
   errorMessage      String?
   previewNudgeSentAt DateTime?
   followUp1SentAt   DateTime?
@@ -64,6 +65,8 @@ model Job {
   tokensOutCall1    Int       @default(0)
   tokensInCall2     Int       @default(0)
   tokensOutCall2    Int       @default(0)
+  tokensInCall3     Int       @default(0)
+  tokensOutCall3    Int       @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

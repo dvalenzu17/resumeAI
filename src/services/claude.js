@@ -93,6 +93,76 @@ ${coverLetterGuidance}
 Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }
 
+function buildCvRewritePrompt(resumeText, jobDescription, analysisResult, rewritesResult) {
+  return `You are an expert resume writer and career coach.
+
+Parse the candidate's resume into structured sections, then rewrite every section to be tailored to the job description. Incorporate the keyword gaps naturally. Use the already-rewritten bullets and summary as a foundation where applicable.
+
+Return ONLY a JSON object — no markdown, no explanation, no preamble:
+
+{
+  "name": <string, candidate's full name>,
+  "title": <string, updated professional title targeting this specific role>,
+  "contact": {
+    "email": <string or null>,
+    "phone": <string or null>,
+    "location": <string or null>,
+    "linkedin": <string or null>
+  },
+  "profile": <string, a punchy 3-4 sentence professional summary tailored to this role — specific, no filler phrases like "results-driven" or "passionate about">,
+  "experience": [
+    {
+      "title": <string, job title>,
+      "company": <string, company name>,
+      "location": <string or null>,
+      "dates": <string, date range>,
+      "bullets": <string array, ALL bullets for this role rewritten as achievements — start with strong action verbs, quantify where possible, naturally weave in JD keywords where truthful>
+    }
+  ],
+  "education": [
+    {
+      "degree": <string>,
+      "school": <string>,
+      "dates": <string or null>
+    }
+  ],
+  "skills": <string array, skills list reordered so JD-matching skills appear first, include keyword gap terms the candidate likely has based on their experience>,
+  "certifications": [
+    {
+      "name": <string>,
+      "issuer": <string or null>,
+      "year": <string or null>
+    }
+  ],
+  "languages": <string array or empty array>
+}
+
+Rules:
+- Do NOT invent experience, companies, dates, or qualifications the candidate does not have.
+- You MAY add keyword gap skills to the skills list only if the candidate's experience makes it plausible they have them.
+- Every bullet must read like an achievement, not a duty. "Managed X" becomes "Reduced X by Y% by implementing Z".
+- Keep the same number of experience entries as the original resume. Do not merge or drop roles.
+- If a section does not exist in the original (e.g. no certifications), return an empty array.
+
+RESUME:
+${resumeText}
+
+JOB DESCRIPTION:
+${jobDescription}
+
+KEYWORD GAPS TO WEAVE IN (naturally, where truthful):
+${JSON.stringify(analysisResult.keyword_gaps || [])}
+
+ALREADY REWRITTEN BULLETS AND SUMMARY (use as foundation):
+${JSON.stringify({
+  summary_rewrite: rewritesResult?.summary_rewrite || null,
+  rewritten_bullets: rewritesResult?.rewritten_bullets || [],
+  skills_section: rewritesResult?.skills_section || null,
+}, null, 2)}
+
+Return ONLY the JSON object. No markdown code fences. No explanation.`;
+}
+
 async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
   const finalPrompt = retryWithStricter
     ? prompt + '\n\nCRITICAL: Your previous response was not valid JSON. Return ONLY raw JSON. No text before or after the opening { and closing }.'
@@ -267,6 +337,99 @@ I'd welcome a conversation about how my background maps to what you're building.
   }
 }
 
+export async function runCvRewrite(resumeText, jobDescription, analysisResult, rewritesResult) {
+  if (MOCK) {
+    logger.warn('MOCK_CLAUDE=true — returning mock CV rewrite');
+    return { inputTokens: 0, outputTokens: 0, result: {
+      name: 'Daniel Valenzuela',
+      title: 'Data Analyst',
+      contact: {
+        email: 'daniel.valenz@icloud.com',
+        phone: '+507 6519-1593',
+        location: 'Panama, Panama',
+        linkedin: 'in/itsdanny17',
+      },
+      profile: 'Data Analyst with hands-on experience in Power BI dashboard development, SAP scripting, and process automation across global operations. Reduced manual reporting turnaround from 48 hours to under 5 minutes at Estee Lauder using Excel automation and Power Automate flows. Strong background in SLA compliance, KPI monitoring, and stakeholder reporting in high-volume service environments.',
+      experience: [
+        {
+          title: 'Insurance Data Analyst',
+          company: 'Foundever / State Farm',
+          location: 'Panama',
+          dates: 'January 2026 - present',
+          bullets: [
+            'Track and analyse 40-50 daily insurance claims across SLA compliance, turnaround time, and case resolution metrics in a structured data pipeline.',
+            'Built case documentation process that reduced resolution timeline variance by 30%, improving SLA adherence reporting accuracy.',
+            'Monitor operational KPIs daily and surface trends to team leads, enabling proactive workload rebalancing.',
+          ],
+        },
+        {
+          title: 'Freelance Data Analyst',
+          company: 'Kimberly-Clark',
+          location: 'Panama',
+          dates: 'December 2025 - January 2026',
+          bullets: [
+            'Collected and analysed labor market datasets to identify hiring trends and skill demand shifts across 5 regional markets.',
+            'Built Power BI dashboards to visualise workforce insights, cutting stakeholder reporting time by 60%.',
+            'Structured analytical findings into executive-ready summaries adopted directly by the Talent Intelligence team.',
+          ],
+        },
+        {
+          title: 'CAPEX Continuous Improvement Intern',
+          company: 'Estee Lauder',
+          location: 'Panama',
+          dates: 'November 2024 - November 2025',
+          bullets: [
+            'Designed and deployed Excel automation tools and SAP scripts that cut manual reporting turnaround from 48-72 hours to under 5 minutes.',
+            'Standardised reporting processes across 3 global shared service centers, improving cross-team consistency and data governance compliance.',
+            'Implemented Power Automate flows to eliminate 12+ hours per week of repetitive manual tasks across the operations team.',
+            'Conducted QA testing and maintained process documentation to ensure data accuracy and governance compliance.',
+            'Developed Power BI performance dashboards tracking operational KPIs with real-time visibility for senior stakeholders.',
+          ],
+        },
+        {
+          title: 'Technical Support Representative',
+          company: 'Best Buy Geek Squad',
+          location: 'Panama',
+          dates: 'September 2023 - October 2024',
+          bullets: [
+            'Resolved technical issues across 50+ daily cases, maintaining service procedure adherence and resolution quality standards.',
+            'Applied structured diagnostic methodologies to identify root causes, reducing repeat incident rate by 20%.',
+          ],
+        },
+      ],
+      education: [
+        { degree: 'Computer Science', school: 'Universidad Interamericana de Panama', dates: 'Fall 2027 (Estimate)' },
+        { degree: 'High School Diploma', school: 'Colegio Anglo Mexicano', dates: '2022' },
+      ],
+      skills: [
+        'Power BI', 'Excel Automation', 'Power Automate', 'SAP Scripting', 'Python',
+        'Data Visualisation', 'KPI Monitoring', 'Process Optimisation', 'Stakeholder Communication',
+        'SQL', 'Data Governance', 'SLA Compliance',
+      ],
+      certifications: [
+        { name: 'Microsoft Excel: Beginner to Advanced', issuer: 'Udemy', year: '2023' },
+        { name: 'Excel Power Query Tips and Techniques', issuer: 'LinkedIn Learning', year: '2025' },
+        { name: 'Microsoft Power Automate: Advanced Business Automation', issuer: 'LinkedIn Learning', year: '2025' },
+        { name: 'AI, IoT and Coding Skills Development', issuer: 'Samsung Innovation Campus', year: '2023' },
+      ],
+      languages: ['English - Native', 'Spanish - Native'],
+    } };
+  }
+
+  const prompt = buildCvRewritePrompt(resumeText, jobDescription, analysisResult, rewritesResult);
+  try {
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 4000);
+    validateCvRewrite(result);
+    return { result, inputTokens, outputTokens };
+  } catch (err) {
+    logger.warn({ err }, 'Claude CV rewrite call failed, retrying with stricter instruction');
+    const { result, inputTokens, outputTokens } = await callClaude(prompt, 4000, true);
+    logEvent('claude_retry', { properties: { call: 3, reason: 'json_parse_error' } });
+    validateCvRewrite(result);
+    return { result, inputTokens, outputTokens };
+  }
+}
+
 function validateAnalysis(obj) {
   const required = ['ats_score', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
   for (const key of required) {
@@ -298,6 +461,22 @@ function validateRewrites(obj) {
   for (const q of obj.interview_questions) {
     if (!q.question || !q.why_likely || !q.star_framework) {
       throw new Error('Each interview_question must have question, why_likely, and star_framework fields');
+    }
+  }
+}
+
+function validateCvRewrite(obj) {
+  const required = ['name', 'title', 'contact', 'profile', 'experience', 'education', 'skills'];
+  for (const key of required) {
+    if (obj[key] === undefined) throw new Error(`CV rewrite missing field: ${key}`);
+  }
+  if (!Array.isArray(obj.experience)) throw new Error('experience must be an array');
+  if (obj.experience.length === 0) throw new Error('experience must have at least one entry');
+  if (!Array.isArray(obj.skills)) throw new Error('skills must be an array');
+  if (!Array.isArray(obj.education)) throw new Error('education must be an array');
+  for (const exp of obj.experience) {
+    if (!exp.title || !exp.company || !Array.isArray(exp.bullets)) {
+      throw new Error('Each experience entry must have title, company, and bullets array');
     }
   }
 }

@@ -18,16 +18,16 @@ const s3 = env.R2_ACCOUNT_ID
 // 72 hours in seconds
 const SIGNED_URL_EXPIRY = 72 * 60 * 60;
 
-export async function uploadReport(jobId, pdfBuffer) {
+async function uploadPdf(jobId, pdfBuffer, prefix, devLabel) {
   if (!s3) {
     if (env.NODE_ENV === 'production') {
-      throw new Error('R2 storage is not configured. Cannot upload report in production.');
+      throw new Error('R2 storage is not configured. Cannot upload in production.');
     }
-    logger.warn({ jobId }, 'R2 not configured — skipping upload, returning placeholder URL');
-    return `http://localhost:3000/dev-placeholder/${jobId}.pdf`;
+    logger.warn({ jobId }, `R2 not configured — skipping ${devLabel} upload, returning placeholder URL`);
+    return `http://localhost:3000/dev-placeholder/${jobId}-${devLabel}.pdf`;
   }
 
-  const key = `reports/${jobId}.pdf`;
+  const key = `${prefix}/${jobId}.pdf`;
 
   await s3.send(
     new PutObjectCommand({
@@ -45,4 +45,12 @@ export async function uploadReport(jobId, pdfBuffer) {
   );
 
   return signedUrl;
+}
+
+export async function uploadReport(jobId, pdfBuffer) {
+  return uploadPdf(jobId, pdfBuffer, 'reports', 'report');
+}
+
+export async function uploadCv(jobId, pdfBuffer) {
+  return uploadPdf(jobId, pdfBuffer, 'cvs', 'cv');
 }
