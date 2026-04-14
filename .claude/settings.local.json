@@ -31,7 +31,10 @@
       "Bash(node --check src/routes/jobs.js)",
       "Bash(node --check src/index.js src/services/analytics.js src/routes/analytics.js src/routes/jobs.js src/routes/webhooks.js src/services/analyser.js src/routes/admin.js)",
       "Bash(node:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(sed -i \"123a \\\\        logEvent\\(''claude_retry'', { properties: { reason: ''rate_limit'', attempt: attempt + 1 } }\\);\" /c/dev/ResumeAI/src/services/claude.js)",
+      "Bash(sed -i \"182a \\\\    logEvent\\(''claude_retry'', { properties: { call: 1, reason: ''json_parse_error'' } }\\);\" /c/dev/ResumeAI/src/services/claude.js)",
+      "Bash(sed -i \"263a \\\\    logEvent\\(''claude_retry'', { properties: { call: 2, reason: ''json_parse_error'' } }\\);\" /c/dev/ResumeAI/src/services/claude.js)"
     ]
   }
 }
