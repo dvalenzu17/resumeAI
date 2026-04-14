@@ -1,6 +1,6 @@
 # Shortlisted — Task State
 
-## Status: Day 5 complete — renamed to Shortlisted, pricing updated, emails upgraded, ready for Day 6 (Railway deploy)
+## Status: All pre-launch code complete — blocked on domain purchase + Railway deploy
 
 ---
 
@@ -11,7 +11,7 @@
 - [x] Prisma schema — Job model, Tier + JobStatus enums
 - [x] React/Vite frontend — UploadView, ProcessingView, SuccessView
 - [x] scripts/test-chain.js smoke test
-- [x] package.json, railway.toml, .env.example, .gitignore
+- [x] package.json, railway.toml, .gitignore
 
 ### Claude chain (Day 2)
 - [x] MOCK_CLAUDE=true bypass for dev without API credits
@@ -24,102 +24,92 @@
 - [x] Webhook handler — HMAC-SHA256 signature verification, order_created event
 
 ### Pre-launch hardening (Day 3)
-- [x] Input truncation — resume capped at 6,000 chars, JD at 4,000 chars (in analyser.js)
+- [x] Input truncation — resume capped at 6,000 chars, JD at 4,000 chars
 - [x] PDF empty guard — rejects if extracted text < 200 chars with PDF_EMPTY error code
-- [x] Claude double-failure — job marked FAILED, failure email sent to user
-- [x] Webhook idempotency — analyseJob() skips if status is PROCESSING or COMPLETE
-- [x] R2 signed URL — 72h expiry set at job completion (uploadReport returns signed URL)
-- [x] Puppeteer memory — --max-old-space-size=512 added to Railway startCommand
+- [x] Webhook idempotency — atomic updateMany (prevents duplicate runs on webhook retry)
+- [x] R2 signed URL — 72h expiry set at job completion
+- [x] Puppeteer memory — --max-old-space-size=512 in Railway startCommand
 - [x] Rate limiting — express-rate-limit on POST /api/jobs (5 req / IP / 10 min)
-- [x] Error emails — sendFailureEmail() called in analyseJob catch block
+- [x] Error emails — sendFailureEmail() in analyseJob catch block
 - [x] Health check — GET /api/health returns { status: 'ok', db: 'connected' }
-- [x] Environment parity guard — server refuses to start if MOCK_CLAUDE=true or SKIP_PAYMENT=true in production
+- [x] Environment parity guard — server refuses to start if MOCK_CLAUDE or SKIP_PAYMENT=true in prod
 
-### Design (Day 4)
+### Design + rename (Days 4–5)
 - [x] Gen-Z redesign — bold typography, gradient accents, hero section
-- [x] Tier rename — "The Audit" ($9) / "The Glow-Up" ($19)
-- [x] Copy rewrite — professional with 5% personality
+- [x] Pricing: The Audit $12 / The Glow-Up $29
+- [x] Email templates — branded, card layout, good copy
+- [x] PDF report header — tier labels
+- [x] Full local E2E test — real PDF, COMPLETE state, R2 upload, Resend email confirmed
 
-### Database & local E2E test (Day 4)
-- [x] Neon DATABASE_URL already in .env — prisma generate + db push complete
-- [x] Backend on :3000, frontend on :5173 (Vite proxy /api → backend)
-- [x] Full E2E with real PDF: job COMPLETE in ~3s, PDF in R2, email via Resend
-- [x] Idempotency: duplicate analyseJob() on COMPLETE job skips correctly
+### Launch prep + market readiness (Day 6 code)
+- [x] i18n — en + es-419, LangSwitcher top-right, browser auto-detect, localStorage persist
+- [x] All UI strings translated (UploadView, PreviewView, ProcessingView, SuccessView, NotFoundView)
+- [x] Email capture at upload — email stored on job creation, enables nurture sequence
+- [x] Preview nudge email — PREVIEW_READY jobs 2h+ with email → ATS score + first gap CTA
+- [x] Follow-up email sequence — day 3 and day 7 (existing, unchanged)
+- [x] Blurred rewrite teaser on PreviewView — before/after bullet, blur on "after" side
+- [x] Urgency strip on PreviewView paywall — accent banner
+- [x] SuccessView referral — copy link + LinkedIn share button, clipboard bug fixed
+- [x] Sample report — regenerated as BASIC tier (no rewrites revealed)
+- [x] Hero sample link — "See a real sample report →" below primary CTA
+- [x] Mobile touch detection — "Tap to upload" vs "Drop here" based on ontouchstart
+- [x] Privacy note — shown only after file is selected
+- [x] Blog — 3 long-form posts: ATS systems, resume keywords, software engineer resume
+- [x] Blog nav link in hero nav
+- [x] Sitemap updated with blog URLs (priority 0.9, lastmod 2025-04-13)
+- [x] Blog routes in App.jsx
+- [x] Cost tracking + analytics dashboard (/admin)
+- [x] Prisma schema: previewNudgeSentAt, followUp1SentAt, followUp2SentAt fields
 
 ---
 
-## Next Steps
+## Blocked — manual actions required
 
-### Day 3 — Complete Lemon Squeezy integration
-- [ ] Sign up at app.lemonsqueezy.com
-- [ ] Create "The Audit" ($9) and "The Glow-Up" ($19) products
-- [ ] Copy Variant IDs → .env LEMONSQUEEZY_VARIANT_ID_BASIC / _FULL
-- [ ] Copy Store ID → .env LEMONSQUEEZY_STORE_ID
-- [ ] Create API key → .env LEMONSQUEEZY_API_KEY
-- [ ] Add webhook (order_created) → copy signing secret → .env LEMONSQUEEZY_WEBHOOK_SECRET
-- [ ] Test with ngrok: ngrok http 3000
-- [ ] Full end-to-end test with test purchase
-- [ ] Verify idempotency: trigger webhook twice for same job, confirm second run skipped
+### Domain (do first — unlocks everything else)
+- [ ] Purchase getshortlisted.fyi and point DNS to Railway
 
-### Day 4 — Database & full local test
-- [x] Set up PostgreSQL (Neon free tier — DATABASE_URL already in .env)
-- [x] Add DATABASE_URL to .env
-- [x] npx prisma generate && npx prisma db push
-- [x] npm run dev (backend) + cd client && npm run dev (frontend)
-- [x] Upload a real resume PDF end-to-end with SKIP_PAYMENT=true
-- [x] Confirm processing page polls correctly and shows COMPLETE state
-- [x] Verified idempotency — second analyseJob() call on COMPLETE job skips correctly
-- [x] R2 upload confirmed — signed URL stored in DB, 72h expiry
-- [x] Email sent via Resend on job completion
-
-### Day 5 — Rename + polish ✅
-- [x] Rename product from "ResumeAI" to "Shortlisted" across all frontend + backend files
-- [x] Update pricing: Basic $9 → $12, Full $19 → $29
-- [x] Upgrade email templates — new branding, better copy, card layout
-- [x] Update PDF report header to show "The Audit" / "The Glow-Up" tier labels
-- [x] Add referral copy-link prompt to SuccessView
-- [x] Update hero copy on UploadView
-- [ ] Verify getshortlisted.fyi domain in Resend dashboard (manual — user action)
-- [ ] Update Lemon Squeezy product prices to $12 / $29 (manual — user action)
-
-### Day 6 — Deploy to Railway
-- [ ] Push to GitHub
+### Railway deploy
+- [ ] Push to GitHub (or it's already there — confirm)
 - [ ] Connect repo in Railway dashboard
-- [ ] Add all production env vars (MOCK_CLAUDE=false, SKIP_PAYMENT=false)
+- [ ] Add all production env vars (see .env.example)
+- [ ] Set CRON_SECRET env var (any long random string)
+- [ ] Set ADMIN_SECRET env var (any long random string)
+- [ ] Set MOCK_CLAUDE=false, SKIP_PAYMENT=false
 - [ ] Confirm /api/health returns { status: 'ok', db: 'connected' }
-- [ ] Run live end-to-end test with real purchase
+- [ ] Run live end-to-end test with real Lemon Squeezy test purchase
 
-### Manual — requires domain to be live first
+### After domain is live
 - [ ] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
-- [ ] Set CRON_SECRET env var in Railway (any long random string)
-- [ ] Set ADMIN_SECRET env var in Railway (any long random string) — dashboard at /admin
-- [ ] Go to cron-job.org (free), create job: POST https://getshortlisted.fyi/api/cron/followups every hour, header X-Cron-Secret: <your CRON_SECRET> — CRON_SECRET is already set
-- [ ] Set up Google Search Console and verify domain
-- [ ] Set STATS_SEED in Railway env once you have real completed jobs (seed the counter)
-- [ ] Drop daniel.jpg into client/public/images/daniel.jpg (founder photo on homepage)
-- [ ] Screenshot og-template.html at 1200x630 and save as client/public/og-image.png
-- [ ] Verify getshortlisted.fyi domain in Resend dashboard
+- [ ] Set up cron-job.org: POST https://getshortlisted.fyi/api/cron/followups hourly, header X-Cron-Secret: <CRON_SECRET>
+- [ ] Set up Google Search Console + verify domain
+- [ ] Verify getshortlisted.fyi in Resend dashboard (domain verification)
 - [ ] Update Lemon Squeezy webhook URL to https://getshortlisted.fyi/api/webhooks/lemonsqueezy
+- [ ] Set STATS_SEED in Railway env once real completed jobs exist
+- [ ] Drop daniel.jpg into client/public/images/daniel.jpg
+- [ ] Screenshot og-template.html at 1200x630 → save as client/public/og-image.png
+
+### Lemon Squeezy (manual)
+- [ ] Sign up at app.lemonsqueezy.com
+- [ ] Create "The Audit" ($12) and "The Glow-Up" ($29) products
+- [ ] Copy Variant IDs → LEMONSQUEEZY_VARIANT_ID_BASIC / _FULL
+- [ ] Copy Store ID → LEMONSQUEEZY_STORE_ID
+- [ ] Create API key → LEMONSQUEEZY_API_KEY
+- [ ] Add webhook (order_created) → copy signing secret → LEMONSQUEEZY_WEBHOOK_SECRET
 
 ---
 
-## PRD Notes (from Market Analysis)
-
-### Pricing (update before launch)
-- [ ] Raise Basic from $9 → $12
-- [ ] Raise Full from $19 → $29
-- [ ] Update Lemon Squeezy product prices
-- [ ] Update tier labels and prices in UploadView.jsx
-
-### Backlog (v1.1)
-- [ ] LinkedIn About section rewrite in Full tier (add to Claude rewrite prompt)
-- [ ] 3-pack bundle: 3 analyses for $25
-- [ ] 30-day follow-up re-engagement email
-- [ ] Referral discount code on success page
+## Backlog (v1.1)
+- [ ] LinkedIn About section rewrite in Full tier
+- [ ] 3-pack bundle: 3 analyses for $25 (credit system)
 - [ ] Job description URL input (Jina AI reader API: r.jina.ai/{url})
+- [ ] Referral discount code on success page
+- [ ] 30-day re-engagement email
 
-### Critical constraints — never violate
+---
+
+## Critical constraints — never violate
 - Webhook handler responds 200 in < 5s — analyseJob() is always fire-and-forget
-- analyseJob() checks job status before running — idempotency guard in place
+- analyseJob() atomic idempotency via updateMany — not read-then-write
 - MOCK_CLAUDE and SKIP_PAYMENT must be false in production (enforced at startup)
-- Input truncation: resume ≤ 6,000 chars, JD ≤ 4,000 chars — prevents Claude cost spikes
+- Input truncation: resume ≤ 6,000 chars, JD ≤ 4,000 chars
+- Never use em dashes in UI copy or AI-generated content
