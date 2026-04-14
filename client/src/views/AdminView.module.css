@@ -449,10 +449,133 @@
   border-top: 1px solid var(--border);
 }
 
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.tabBtn {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: var(--text);
+}
+
+.tabActive {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* ── Leakage Funnel table ──────────────────────────────────────────────────── */
+.funnelTable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funnelRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.funnelStep2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.funnelStepNum {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-subtle);
+  min-width: 16px;
+}
+
+.funnelStepName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.funnelSource {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: 2px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+}
+
+.funnelBar2Wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.funnelBar2 {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+  min-width: 2px;
+  transition: width 0.3s ease;
+  opacity: 0.8;
+}
+
+.funnelCount2 {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 48px;
+  text-align: right;
+}
+
+.funnelDrop {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 52px;
+  text-align: right;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .body { padding: 20px 16px 48px; }
-  .header { padding: 14px 16px; }
+  .header { padding: 14px 16px; flex-wrap: wrap; gap: 12px; }
+  .headerRight { flex-wrap: wrap; }
+  .tabs { width: 100%; }
   .funnel { flex-direction: column; align-items: flex-start; }
   .funnelArrow { flex-direction: row; transform: rotate(90deg); }
+  .funnelRow { flex-wrap: wrap; }
+  .funnelStep2 { min-width: 100%; }
 }

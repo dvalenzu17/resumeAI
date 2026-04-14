@@ -21,6 +21,29 @@ enum JobStatus {
   FAILED
 }
 
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  jobId       String?
+  event       String
+  sessionId   String?
+  device      String?
+  browser     String?
+  os          String?
+  country     String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  referrer    String?
+  properties  Json?
+  createdAt   DateTime @default(now())
+
+  @@index([event, createdAt])
+  @@index([jobId])
+  @@index([sessionId])
+}
+
 model Job {
   id                String    @id @default(cuid())
   email             String    @default("")

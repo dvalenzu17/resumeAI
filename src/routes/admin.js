@@ -260,3 +260,110 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     res.status(500).json({ error: 'Dashboard query failed' });
   }
 });
+
+// GET /api/admin/funnel
+adminRouter.get('/funnel', requireAdminSecret, async (req, res) => {
+  try {
+    const [pageViews, uploadStarts, scrollPaywall, checkoutClicks, jobGroups] = await Promise.all([
+      db.analyticsEvent.count({ where: { event: 'page_view' } }),
+      db.analyticsEvent.count({ where: { event: 'upload_started' } }),
+      db.analyticsEvent.count({ where: { event: 'scroll_to_paywall' } }),
+      db.analyticsEvent.count({ where: { event: 'checkout_clicked' } }),
+      db.job.groupBy({ by: ['status'], _count: { id: true } }),
+    ]);
+
+    const sm = {};
+    for (const g of jobGroups) sm[g.status] = g._count.id;
+    const uploaded        = Object.values(sm).reduce((s, n) => s + n, 0);
+    const previewed       = (sm.PREVIEW_READY || 0) + (sm.PENDING_PAYMENT || 0) + (sm.PROCESSING || 0) + (sm.COMPLETE || 0);
+    const checkoutStarted = (sm.PENDING_PAYMENT || 0) + (sm.PROCESSING || 0) + (sm.COMPLETE || 0);
+    const paid            = sm.COMPLETE || 0;
+
+    const steps = [
+      { step: 'Page views',          count: pageViews,                                      source: 'analytics' },
+      { step: 'Upload intent',       count: uploadStarts,                                   source: 'analytics' },
+      { step: 'Resume uploaded',     count: uploaded,                                       source: 'jobs' },
+      { step: 'Preview seen',        count: previewed,                                      source: 'jobs' },
+      { step: 'Scrolled to paywall', count: scrollPaywall,                                  source: 'analytics' },
+      { step: 'Checkout clicked',    count: Math.max(checkoutClicks, checkoutStarted),      source: 'both' },
+      { step: 'Paid',                count: paid,                                           source: 'jobs' },
+    ];
+
+    const funnel = steps.map((s, i) => ({
+      ...s,
+      dropRate: i === 0 || steps[i - 1].count === 0 ? null
+        : Math.round((1 - s.count / steps[i - 1].count) * 10000) / 100,
+    }));
+
+    const [devices, browsers] = await Promise.all([
+      db.analyticsEvent.groupBy({ by: ['device'], _count: { id: true }, where: { event: 'page_view', device: { not: null } } }),
+      db.analyticsEvent.groupBy({ by: ['browser'], _count: { id: true }, where: { event: 'page_view', browser: { not: null } } }),
+    ]);
+
+    res.json({
+      funnel,
+      devices: devices.map(d => ({ device: d.device, count: d._count.id })),
+      browsers: browsers.map(b => ({ browser: b.browser, count: b._count.id })),
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin funnel query failed');
+    res.status(500).json({ error: 'Funnel query failed' });
+  }
+});
+
+// GET /api/admin/niche
+adminRouter.get('/niche', requireAdminSecret, async (req, res) => {
+  try {
+    const jobs = await db.job.findMany({
+      where: { analysisResult: { not: null } },
+      select: { analysisResult: true, tier: true, status: true, createdAt: true },
+      take: 500,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const gapCounts = {};
+    const matchCounts = {};
+
+    for (const job of jobs) {
+      const a = job.analysisResult;
+      if (!a || typeof a !== 'object') continue;
+      for (const gap of (Array.isArray(a.keyword_gaps) ? a.keyword_gaps : [])) {
+        if (typeof gap === 'string' && gap.trim()) {
+          const k = gap.toLowerCase().trim();
+          gapCounts[k] = (gapCounts[k] || 0) + 1;
+        }
+      }
+      for (const match of (Array.isArray(a.keyword_matches) ? a.keyword_matches : [])) {
+        if (typeof match === 'string' && match.trim()) {
+          const k = match.toLowerCase().trim();
+          matchCounts[k] = (matchCounts[k] || 0) + 1;
+        }
+      }
+    }
+
+    const topGaps = Object.entries(gapCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 50)
+      .map(([keyword, count]) => ({ keyword, count }));
+
+    const topMatches = Object.entries(matchCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 30)
+      .map(([keyword, count]) => ({ keyword, count }));
+
+    const scoreBuckets = { '0-25': 0, '26-50': 0, '51-75': 0, '76-100': 0 };
+    for (const job of jobs) {
+      const score = job.analysisResult?.ats_score;
+      if (typeof score !== 'number') continue;
+      if (score <= 25) scoreBuckets['0-25']++;
+      else if (score <= 50) scoreBuckets['26-50']++;
+      else if (score <= 75) scoreBuckets['51-75']++;
+      else scoreBuckets['76-100']++;
+    }
+
+    res.json({ topGaps, topMatches, scoreBuckets, jobsAnalyzed: jobs.length });
+  } catch (err) {
+    logger.error({ err }, 'Admin niche query failed');
+    res.status(500).json({ error: 'Niche query failed' });
+  }
+});

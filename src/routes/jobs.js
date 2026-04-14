@@ -7,6 +7,7 @@ import { createCheckoutSession } from '../services/payments.js';
 import { runTeaserAnalysis, runFullReport } from '../services/analyser.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
+import { logEvent, parseUA, extractCountry } from '../services/analytics.js';
 
 export const jobsRouter = Router();
 
@@ -50,6 +51,24 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
 
     const job = await db.job.create({
       data: { tier, jobDescription, resumeText, status: 'ANALYZING', email },
+    });
+
+    // Parse analytics metadata from form submission
+    let clientMeta = {};
+    try { clientMeta = req.body.analytics ? JSON.parse(req.body.analytics) : {}; } catch { /* skip */ }
+    const { device, browser, os } = parseUA(req.headers['user-agent'] || '');
+    logEvent('job_created', {
+      jobId: job.id,
+      sessionId: clientMeta.sessionId || null,
+      device, browser, os,
+      country: extractCountry(req),
+      utmSource:   clientMeta.utm?.utm_source   || null,
+      utmMedium:   clientMeta.utm?.utm_medium   || null,
+      utmCampaign: clientMeta.utm?.utm_campaign || null,
+      utmTerm:     clientMeta.utm?.utm_term     || null,
+      utmContent:  clientMeta.utm?.utm_content  || null,
+      referrer:    clientMeta.referrer || null,
+      properties: { tier, hasEmail: !!email, jdLength: jobDescription.length },
     });
 
     // Fire teaser analysis — always runs before payment
@@ -107,6 +126,11 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
     }
 
     const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier, email: userEmail || job.email });
+
+    logEvent('checkout_initiated', {
+      jobId: job.id,
+      properties: { tier: chosenTier, price: chosenTier === 'FULL' ? 29 : 12 },
+    });
 
     await db.job.update({
       where: { id: job.id },

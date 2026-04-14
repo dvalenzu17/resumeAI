@@ -4,6 +4,7 @@ import { runFullReport } from '../services/analyser.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import { db } from '../lib/db.js';
+import { logEvent } from '../services/analytics.js';
 
 export const webhooksRouter = Router();
 
@@ -57,6 +58,7 @@ webhooksRouter.post('/lemonsqueezy', async (req, res) => {
         runFullReport(jobId).catch((err) => {
           logger.error({ jobId, err }, 'runFullReport uncaught error');
         });
+        logEvent('payment_completed', { jobId, properties: { tier: payload.data?.attributes?.first_order_item?.variant_name || null } });
       };
       kickoff();
     } else {

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted } from '../lib/analytics.js';
+import { track, trackOnce } from '../lib/tracker.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './PreviewView.module.css';
 
@@ -56,6 +57,8 @@ export default function PreviewView() {
   const [step, setStep] = useState('preview'); // 'preview' | 'personalise'
   const [clContext, setClContext] = useState({ companyWhy: '', topAchievement: '', uniqueAngle: '' });
   const [email, setEmail] = useState('');
+  const paywallRef = useRef(null);
+  const tierTrackedRef = useRef(false);
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -71,11 +74,23 @@ export default function PreviewView() {
         setTier(data.tier);
         setSelectedTier(data.tier);
         trackPreviewViewed({ ats_score: data.preview?.ats_score, tier: data.tier });
+        track('preview_loaded', { ats_score: data.preview?.ats_score, gap_count: data.preview?.gap_count }, jobId);
       })
       .catch(() => setError('Could not load your preview.'));
   }, [jobId, navigate]);
 
+  useEffect(() => {
+    if (!preview || !paywallRef.current) return;
+    return trackOnce(paywallRef.current, 'scroll_to_paywall', { ats_score: preview.ats_score }, jobId);
+  }, [preview, jobId]);
+
+  useEffect(() => {
+    if (!tierTrackedRef.current) { tierTrackedRef.current = true; return; }
+    track('tier_switched', { tier: selectedTier }, jobId);
+  }, [selectedTier]);
+
   const handleUnlock = async () => {
+    track('checkout_clicked', { tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 }, jobId);
     if (!email || !email.includes('@')) {
       setError('Enter your email so we can send the report.');
       return;
@@ -268,7 +283,7 @@ export default function PreviewView() {
         </div>
 
         {/* Tier picker + CTA */}
-        <div className={styles.paywall}>
+        <div className={styles.paywall} ref={paywallRef}>
           <div className={styles.urgencyStrip}>
             {t('preview_urgency')}
           </div>

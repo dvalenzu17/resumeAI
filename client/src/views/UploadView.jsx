@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
+import { track, trackOnce, getSessionId, getUtm } from '../lib/tracker.js';
 import { Reveal } from '../lib/Reveal.jsx';
 import { useStats } from '../lib/useStats.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
@@ -265,11 +266,17 @@ export default function UploadView() {
   const [email, setEmail] = useState('');
   const [isTouch, setIsTouch] = useState(false);
   const fileInputRef = useRef(null);
+  const pricingRef = useRef(null);
   const total = useStats();
   const { t } = useT();
 
   // Detect touch devices to show "Tap to upload" instead of "Drop"
   useEffect(() => { setIsTouch('ontouchstart' in window); }, []);
+
+  useEffect(() => {
+    track('page_view', { page: 'landing', screenWidth: window.screen.width, lang: navigator.language });
+    return trackOnce(pricingRef.current, 'scroll_to_pricing', { page: 'landing' });
+  }, []);
 
   const handleFile = (f) => {
     if (!f) return;
@@ -288,6 +295,7 @@ export default function UploadView() {
   const onDrop = useCallback((e) => {
     e.preventDefault();
     setDragging(false);
+    track('upload_started', { method: 'drop' });
     handleFile(e.dataTransfer.files[0]);
   }, []);
 
@@ -302,6 +310,7 @@ export default function UploadView() {
     setLoading(true);
     try {
       const formData = new FormData();
+      formData.append('analytics', JSON.stringify({ sessionId: getSessionId(), utm: getUtm(), referrer: document.referrer }));
       formData.append('resume', file);
       formData.append('jobDescription', jobDescription);
       formData.append('tier', 'FULL');
@@ -419,7 +428,7 @@ export default function UploadView() {
                   type="file"
                   accept="application/pdf"
                   className={styles.fileInput}
-                  onChange={(e) => handleFile(e.target.files[0])}
+                  onChange={(e) => { track('upload_started', { method: 'browse' }); handleFile(e.target.files[0]); }}
                 />
                 {file ? (
                   <div className={styles.fileSelected}>
@@ -520,7 +529,7 @@ export default function UploadView() {
         </div>
       </main>
 
-      <Pricing />
+      <div ref={pricingRef}><Pricing /></div>
       <FAQ />
 
       {/* ── WHY THIS EXISTS ─────────────────── */}

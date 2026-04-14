@@ -4,6 +4,7 @@ import { runAnalysis, runRewrites } from './claude.js';
 import { generateReport } from './report.js';
 import { uploadReport } from './storage.js';
 import { sendReportEmail, sendFailureEmail } from './email.js';
+import { logEvent } from './analytics.js';
 
 const MAX_RESUME_CHARS = 6000;
 const MAX_JD_CHARS = 4000;
@@ -27,6 +28,7 @@ export async function runTeaserAnalysis(jobId) {
     const resumeText = (job.resumeText ?? '').slice(0, MAX_RESUME_CHARS);
     const jobDescription = job.jobDescription.slice(0, MAX_JD_CHARS);
 
+    const t0 = Date.now();
     const { result: analysis, inputTokens, outputTokens } = await runAnalysis(resumeText, jobDescription);
     logger.info({ jobId, ats_score: analysis.ats_score }, 'Teaser analysis complete');
 
@@ -38,6 +40,11 @@ export async function runTeaserAnalysis(jobId) {
         tokensInCall1: { increment: inputTokens },
         tokensOutCall1: { increment: outputTokens },
       },
+    });
+
+    logEvent('teaser_complete', {
+      jobId,
+      properties: { ats_score: analysis.ats_score, durationMs: Date.now() - t0, tokensIn: inputTokens, tokensOut: outputTokens, gapCount: Array.isArray(analysis.keyword_gaps) ? analysis.keyword_gaps.length : 0 },
     });
   } catch (err) {
     logger.error({ jobId, err }, 'runTeaserAnalysis failed');
@@ -83,6 +90,7 @@ export async function runFullReport(jobId) {
     let rewrites = null;
     let tokensIn2 = 0;
     let tokensOut2 = 0;
+    const t0 = Date.now();
     if (job.tier === 'FULL') {
       const { result: rewriteResult, inputTokens: in2, outputTokens: out2 } = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
       rewrites = rewriteResult;
@@ -111,8 +119,18 @@ export async function runFullReport(jobId) {
     });
 
     logger.info({ jobId }, 'Full report complete');
+
+    logEvent('full_report_complete', {
+      jobId,
+      properties: { tier: job.tier, durationMs: Date.now() - t0, tokensIn2, tokensOut2 },
+    });
   } catch (err) {
     logger.error({ jobId, err }, 'runFullReport failed');
+
+    logEvent('full_report_failed', {
+      jobId,
+      properties: { errorCode: err.code || null, message: err.message?.slice(0, 100) || 'unknown' },
+    });
 
     await db.job.update({
       where: { id: jobId },
