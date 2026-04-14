@@ -28,7 +28,10 @@
       "Bash(git commit:*)",
       "Bash(node --check src/routes/cron.js)",
       "Bash(node --check src/services/email.js)",
-      "Bash(node --check src/routes/jobs.js)"
+      "Bash(node --check src/routes/jobs.js)",
+      "Bash(node --check src/index.js src/services/analytics.js src/routes/analytics.js src/routes/jobs.js src/routes/webhooks.js src/services/analyser.js src/routes/admin.js)",
+      "Bash(node:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
