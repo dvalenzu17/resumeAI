@@ -568,6 +568,113 @@ adminRouter.get('/performance', requireAdminSecret, async (req, res) => {
   }
 });
 
+// GET /api/admin/simulate?basic=10&full=5
+// P&L simulator: plug in a number of sales, see exactly where every dollar goes.
+adminRouter.get('/simulate', requireAdminSecret, async (req, res) => {
+  try {
+    const basicCount = Math.max(0, parseInt(req.query.basic) || 0);
+    const fullCount  = Math.max(0, parseInt(req.query.full)  || 0);
+    const totalJobs  = basicCount + fullCount;
+
+    // Pull real average Claude costs per tier from completed jobs
+    const completedJobs = await db.job.findMany({
+      where: { status: 'COMPLETE' },
+      select: { tier: true, tokensInCall1: true, tokensOutCall1: true, tokensInCall2: true, tokensOutCall2: true },
+    });
+
+    function avgClaudeForTier(tier) {
+      const jobs = completedJobs.filter(j => j.tier === tier);
+      if (!jobs.length) return tier === 'FULL' ? 0.055 : 0.024; // fallback estimates
+      const total = jobs.reduce((s, j) => {
+        const tin  = (j.tokensInCall1  || 0) + (j.tokensInCall2  || 0);
+        const tout = (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0);
+        return s + tin * CLAUDE_INPUT_PRICE + tout * CLAUDE_OUTPUT_PRICE;
+      }, 0);
+      return r4(total / jobs.length);
+    }
+
+    const claudePerBasic = avgClaudeForTier('BASIC');
+    const claudePerFull  = avgClaudeForTier('FULL');
+
+    // Per-job breakdown (variable costs only — same regardless of volume)
+    function jobBreakdown(price, claudeCost) {
+      const processorFee = r4(price * PROCESSOR_FEE_PCT + PROCESSOR_FEE_FLAT);
+      const resendCost   = 0; // within free tier at typical volumes
+      const totalCOGS    = r4(processorFee + claudeCost + resendCost);
+      const contribution = r4(price - totalCOGS);
+      return {
+        revenue:       price,
+        costs: {
+          processorFee,
+          claude:      claudeCost,
+          resend:      resendCost,
+          totalCOGS,
+        },
+        contributionMargin: contribution,
+        contributionMarginPct: pct(contribution / price),
+      };
+    }
+
+    const perJob = {
+      BASIC: jobBreakdown(BASIC_PRICE, claudePerBasic),
+      FULL:  jobBreakdown(FULL_PRICE,  claudePerFull),
+    };
+
+    // Simulation totals for the requested volume
+    const grossRevenue     = r2(basicCount * BASIC_PRICE + fullCount * FULL_PRICE);
+    const totalProcessor   = r4(basicCount * perJob.BASIC.costs.processorFee + fullCount * perJob.FULL.costs.processorFee);
+    const totalClaude      = r4(basicCount * claudePerBasic + fullCount * claudePerFull);
+    const totalResend      = 0;
+    const totalVariable    = r4(totalProcessor + totalClaude + totalResend);
+    const totalFixed       = RAILWAY_MONTHLY; // always $10/month regardless of volume
+    const totalCosts       = r4(totalVariable + totalFixed);
+    const netProfit        = r4(grossRevenue - totalCosts);
+    const netMarginPct     = grossRevenue > 0 ? pct(netProfit / grossRevenue) : 0;
+    const railwayPerJob    = totalJobs > 0 ? r4(RAILWAY_MONTHLY / totalJobs) : RAILWAY_MONTHLY;
+
+    // Dollar destination: where does each dollar go?
+    const destinations = grossRevenue > 0 ? {
+      toProcessor:  { amount: totalProcessor, pct: pct(totalProcessor / grossRevenue) },
+      toClaude:     { amount: totalClaude,    pct: pct(totalClaude    / grossRevenue) },
+      toResend:     { amount: totalResend,    pct: pct(totalResend    / grossRevenue) },
+      toRailway:    { amount: totalFixed,     pct: pct(totalFixed     / grossRevenue) },
+      toYou:        { amount: netProfit,      pct: pct(netProfit      / grossRevenue) },
+    } : null;
+
+    // Scale table: what does profit look like at different volumes?
+    const scaleSteps = [1, 5, 10, 25, 50, 100].map(n => {
+      const ratio   = totalJobs > 0 ? n / totalJobs : 0;
+      const rev     = r2(grossRevenue * ratio);
+      const varCost = r4(totalVariable * ratio);
+      const net     = r4(rev - varCost - RAILWAY_MONTHLY);
+      return { jobs: n, revenue: rev, variableCosts: varCost, railway: RAILWAY_MONTHLY, netProfit: net };
+    });
+
+    res.json({
+      inputs: { basicCount, fullCount, totalJobs },
+      perJob,
+      railwayNote: `Railway is a fixed $${RAILWAY_MONTHLY}/month regardless of volume. At ${totalJobs} jobs it costs $${railwayPerJob} per job.`,
+      totals: {
+        grossRevenue,
+        costs: {
+          processor: totalProcessor,
+          claude:    totalClaude,
+          resend:    totalResend,
+          railway:   totalFixed,
+          total:     totalCosts,
+        },
+        netProfit,
+        netMarginPct,
+      },
+      destinations,
+      scaleTable: scaleSteps,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin simulate query failed');
+    res.status(500).json({ error: 'Simulate query failed' });
+  }
+});
+
 // GET /api/admin/attribution
 // Channel LTV by UTM source, blog conversion attribution
 adminRouter.get('/attribution', requireAdminSecret, async (req, res) => {
