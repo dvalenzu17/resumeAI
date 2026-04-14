@@ -66,21 +66,32 @@ export default function SuccessView() {
           </div>
 
           <div className={styles.referral}>
+            <p className={styles.referralHeading}>One favour.</p>
             <p className={styles.referralText}>
-              Know someone job hunting? Send them here.
+              Most job seekers don't know their resume is being filtered before a recruiter reads it.
+              If you know someone applying right now, send them here. Free score, 30 seconds.
             </p>
-            <a
-              href="https://getshortlisted.fyi"
-              className={styles.referralLink}
-              onClick={(e) => {
-                e.preventDefault();
-                navigator.clipboard?.writeText('https://getshortlisted.fyi').catch(() => {});
-                e.currentTarget.textContent = 'Link copied!';
-                setTimeout(() => { e.currentTarget.textContent = 'Copy link'; }, 2000);
-              }}
-            >
-              Copy link
-            </a>
+            <div className={styles.referralActions}>
+              <button
+                className={styles.referralBtn}
+                onClick={(e) => {
+                  navigator.clipboard?.writeText('https://getshortlisted.fyi').catch(() => {});
+                  e.currentTarget.textContent = 'Copied!';
+                  setTimeout(() => { e.currentTarget.textContent = 'Copy link'; }, 2000);
+                }}
+              >
+                Copy link
+              </button>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://getshortlisted.fyi')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.referralLinkedIn}
+              >
+                Share on LinkedIn
+              </a>
+            </div>
+            <p className={styles.referralUrl}>getshortlisted.fyi</p>
           </div>
         </div>
       </main>

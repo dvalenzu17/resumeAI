@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
-import { sendFollowUp1Email, sendFollowUp2Email } from '../services/email.js';
+import { sendFollowUp1Email, sendFollowUp2Email, sendPreviewNudgeEmail } from '../services/email.js';
 
 export const cronRouter = Router();
 
@@ -15,13 +15,42 @@ cronRouter.post('/followups', async (req, res) => {
   }
 
   const now = new Date();
+  const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
   const day3Ago = new Date(now - 3 * 24 * 60 * 60 * 1000);
   const day7Ago = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
+  let sentNudge = 0;
   let sent1 = 0;
   let sent2 = 0;
 
   try {
+    // Preview nudge: PREVIEW_READY, 2+ hours ago, email present, nudge not yet sent
+    const needsNudge = await db.job.findMany({
+      where: {
+        status: 'PREVIEW_READY',
+        email: { not: '' },
+        previewNudgeSentAt: null,
+        createdAt: { lte: twoHoursAgo },
+      },
+      select: { id: true, email: true, analysisResult: true },
+    });
+
+    for (const job of needsNudge) {
+      try {
+        const analysis = job.analysisResult;
+        const atsScore = analysis?.ats_score ?? null;
+        const firstGap = Array.isArray(analysis?.keyword_gaps) ? analysis.keyword_gaps[0] : null;
+        if (atsScore !== null) {
+          await sendPreviewNudgeEmail(job.email, job.id, env.APP_URL, atsScore, firstGap);
+          await db.job.update({ where: { id: job.id }, data: { previewNudgeSentAt: now } });
+          sentNudge++;
+          logger.info({ jobId: job.id, atsScore }, 'Preview nudge sent');
+        }
+      } catch (err) {
+        logger.error({ jobId: job.id, err }, 'Failed to send preview nudge');
+      }
+    }
+
     // Follow-up 1: COMPLETE, 3+ days ago, email present, not yet sent
     const needsFollowUp1 = await db.job.findMany({
       where: {
@@ -67,8 +96,8 @@ cronRouter.post('/followups', async (req, res) => {
       }
     }
 
-    logger.info({ sent1, sent2 }, 'Follow-up cron complete');
-    res.json({ ok: true, sent1, sent2 });
+    logger.info({ sentNudge, sent1, sent2 }, 'Follow-up cron complete');
+    res.json({ ok: true, sentNudge, sent1, sent2 });
   } catch (err) {
     logger.error({ err }, 'Follow-up cron failed');
     res.status(500).json({ error: 'Cron failed' });

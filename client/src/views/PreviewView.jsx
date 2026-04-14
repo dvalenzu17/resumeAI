@@ -236,6 +236,37 @@ export default function PreviewView() {
           </div>
         </div>
 
+        {/* Rewrite teaser — shows outcome before asking to pay */}
+        <div className={styles.rewriteTeaser}>
+          <div className={styles.rewriteTeaserHeader}>
+            <span className={styles.rewriteTeaserBadge}>{t('teaser_badge')}</span>
+            <h3 className={styles.rewriteTeaserTitle}>{t('teaser_title')}</h3>
+            <p className={styles.rewriteTeaserSub}>{t('teaser_sub')}</p>
+          </div>
+          <div className={styles.rewriteComparison}>
+            <div className={styles.rewriteCol}>
+              <p className={styles.rewriteColLabel}>{t('teaser_before')}</p>
+              <div className={styles.rewriteBullet} style={{ opacity: 0.6 }}>
+                <span className={styles.bulletDot} />
+                <span>{t('teaser_before_bullet')}</span>
+              </div>
+            </div>
+            <div className={styles.rewriteArrow}>
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className={styles.rewriteCol}>
+              <p className={styles.rewriteColLabel} style={{ color: 'var(--accent)' }}>{t('teaser_after')}</p>
+              <div className={`${styles.rewriteBullet} ${styles.rewriteBulletBlur}`}>
+                <span className={styles.bulletDot} style={{ background: 'var(--accent)' }} />
+                <span>{t('teaser_after_bullet')}</span>
+              </div>
+            </div>
+          </div>
+          <p className={styles.rewriteTeaserNote}>{t('teaser_note')}</p>
+        </div>
+
         {/* Tier picker + CTA */}
         <div className={styles.paywall}>
           <div className={styles.urgencyStrip}>

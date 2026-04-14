@@ -262,9 +262,14 @@ export default function UploadView() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isTouch, setIsTouch] = useState(false);
   const fileInputRef = useRef(null);
   const total = useStats();
   const { t } = useT();
+
+  // Detect touch devices to show "Tap to upload" instead of "Drop"
+  useEffect(() => { setIsTouch('ontouchstart' in window); }, []);
 
   const handleFile = (f) => {
     if (!f) return;
@@ -300,6 +305,7 @@ export default function UploadView() {
       formData.append('resume', file);
       formData.append('jobDescription', jobDescription);
       formData.append('tier', 'FULL');
+      if (email) formData.append('email', email);
       const res = await fetch('/api/jobs', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
@@ -318,6 +324,7 @@ export default function UploadView() {
       <nav className={styles.nav}>
         <span className={styles.logo}>short<span className={styles.logoAccent}>listed</span></span>
         <div className={styles.navRight}>
+          <Link to="/blog" className={styles.navBlogLink}>Blog</Link>
           <LangSwitcher className={styles.langSwitcher} />
           <a href="#analyse" className={styles.navCta}>{t('nav_cta')}</a>
         </div>
@@ -432,17 +439,21 @@ export default function UploadView() {
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
-                    <p className={styles.dropzoneText}>{t('form_drop_text')}</p>
-                    <p className={styles.dropzoneHint}>
-                      or{' '}
-                      <span
-                        className={styles.browseLink}
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                      >
-                        {t('form_browse')}
-                      </span>
-                      {' '}· {t('form_drop_hint_suffix')}
+                    <p className={styles.dropzoneText}>
+                      {isTouch ? 'Tap to upload your resume' : t('form_drop_text')}
                     </p>
+                    {!isTouch && (
+                      <p className={styles.dropzoneHint}>
+                        or{' '}
+                        <span
+                          className={styles.browseLink}
+                          onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        >
+                          {t('form_browse')}
+                        </span>
+                        {' '}· {t('form_drop_hint_suffix')}
+                      </p>
+                    )}
                   </>
                 )}
               </div>
@@ -466,6 +477,19 @@ export default function UploadView() {
                   ? `${100 - jobDescription.length} ${t('form_jd_hint_more')}`
                   : `${jobDescription.length.toLocaleString()} ${t('form_jd_hint_good')}`}
               </p>
+            </div>
+
+            <div className={styles.section}>
+              <p className={styles.sectionLabel}>{t('form_email_label')}</p>
+              <input
+                type="email"
+                className={styles.emailInput}
+                placeholder={t('form_email_placeholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+              <p className={styles.hint}>{t('form_email_hint')}</p>
             </div>
 
             {error && (
@@ -538,6 +562,8 @@ export default function UploadView() {
           <span className={styles.footerLogo}>short<span className={styles.logoAccent}>listed</span></span>
           <span className={styles.footerTagline}>{t('footer_tagline')}</span>
           <div className={styles.footerLinks}>
+            <Link to="/blog" className={styles.footerLink}>Blog</Link>
+            <span className={styles.footerDivider}>·</span>
             <Link to="/privacy" className={styles.footerLink}>{t('footer_privacy')}</Link>
             <span className={styles.footerDivider}>·</span>
             <Link to="/terms" className={styles.footerLink}>{t('footer_terms')}</Link>

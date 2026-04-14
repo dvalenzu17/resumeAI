@@ -26,7 +26,7 @@ const upload = multer({
 // Creates the job and fires the free teaser analysis. No payment at this stage.
 jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
   try {
-    const { jobDescription, tier } = req.body;
+    const { jobDescription, tier, email: rawEmail } = req.body;
 
     if (!jobDescription || !tier) {
       throw AppError.badRequest('jobDescription and tier are required');
@@ -41,11 +41,15 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
       throw AppError.badRequest('Resume PDF is required');
     }
 
+    const email = typeof rawEmail === 'string' ? rawEmail.trim() : '';
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw AppError.badRequest('Invalid email address', 'INVALID_EMAIL');
+    }
+
     const resumeText = await extractText(req.file.buffer);
 
-    // Email is not collected here — it comes from the Lemon Squeezy checkout webhook
     const job = await db.job.create({
-      data: { tier, jobDescription, resumeText, status: 'ANALYZING' },
+      data: { tier, jobDescription, resumeText, status: 'ANALYZING', email },
     });
 
     // Fire teaser analysis — always runs before payment

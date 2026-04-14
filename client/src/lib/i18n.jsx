@@ -22,7 +22,7 @@ const translations = {
     lang_es: 'Español',
 
     // Hero
-    hero_badge: 'Free · No account · ~30 seconds',
+    hero_badge: 'Pay once · No subscription · Resume deleted after 30 days',
     hero_reject_source: 'linkedin.com · just now',
     hero_reject_quote: '"After careful consideration, we\'ve decided to move forward with other candidates."',
     hero_reject_caption: 'The recruiter never read your resume. The ATS filtered it out in under a second.',
@@ -72,6 +72,9 @@ const translations = {
     form_submitting: 'Analysing…',
     form_secure: 'No account · No card · Your data is never sold or shared',
     form_privacy: 'Your resume is processed server-side and never stored beyond 30 days. We don\'t sell, share, or use it to train AI models.',
+    form_email_label: 'Your email',
+    form_email_placeholder: 'you@example.com — we send your score here',
+    form_email_hint: 'Optional but recommended. We email you your results so you can access them later.',
     form_err_pdf: 'PDF files only. Not a JPEG of your resume.',
     form_err_size: 'File must be under 10 MB.',
     form_err_file: 'Drop your resume first.',
@@ -172,6 +175,16 @@ const translations = {
     preview_sending_to: 'Sending to',
     preview_tier_badge: 'Best value',
 
+    // Rewrite teaser
+    teaser_badge: 'The Glow-Up',
+    teaser_title: 'This is what your top bullet looks like after the rewrite.',
+    teaser_sub: 'Same experience. Different framing. The ATS reads it differently. So do recruiters.',
+    teaser_before: 'Your bullet now',
+    teaser_before_bullet: 'Responsible for managing the team and delivering projects on time within budget.',
+    teaser_after: 'After The Glow-Up',
+    teaser_after_bullet: 'Led a cross-functional team of 6 to deliver 4 product features on schedule, reducing scope creep by 40% through weekly stakeholder alignment.',
+    teaser_note: 'The Glow-Up rewrites your top 5 bullets, rewrites your summary, writes your cover letter, and gives you 8 interview questions with STAR answers.',
+
     // Success view
     success_heading: 'Your report is on its way.',
     success_sub: 'Check your inbox in the next 60 seconds. Check spam if it\'s not there.',
@@ -196,7 +209,7 @@ const translations = {
     lang_es: 'Espanol',
 
     // Hero
-    hero_badge: 'Gratis · Sin cuenta · ~30 segundos',
+    hero_badge: 'Pago unico · Sin suscripcion · CV eliminado a los 30 dias',
     hero_reject_source: 'linkedin.com · ahora mismo',
     hero_reject_quote: '"Despues de una cuidadosa consideracion, hemos decidido avanzar con otros candidatos."',
     hero_reject_caption: 'El reclutador nunca leyo tu CV. El ATS lo filtro en menos de un segundo.',
@@ -246,6 +259,9 @@ const translations = {
     form_submitting: 'Analizando...',
     form_secure: 'Sin cuenta · Sin tarjeta · Tus datos nunca se venden ni comparten',
     form_privacy: 'Tu CV se procesa en nuestros servidores y nunca se almacena mas de 30 dias. No lo vendemos, compartimos ni usamos para entrenar IA.',
+    form_email_label: 'Tu email',
+    form_email_placeholder: 'tu@ejemplo.com — te enviamos tu puntuacion aqui',
+    form_email_hint: 'Opcional pero recomendado. Te enviamos tus resultados por email para que puedas acceder despues.',
     form_err_pdf: 'Solo archivos PDF. No imagenes de tu CV.',
     form_err_size: 'El archivo debe pesar menos de 10 MB.',
     form_err_file: 'Sube tu CV primero.',
@@ -345,6 +361,16 @@ const translations = {
     preview_continue_checkout: 'Continuar al pago por $29',
     preview_sending_to: 'Enviando a',
     preview_tier_badge: 'Mejor relacion precio-valor',
+
+    // Rewrite teaser
+    teaser_badge: 'The Glow-Up',
+    teaser_title: 'Asi se ve tu punto principal despues de la reescritura.',
+    teaser_sub: 'La misma experiencia. Diferente enfoque. El ATS lo lee diferente. Los reclutadores tambien.',
+    teaser_before: 'Tu punto ahora',
+    teaser_before_bullet: 'Responsable de gestionar el equipo y entregar proyectos a tiempo y dentro del presupuesto.',
+    teaser_after: 'Con The Glow-Up',
+    teaser_after_bullet: 'Lidere un equipo multifuncional de 6 personas para entregar 4 funcionalidades a tiempo, reduciendo los cambios de alcance un 40% mediante alineacion semanal con stakeholders.',
+    teaser_note: 'The Glow-Up reescribe tus 5 mejores puntos, reescribe tu resumen, redacta tu carta de presentacion y te da 8 preguntas de entrevista con respuestas STAR.',
 
     // Success view
     success_heading: 'Tu reporte esta en camino.',

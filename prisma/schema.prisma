@@ -33,6 +33,7 @@ model Job {
   checkoutSessionId   String?   @unique
   reportUrl         String?
   errorMessage      String?
+  previewNudgeSentAt DateTime?
   followUp1SentAt   DateTime?
   followUp2SentAt   DateTime?
   feedbackResult    String?   // 'yes' | 'no'

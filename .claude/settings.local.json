@@ -24,7 +24,11 @@
       "Bash(node --check src/services/claude.js)",
       "Bash(npm run:*)",
       "Bash(node --check src/services/analyser.js)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node --check src/routes/cron.js)",
+      "Bash(node --check src/services/email.js)",
+      "Bash(node --check src/routes/jobs.js)"
     ]
   }
 }

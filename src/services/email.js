@@ -134,6 +134,52 @@ export async function sendFollowUp2Email(to, appUrl) {
   });
 }
 
+export async function sendPreviewNudgeEmail(to, jobId, appUrl, atsScore, firstGap) {
+  if (!resend) {
+    logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping preview nudge email');
+    return;
+  }
+
+  const scoreColor = atsScore >= 75 ? '#059669' : atsScore >= 50 ? '#d97706' : '#dc2626';
+  const scoreVerdict = atsScore >= 75
+    ? 'That is solid, but there are still gaps costing you callbacks.'
+    : atsScore >= 50
+    ? 'You are close, but keyword gaps are filtering you out before a human reads this.'
+    : 'This resume is getting filtered before a recruiter ever sees it.';
+
+  const gapLine = firstGap
+    ? `<p style="line-height:1.75;margin:0 0 8px;color:#374151;">One keyword the ATS is looking for that is not in your resume: <strong>"${firstGap}"</strong>. There are more.</p>`
+    : '';
+
+  const content = `
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;letter-spacing:-0.3px;">Your ATS score came back.</h1>
+    <div style="display:inline-block;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px 24px;margin:0 0 24px;text-align:center;">
+      <div style="font-size:48px;font-weight:800;color:${scoreColor};letter-spacing:-2px;line-height:1;">${atsScore}</div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;">out of 100</div>
+    </div>
+    <p style="line-height:1.75;margin:0 0 16px;color:#374151;">${scoreVerdict}</p>
+    ${gapLine}
+    <p style="line-height:1.75;margin:0 0 28px;color:#374151;">
+      The full report shows every gap, every match, your experience fit score, salary intel for the role, and a rewritten LinkedIn headline. The Glow-Up tier also rewrites your top bullets and writes your cover letter.
+    </p>
+    <a href="${appUrl}/preview?jobId=${jobId}"
+       style="background:linear-gradient(135deg,#e85d04,#c44d03);color:#fff;text-decoration:none;
+              padding:14px 28px;border-radius:8px;font-weight:700;display:inline-block;font-size:15px;
+              letter-spacing:-0.2px;">
+      See My Full Report →
+    </a>
+    <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;line-height:1.6;">
+      Your free preview is still waiting. Paid plans start at $12, one-time. No subscription.
+    </p>`;
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Your ATS score: ${atsScore}/100 — here's what's holding you back`,
+    html: EMAIL_BASE(content),
+  });
+}
+
 export async function sendFailureEmail(to, jobId) {
   if (!resend) {
     logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping failure email');
