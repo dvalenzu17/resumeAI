@@ -50,7 +50,9 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     const now = new Date();
     const today = startOfDay(0);
     const ago7  = startOfDay(7);
+    const ago14 = startOfDay(14);
     const ago30 = startOfDay(30);
+    const ago60 = startOfDay(60);
 
     // All queries in parallel
     const [completeJobs, statusGroups, allJobs] = await Promise.all([
@@ -221,6 +223,105 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
       FULL:  tierUnitEcon(fullJobs,  FULL_PRICE),
     };
 
+    // ── Business metrics ──────────────────────────────────────────────────
+
+    // COGS (variable costs only — costs that scale with each sale)
+    const avgProcessorFeeAll = completeJobs.length > 0 ? r4(totalProcessorFee / completeJobs.length) : 0;
+    const avgClaudeAll       = completeJobs.length > 0 ? r4(totalClaudeCost   / completeJobs.length) : 0;
+    const avgEmailAll        = completeJobs.length > 0 ? r4(totalEmailCost    / completeJobs.length) : 0;
+    const avgCOGS            = r4(avgProcessorFeeAll + avgClaudeAll + avgEmailAll);
+
+    // Contribution margin: what's left from each sale after variable costs
+    const avgContribMargin  = r4(avgRevPerJob - avgCOGS);
+    const contribMarginPct  = avgRevPerJob > 0 ? pct(avgContribMargin / avgRevPerJob) : 0;
+
+    // Break-even: minimum sales/month to cover fixed costs (Railway)
+    const breakEvenJobs = avgContribMargin > 0 ? Math.ceil(RAILWAY_MONTHLY / avgContribMargin) : null;
+
+    // Burn rate: total monthly spend (fixed + variable at current sales pace)
+    const dailyJobRate    = daysRunning > 0 ? completeJobs.length / daysRunning : 0;
+    const burnRateMonthly = r2(RAILWAY_MONTHLY + avgCOGS * dailyJobRate * 30);
+
+    // Revenue velocity: week-over-week and month-over-month
+    const rev7        = revenue.last7days.revenue;
+    const rev30val    = revenue.last30days.revenue;
+    const revPrior7   = r2(completeJobs.filter(j => j.createdAt >= ago14 && j.createdAt < ago7).reduce((s, j) => s + revenueForJob(j), 0));
+    const revPrior30  = r2(completeJobs.filter(j => j.createdAt >= ago60 && j.createdAt < ago30).reduce((s, j) => s + revenueForJob(j), 0));
+    const velocityWoW = revPrior7  > 0 ? pct((rev7     - revPrior7)  / revPrior7)  : null;
+    const velocityMoM = revPrior30 > 0 ? pct((rev30val - revPrior30) / revPrior30) : null;
+
+    // LTV: average total revenue per unique customer (email)
+    const emailRevMap = {};
+    for (const j of completeJobs) {
+      const e = j.email?.toLowerCase().trim();
+      if (!e) continue;
+      if (!emailRevMap[e]) emailRevMap[e] = { count: 0, revenue: 0 };
+      emailRevMap[e].count++;
+      emailRevMap[e].revenue += revenueForJob(j);
+    }
+    const uniqueCustomers        = Object.keys(emailRevMap).length;
+    const emailRevValues         = Object.values(emailRevMap);
+    const ltv                    = uniqueCustomers > 0 ? r2(emailRevValues.reduce((s, c) => s + c.revenue, 0) / uniqueCustomers) : avgRevPerJob;
+    const avgPurchasesPerCustomer = uniqueCustomers > 0 ? r4(emailRevValues.reduce((s, c) => s + c.count, 0) / uniqueCustomers) : 1;
+
+    // Operating leverage: fixed costs as % of total — higher = more scalable
+    const operatingLeveragePct = totalCost > 0 ? pct(totalRailwayCost / totalCost) : 0;
+
+    // Rule of 40: annualised growth % + net profit margin % (>40 = world-class)
+    const annualizedGrowthPct = velocityMoM !== null ? r2(velocityMoM * 12) : null;
+    const netMarginPct        = totalRevenue > 0 ? pct(netProfit / totalRevenue) : 0;
+    const rule40Score         = annualizedGrowthPct !== null ? r2(annualizedGrowthPct + netMarginPct) : null;
+
+    const businessMetrics = {
+      cogs: {
+        label: 'Cost of Goods Sold — variable costs per sale',
+        avgProcessorFee: avgProcessorFeeAll,
+        avgClaudeCost:   avgClaudeAll,
+        avgEmailCost:    avgEmailAll,
+        avgTotalPerJob:  avgCOGS,
+      },
+      contributionMargin: {
+        label: 'Revenue left after COGS — funds fixed costs and profit',
+        avgPerJob:  avgContribMargin,
+        marginPct:  contribMarginPct,
+      },
+      breakEven: {
+        label: 'Minimum sales per month to cover fixed costs',
+        jobsPerMonth:      breakEvenJobs,
+        fixedCostsMonthly: RAILWAY_MONTHLY,
+      },
+      burnRate: {
+        label: 'Total monthly spend at current sales pace',
+        monthly: burnRateMonthly,
+      },
+      ltv: {
+        label: 'Average total revenue per unique customer',
+        avgRevenuePerCustomer:    ltv,
+        avgPurchasesPerCustomer:  avgPurchasesPerCustomer,
+        uniqueCustomers,
+      },
+      revenueVelocity: {
+        label: 'Sales growth rate week-over-week and month-over-month',
+        weekOverWeekPct:   velocityWoW,
+        monthOverMonthPct: velocityMoM,
+        last7dRevenue:     rev7,
+        prior7dRevenue:    revPrior7,
+        last30dRevenue:    rev30val,
+        prior30dRevenue:   revPrior30,
+      },
+      operatingLeverage: {
+        label: 'Fixed cost share of total costs — higher means more scalable',
+        fixedCostPct: operatingLeveragePct,
+      },
+      rule40: {
+        label: 'Annualised growth % + net margin % — score above 40 is world-class',
+        score:                rule40Score,
+        annualizedGrowthPct,
+        netMarginPct,
+        healthy:              rule40Score !== null ? rule40Score >= 40 : null,
+      },
+    };
+
     // ── Daily revenue (last 30 days) ──────────────────────────────────────
     const dailyMap = {};
     for (let i = 29; i >= 0; i--) {
@@ -291,6 +392,7 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
       costs,
       profit,
       unitEconomics,
+      businessMetrics,
       dailyRevenue,
       feedback,
       projections,
