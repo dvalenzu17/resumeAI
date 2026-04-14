@@ -38,6 +38,18 @@ function Section({ title, children }) {
   );
 }
 
+function Department({ label, icon, children }) {
+  return (
+    <div className={styles.dept}>
+      <div className={styles.deptHeader}>
+        <span className={styles.deptIcon}>{icon}</span>
+        <span className={styles.deptLabel}>{label}</span>
+      </div>
+      <div className={styles.deptBody}>{children}</div>
+    </div>
+  );
+}
+
 function BarChart({ data }) {
   const max = Math.max(...data.map(d => d.revenue), 1);
   return (
@@ -261,152 +273,238 @@ export default function AdminView() {
       {activeTab === 'dashboard' && (
         <div className={styles.body}>
 
-          {/* Top metric cards */}
-          <div className={styles.cardGrid}>
-            <Card label="All-time revenue" value={fmt$(revenue.allTime.revenue)} sub={`${fmtN(revenue.allTime.jobCount)} paid jobs`} accent />
-            <Card label="Today" value={fmt$(revenue.today.revenue)} sub={`${fmtN(revenue.today.jobCount)} jobs`} />
-            <Card label="Gross margin" value={fmtPct(profit.grossMarginPct)} sub="excl. Railway" />
-            <Card label="Overall conversion" value={fmtPct(funnel.rates.overallConversion)} sub="upload → purchase" />
-            <Card label="Net profit (all-time)" value={fmt$(profit.netProfit)} sub="incl. Railway" />
-            <Card label="Avg profit / job" value={fmt$(profit.avgProfitPerJob)} sub={`avg cost ${fmt$4(profit.avgCostPerJob)}`} />
-          </div>
+          {/* ── FINANCE ─────────────────────────────────────────────────── */}
+          <Department label="Finance" icon="$">
 
-          {/* Revenue by period */}
-          <Section title="Revenue by period">
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Period</th><th>Revenue</th><th>Jobs</th><th>Basic</th><th>Full</th><th>Avg/job</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ['Today', revenue.today],
-                    ['Last 7 days', revenue.last7days],
-                    ['Last 30 days', revenue.last30days],
-                    ['All time', revenue.allTime],
-                  ].map(([label, r]) => (
-                    <tr key={label}>
-                      <td>{label}</td>
-                      <td className={styles.mono}>{fmt$(r.revenue)}</td>
-                      <td className={styles.mono}>{fmtN(r.jobCount)}</td>
-                      <td className={styles.mono}>{fmtN(r.basicCount)}</td>
-                      <td className={styles.mono}>{fmtN(r.fullCount)}</td>
-                      <td className={styles.mono}>{r.jobCount > 0 ? fmt$(r.revenue / r.jobCount) : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
+            <Section title="Key numbers">
+              <div className={styles.cardGrid}>
+                <Card label="All-time revenue" value={fmt$(revenue.allTime.revenue)} sub={`${fmtN(revenue.allTime.jobCount)} paid jobs`} accent />
+                <Card label="Net profit (all-time)" value={fmt$(profit.netProfit)} sub="after all costs" />
+                <Card label="Gross margin" value={fmtPct(profit.grossMarginPct)} sub="excl. Railway" />
+                <Card label="Avg profit / job" value={fmt$(profit.avgProfitPerJob)} sub={`avg cost ${fmt$4(profit.avgCostPerJob)}`} />
+                <Card label="Today" value={fmt$(revenue.today.revenue)} sub={`${fmtN(revenue.today.jobCount)} jobs`} />
+                <Card label="Last 7 days" value={fmt$(revenue.last7days.revenue)} sub={`${fmtN(revenue.last7days.jobCount)} jobs`} />
+              </div>
+            </Section>
 
-          {/* Daily revenue chart */}
-          <Section title="Daily revenue — last 30 days">
-            <BarChart data={dailyRevenue} />
-          </Section>
+            <Section title="Revenue by period">
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr><th>Period</th><th>Revenue</th><th>Jobs</th><th>Audit</th><th>Glow-Up</th><th>Avg/job</th></tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Today', revenue.today],
+                      ['Last 7 days', revenue.last7days],
+                      ['Last 30 days', revenue.last30days],
+                      ['All time', revenue.allTime],
+                    ].map(([label, r]) => (
+                      <tr key={label}>
+                        <td>{label}</td>
+                        <td className={styles.mono}>{fmt$(r.revenue)}</td>
+                        <td className={styles.mono}>{fmtN(r.jobCount)}</td>
+                        <td className={styles.mono}>{fmtN(r.basicCount)}</td>
+                        <td className={styles.mono}>{fmtN(r.fullCount)}</td>
+                        <td className={styles.mono}>{r.jobCount > 0 ? fmt$(r.revenue / r.jobCount) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
 
-          {/* Funnel */}
-          <Section title="Conversion funnel">
-            <div className={styles.funnel}>
-              <FunnelStep label="Uploads" count={funnel.uploads} rate={funnel.rates.uploadToPreview} />
-              <FunnelStep label="Preview ready" count={funnel.previewReady} rate={funnel.rates.previewToCheckout} />
-              <FunnelStep label="Checkout started" count={funnel.checkoutStarted} rate={funnel.rates.checkoutToPurchase} />
-              <FunnelStep label="Purchased" count={funnel.purchases} last />
-            </div>
-            <div className={styles.statusGrid}>
-              {Object.entries(funnel.statusBreakdown).map(([s, n]) => (
-                <div key={s} className={styles.statusChip}>
-                  <span className={styles.statusDot} style={{ background: STATUS_COLOR[s] || '#6b7280' }} />
-                  <span className={styles.statusName}>{s.replace('_', ' ')}</span>
-                  <span className={styles.statusCount}>{fmtN(n)}</span>
+            <Section title="Daily revenue — last 30 days">
+              <BarChart data={dailyRevenue} />
+            </Section>
+
+            <Section title="Cost breakdown">
+              <div className={styles.costGrid}>
+                <div className={styles.costCard}>
+                  <div className={styles.costTitle}>Lemon Squeezy</div>
+                  <div className={styles.costAmount}>{fmt$(costs.processor.totalCost)}</div>
+                  <div className={styles.costMeta}>{costs.processor.feeStructure}</div>
+                  <div className={styles.costMeta}>{fmt$(costs.processor.avgCostPerJob)} per job</div>
                 </div>
-              ))}
-            </div>
-          </Section>
-
-          {/* Costs */}
-          <Section title="Cost breakdown">
-            <div className={styles.costGrid}>
-              <div className={styles.costCard}>
-                <div className={styles.costTitle}>Claude API</div>
-                <div className={styles.costAmount}>{fmt$4(costs.claude.totalCost)}</div>
-                <div className={styles.costMeta}>{fmtN(costs.claude.totalInputTokens)} in / {fmtN(costs.claude.totalOutputTokens)} out</div>
-                <div className={styles.costMeta}>{fmt$4(costs.claude.avgCostPerJob)} per job</div>
+                <div className={styles.costCard}>
+                  <div className={styles.costTitle}>Claude API</div>
+                  <div className={styles.costAmount}>{fmt$4(costs.claude.totalCost)}</div>
+                  <div className={styles.costMeta}>{fmtN(costs.claude.totalInputTokens)} in / {fmtN(costs.claude.totalOutputTokens)} out</div>
+                  <div className={styles.costMeta}>{fmt$4(costs.claude.avgCostPerJob)} per job</div>
+                </div>
+                <div className={styles.costCard}>
+                  <div className={styles.costTitle}>Resend email</div>
+                  <div className={styles.costAmount}>{fmt$4(costs.email.totalCost)}</div>
+                  <div className={styles.costMeta}>{fmtN(costs.email.estimatedEmailsSent)} sent</div>
+                  <div className={styles.costMeta}>{fmtN(costs.email.freeEmailsRemaining)} free remaining</div>
+                </div>
+                <div className={styles.costCard}>
+                  <div className={styles.costTitle}>Railway (hosting)</div>
+                  <div className={styles.costAmount}>{fmt$(costs.railway.totalCost)}</div>
+                  <div className={styles.costMeta}>{fmtN(costs.railway.daysRunning)} days running</div>
+                  <div className={styles.costMeta}>${costs.railway.monthlyFixed}/mo fixed</div>
+                </div>
               </div>
-              <div className={styles.costCard}>
-                <div className={styles.costTitle}>Resend email</div>
-                <div className={styles.costAmount}>{fmt$4(costs.email.totalCost)}</div>
-                <div className={styles.costMeta}>{fmtN(costs.email.estimatedEmailsSent)} emails sent</div>
-                <div className={styles.costMeta}>{fmtN(costs.email.freeEmailsRemaining)} free remaining</div>
+              <div className={styles.costSummary}>
+                Total cost: <strong>{fmt$(costs.total)}</strong>
+                {' · '}
+                Gross profit: <strong style={{ color: profit.grossProfit >= 0 ? '#059669' : '#dc2626' }}>{fmt$(profit.grossProfit)}</strong>
+                {' · '}
+                Net profit: <strong style={{ color: profit.netProfit >= 0 ? '#059669' : '#dc2626' }}>{fmt$(profit.netProfit)}</strong>
               </div>
-              <div className={styles.costCard}>
-                <div className={styles.costTitle}>Railway</div>
-                <div className={styles.costAmount}>{fmt$(costs.railway.totalCost)}</div>
-                <div className={styles.costMeta}>{fmtN(costs.railway.daysRunning)} days running</div>
-                <div className={styles.costMeta}>${costs.railway.monthlyFixed}/mo fixed</div>
+            </Section>
+
+            <Section title="Projections (based on last 30 days)">
+              <div className={styles.cardGrid}>
+                <Card label="Daily run rate" value={fmt$(projections.dailyRevenueRunRate)} />
+                <Card label="Monthly revenue" value={fmt$(projections.monthlyRevenueRunRate)} />
+                <Card label="Annual revenue" value={fmt$(projections.annualRevenueRunRate)} />
+                <Card label="Monthly profit" value={fmt$(projections.monthlyProfitProjection)} accent />
               </div>
-            </div>
-            <div className={styles.costSummary}>
-              Total cost: <strong>{fmt$4(costs.total)}</strong>
-              {' · '}
-              Gross profit: <strong style={{ color: profit.grossProfit >= 0 ? '#059669' : '#dc2626' }}>{fmt$(profit.grossProfit)}</strong>
-              {' · '}
-              Net profit: <strong style={{ color: profit.netProfit >= 0 ? '#059669' : '#dc2626' }}>{fmt$(profit.netProfit)}</strong>
-            </div>
-          </Section>
+            </Section>
 
-          {/* Projections */}
-          <Section title="Projections (based on last 30 days)">
-            <div className={styles.cardGrid}>
-              <Card label="Daily run rate" value={fmt$(projections.dailyRevenueRunRate)} />
-              <Card label="Monthly projection" value={fmt$(projections.monthlyRevenueRunRate)} />
-              <Card label="Annual projection" value={fmt$(projections.annualRevenueRunRate)} />
-              <Card label="Projected monthly profit" value={fmt$(projections.monthlyProfitProjection)} accent />
-            </div>
-          </Section>
+          </Department>
 
-          {/* Feedback */}
-          <Section title="User feedback">
-            <div className={styles.cardGrid}>
-              <Card label="Positive (yes)" value={fmtN(feedback.yes)} sub={`${fmtPct(feedback.satisfactionRate)} satisfaction`} />
-              <Card label="Negative (no)" value={fmtN(feedback.no)} />
-              <Card label="No response" value={fmtN(feedback.noResponse)} sub={`${fmtPct(feedback.responseRate)} responded`} />
-            </div>
-          </Section>
+          {/* ── MARKETING ───────────────────────────────────────────────── */}
+          <Department label="Marketing" icon="~">
 
-          {/* Recent jobs */}
-          <Section title="Recent jobs">
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Email</th><th>Tier</th><th>Status</th><th>Date</th>
-                    <th>Tokens in</th><th>Tokens out</th><th>Claude cost</th><th>Feedback</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentJobs.map(j => (
-                    <tr key={j.id}>
-                      <td className={styles.mono} title={j.id}>{j.id.slice(0, 8)}</td>
-                      <td className={styles.emailCell}>{j.email || '-'}</td>
-                      <td>{j.tier}</td>
-                      <td>
-                        <span className={styles.statusTag} style={{ color: STATUS_COLOR[j.status] || '#6b7280' }}>
-                          {j.status}
-                        </span>
-                      </td>
-                      <td className={styles.mono}>{new Date(j.createdAt).toLocaleDateString()}</td>
-                      <td className={styles.mono}>{fmtN(j.tokensIn)}</td>
-                      <td className={styles.mono}>{fmtN(j.tokensOut)}</td>
-                      <td className={styles.mono}>{fmt$4(j.claudeCost)}</td>
-                      <td>{j.feedbackResult || '-'}</td>
+            <Section title="Conversion performance">
+              <div className={styles.cardGrid}>
+                <Card label="Overall conversion" value={fmtPct(funnel.rates.overallConversion)} sub="upload → purchase" accent />
+                <Card label="Upload to preview" value={fmtPct(funnel.rates.uploadToPreview)} sub="file processed" />
+                <Card label="Preview to checkout" value={fmtPct(funnel.rates.previewToCheckout)} sub="saw paywall" />
+                <Card label="Checkout to paid" value={fmtPct(funnel.rates.checkoutToPurchase)} sub="completed purchase" />
+              </div>
+            </Section>
+
+            <Section title="Conversion funnel">
+              <div className={styles.funnel}>
+                <FunnelStep label="Uploads" count={funnel.uploads} rate={funnel.rates.uploadToPreview} />
+                <FunnelStep label="Preview ready" count={funnel.previewReady} rate={funnel.rates.previewToCheckout} />
+                <FunnelStep label="Checkout started" count={funnel.checkoutStarted} rate={funnel.rates.checkoutToPurchase} />
+                <FunnelStep label="Purchased" count={funnel.purchases} last />
+              </div>
+              <div className={styles.statusGrid}>
+                {Object.entries(funnel.statusBreakdown).map(([s, n]) => (
+                  <div key={s} className={styles.statusChip}>
+                    <span className={styles.statusDot} style={{ background: STATUS_COLOR[s] || '#6b7280' }} />
+                    <span className={styles.statusName}>{s.replace(/_/g, ' ')}</span>
+                    <span className={styles.statusCount}>{fmtN(n)}</span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section title="Customer satisfaction">
+              <div className={styles.cardGrid}>
+                <Card label="Satisfied (yes)" value={fmtN(feedback.yes)} sub={`${fmtPct(feedback.satisfactionRate)} satisfaction rate`} accent />
+                <Card label="Unsatisfied (no)" value={fmtN(feedback.no)} />
+                <Card label="No response" value={fmtN(feedback.noResponse)} sub={`${fmtPct(feedback.responseRate)} response rate`} />
+              </div>
+            </Section>
+
+            {attrData && attrData.attribution.length > 0 && (
+              <Section title="Channel attribution">
+                <div className={styles.tableWrap}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr><th>Channel</th><th>Conversions</th><th>Revenue</th><th>Avg/conversion</th></tr>
+                    </thead>
+                    <tbody>
+                      {attrData.attribution.map(row => (
+                        <tr key={row.channel}>
+                          <td>{row.channel || 'direct'}</td>
+                          <td className={styles.mono}>{fmtN(row.count)}</td>
+                          <td className={styles.mono}>{fmt$(row.revenue)}</td>
+                          <td className={styles.mono}>{fmt$(row.avgRevenue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Section>
+            )}
+
+          </Department>
+
+          {/* ── TECH SYSTEMS ────────────────────────────────────────────── */}
+          <Department label="Tech Systems" icon="#">
+
+            {healthData && (
+              <Section title="System status">
+                <div className={styles.cardGrid}>
+                  <Card
+                    label="System"
+                    value={healthData.claudeRetryRate.rate < 10 && healthData.pdfRejectionRate.rate < 20 ? 'Operational' : 'Degraded'}
+                    sub="Claude + PDF pipeline"
+                    accent={healthData.claudeRetryRate.rate >= 10 || healthData.pdfRejectionRate.rate >= 20}
+                  />
+                  <Card
+                    label="Claude retry rate"
+                    value={`${healthData.claudeRetryRate.rate}%`}
+                    sub={`${fmtN(healthData.claudeRetryRate.retries)} retries / ${fmtN(healthData.claudeRetryRate.totalJobs)} jobs`}
+                    accent={healthData.claudeRetryRate.rate > 5}
+                  />
+                  <Card
+                    label="PDF rejection rate"
+                    value={`${healthData.pdfRejectionRate.rate}%`}
+                    sub={`${fmtN(healthData.pdfRejectionRate.rejected)} rejected / ${fmtN(healthData.pdfRejectionRate.totalUploads)} uploads`}
+                    accent={healthData.pdfRejectionRate.rate > 10}
+                  />
+                </div>
+              </Section>
+            )}
+
+            {healthData && (
+              <Section title="Processing time (p50 / p95)">
+                <div className={styles.cardGrid}>
+                  <Card
+                    label="Teaser analysis"
+                    value={healthData.teaserAnalysis.p50 ? `${(healthData.teaserAnalysis.p50 / 1000).toFixed(1)}s` : '-'}
+                    sub={`p95: ${healthData.teaserAnalysis.p95 ? `${(healthData.teaserAnalysis.p95 / 1000).toFixed(1)}s` : '-'} · ${fmtN(healthData.teaserAnalysis.count)} samples`}
+                  />
+                  <Card
+                    label="Full report"
+                    value={healthData.fullReport.p50 ? `${(healthData.fullReport.p50 / 1000).toFixed(1)}s` : '-'}
+                    sub={`p95: ${healthData.fullReport.p95 ? `${(healthData.fullReport.p95 / 1000).toFixed(1)}s` : '-'} · ${fmtN(healthData.fullReport.count)} samples`}
+                  />
+                </div>
+              </Section>
+            )}
+
+            <Section title="Recent jobs">
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>ID</th><th>Email</th><th>Tier</th><th>Status</th><th>Date</th>
+                      <th>Tokens in</th><th>Tokens out</th><th>Claude cost</th><th>Feedback</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
+                  </thead>
+                  <tbody>
+                    {recentJobs.map(j => (
+                      <tr key={j.id}>
+                        <td className={styles.mono} title={j.id}>{j.id.slice(0, 8)}</td>
+                        <td className={styles.emailCell}>{j.email || '-'}</td>
+                        <td>{j.tier}</td>
+                        <td>
+                          <span className={styles.statusTag} style={{ color: STATUS_COLOR[j.status] || '#6b7280' }}>
+                            {j.status}
+                          </span>
+                        </td>
+                        <td className={styles.mono}>{new Date(j.createdAt).toLocaleDateString()}</td>
+                        <td className={styles.mono}>{fmtN(j.tokensIn)}</td>
+                        <td className={styles.mono}>{fmtN(j.tokensOut)}</td>
+                        <td className={styles.mono}>{fmt$4(j.claudeCost)}</td>
+                        <td>{j.feedbackResult || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+
+          </Department>
 
         </div>
       )}
