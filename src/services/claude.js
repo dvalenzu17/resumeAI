@@ -9,6 +9,13 @@ const MODEL = 'claude-sonnet-4-5';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function withTimeout(promise, ms, label) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout: ${label} did not complete within ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 function buildAnalysisPrompt(resumeText, jobDescription) {
   return `You are an expert ATS analyst, resume coach, and career strategist.
 
@@ -173,11 +180,15 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
   let lastErr;
   for (let attempt = 0; attempt <= RATE_LIMIT_DELAYS.length; attempt++) {
     try {
-      const message = await client.messages.create({
-        model: MODEL,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: finalPrompt }],
-      });
+      const message = await withTimeout(
+        client.messages.create({
+          model: MODEL,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: finalPrompt }],
+        }),
+        90_000,
+        'Claude API call'
+      );
       const text = message.content[0]?.text?.trim() ?? '';
       const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       return {

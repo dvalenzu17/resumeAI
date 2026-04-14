@@ -18,6 +18,7 @@
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@prisma/client": "^5.16.0",
+    "@sentry/node": "^10.48.0",
     "express": "^4.19.2",
     "express-rate-limit": "^8.3.2",
     "helmet": "^8.1.0",

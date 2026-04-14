@@ -29,6 +29,7 @@ const schema = z.object({
   APP_URL: z.string().url().default('http://localhost:5173'),
   CRON_SECRET: z.string().default(''),
   ADMIN_SECRET: z.string().default(''),
+  SENTRY_DSN: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

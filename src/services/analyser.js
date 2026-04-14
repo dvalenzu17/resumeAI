@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { db } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { runAnalysis, runRewrites, runCvRewrite } from './claude.js';
@@ -5,6 +6,20 @@ import { generateReport, generateCv } from './report.js';
 import { uploadReport, uploadCv } from './storage.js';
 import { sendReportEmail, sendFailureEmail } from './email.js';
 import { logEvent } from './analytics.js';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Retries the email once after 5s before giving up.
+// Throws on second failure so the outer catch can mark the job FAILED.
+async function sendEmailWithRetry(emailFn, jobId, label) {
+  try {
+    await emailFn();
+  } catch (firstErr) {
+    logger.warn({ jobId, err: firstErr }, `${label} failed on first attempt — retrying in 5s`);
+    await sleep(5000);
+    await emailFn(); // throws if it fails again
+  }
+}
 
 const MAX_RESUME_CHARS = 6000;
 const MAX_JD_CHARS = 4000;
@@ -48,6 +63,7 @@ export async function runTeaserAnalysis(jobId) {
     });
   } catch (err) {
     logger.error({ jobId, err }, 'runTeaserAnalysis failed');
+    Sentry.captureException(err, { extra: { jobId, phase: 'teaser' } });
     // No failure email here — user hasn't paid yet
     await db.job.update({
       where: { id: jobId },
@@ -121,7 +137,11 @@ export async function runFullReport(jobId) {
       logger.info({ jobId }, 'CV PDF uploaded to R2');
     }
 
-    await sendReportEmail(job.email, jobId, reportUrl, job.tier, cvUrl);
+    await sendEmailWithRetry(
+      () => sendReportEmail(job.email, jobId, reportUrl, job.tier, cvUrl),
+      jobId,
+      'Report email'
+    );
     logger.info({ jobId }, 'Email sent');
 
     await db.job.update({
@@ -145,6 +165,7 @@ export async function runFullReport(jobId) {
     });
   } catch (err) {
     logger.error({ jobId, err }, 'runFullReport failed');
+    Sentry.captureException(err, { extra: { jobId, phase: 'full_report', tier: job.tier } });
 
     logEvent('full_report_failed', {
       jobId,
@@ -160,6 +181,7 @@ export async function runFullReport(jobId) {
       await sendFailureEmail(job.email, jobId);
     } catch (emailErr) {
       logger.error({ jobId, emailErr }, 'Failed to send failure notification email');
+      Sentry.captureException(emailErr, { extra: { jobId, phase: 'failure_email' } });
     }
   }
 }

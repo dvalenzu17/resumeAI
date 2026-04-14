@@ -1,5 +1,14 @@
 import puppeteer from 'puppeteer';
 
+const PUPPETEER_TIMEOUT_MS = 60_000;
+
+function withTimeout(promise, ms, label) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout: ${label} did not complete within ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 function scoreColor(score) {
   if (score >= 75) return '#16a34a';
   if (score >= 50) return '#d97706';
@@ -481,46 +490,32 @@ function buildCvHtml(cvData) {
 </html>`;
 }
 
-export async function generateCv(cvData) {
-  const html = buildCvHtml(cvData);
-
+async function renderPdf(html) {
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-
   try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      printBackground: true,
-    });
-    return Buffer.from(pdfBuffer);
+    const work = async () => {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        margin: { top: '0', right: '0', bottom: '0', left: '0' },
+        printBackground: true,
+      });
+      return Buffer.from(pdfBuffer);
+    };
+    return await withTimeout(work(), PUPPETEER_TIMEOUT_MS, 'Puppeteer PDF render');
   } finally {
     await browser.close();
   }
 }
 
+export async function generateCv(cvData) {
+  return renderPdf(buildCvHtml(cvData));
+}
+
 export async function generateReport(job, analysis, rewrites) {
-  const html = buildHtml(job, analysis, rewrites);
-
-  const browser = await puppeteer.launch({
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-      printBackground: true,
-    });
-    return Buffer.from(pdfBuffer);
-  } finally {
-    await browser.close();
-  }
+  return renderPdf(buildHtml(job, analysis, rewrites));
 }

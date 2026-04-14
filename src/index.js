@@ -2,9 +2,9 @@ import './lib/env.js'; // validate env first
 import express from 'express';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import * as Sentry from '@sentry/node';
 import { env } from './lib/env.js';
 import { logger } from './lib/logger.js';
 import { rawBody } from './middleware/rawBody.js';
@@ -17,6 +17,12 @@ import { cronRouter } from './routes/cron.js';
 import { feedbackRouter } from './routes/feedback.js';
 import { adminRouter } from './routes/admin.js';
 import { analyticsRouter } from './routes/analytics.js';
+
+// Sentry error monitoring — initialise before anything else runs
+if (env.SENTRY_DSN) {
+  Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
+  logger.info('Sentry initialised');
+}
 
 // Production safety guard
 if (env.NODE_ENV === 'production') {
