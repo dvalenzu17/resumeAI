@@ -202,11 +202,14 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     const basicJobs = completeJobs.filter(j => j.tier === 'BASIC');
     const fullJobs  = completeJobs.filter(j => j.tier === 'FULL');
 
-    function tierUnitEcon(jobs, price) {
+    // Estimated Claude cost per tier when no real job data exists yet
+    const CLAUDE_ESTIMATE = { BASIC: 0.024, FULL: 0.095 };
+
+    function tierUnitEcon(jobs, price, tier) {
       const processorFee = r4(price * PROCESSOR_FEE_PCT + PROCESSOR_FEE_FLAT);
       const avgClaude    = jobs.length > 0
         ? r4(jobs.reduce((s, j) => s + claudeCostForJob(j), 0) / jobs.length)
-        : 0;
+        : CLAUDE_ESTIMATE[tier];
       const netPerJob    = r4(price - processorFee - avgClaude);
       return {
         price,
@@ -219,8 +222,8 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     }
 
     const unitEconomics = {
-      BASIC: tierUnitEcon(basicJobs, BASIC_PRICE),
-      FULL:  tierUnitEcon(fullJobs,  FULL_PRICE),
+      BASIC: tierUnitEcon(basicJobs, BASIC_PRICE, 'BASIC'),
+      FULL:  tierUnitEcon(fullJobs,  FULL_PRICE,  'FULL'),
     };
 
     // ── Business metrics ──────────────────────────────────────────────────
