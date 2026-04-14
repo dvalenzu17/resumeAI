@@ -59,6 +59,7 @@ export default function PreviewView() {
   const [email, setEmail] = useState('');
   const paywallRef = useRef(null);
   const tierTrackedRef = useRef(false);
+  const previewLoadedAt = useRef(null);
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -74,6 +75,7 @@ export default function PreviewView() {
         setTier(data.tier);
         setSelectedTier(data.tier);
         trackPreviewViewed({ ats_score: data.preview?.ats_score, tier: data.tier });
+        previewLoadedAt.current = Date.now();
         track('preview_loaded', { ats_score: data.preview?.ats_score, gap_count: data.preview?.gap_count }, jobId);
       })
       .catch(() => setError('Could not load your preview.'));
@@ -90,7 +92,8 @@ export default function PreviewView() {
   }, [selectedTier]);
 
   const handleUnlock = async () => {
-    track('checkout_clicked', { tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 }, jobId);
+    const timeToDecisionMs = previewLoadedAt.current ? Date.now() - previewLoadedAt.current : null;
+    track('checkout_clicked', { tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12, timeToDecisionMs }, jobId);
     if (!email || !email.includes('@')) {
       setError('Enter your email so we can send the report.');
       return;

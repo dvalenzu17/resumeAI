@@ -66,5 +66,17 @@ webhooksRouter.post('/lemonsqueezy', async (req, res) => {
     }
   }
 
+  if (eventName === 'order_refunded') {
+    const jobId = payload.meta?.custom_data?.job_id ?? null;
+    logEvent('refund_issued', {
+      jobId,
+      properties: {
+        amount: payload.data?.attributes?.refund_amount ?? null,
+        reason: payload.data?.attributes?.notes ?? null,
+      },
+    });
+    logger.info({ jobId }, 'Refund event logged');
+  }
+
   res.json({ received: true });
 });

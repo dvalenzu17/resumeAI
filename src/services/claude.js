@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger.js';
 import { env } from '../lib/env.js';
+import { logEvent } from './analytics.js';
 
 const MOCK = env.MOCK_CLAUDE;
 const client = MOCK ? null : new Anthropic({ maxRetries: 0 }); // We handle retries ourselves
@@ -120,6 +121,7 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
       if (isRateLimit && attempt < RATE_LIMIT_DELAYS.length) {
         const delay = RATE_LIMIT_DELAYS[attempt];
         logger.warn({ attempt: attempt + 1, delayMs: delay }, 'Claude rate limited, retrying after delay');
+        logEvent('claude_retry', { properties: { reason: 'rate_limit', attempt: attempt + 1 } });
         await sleep(delay);
         continue;
       }
@@ -178,6 +180,7 @@ export async function runAnalysis(resumeText, jobDescription) {
   } catch (err) {
     logger.warn({ err }, 'Claude analysis call 1 failed, retrying with stricter instruction');
     const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000, true);
+    logEvent('claude_retry', { properties: { call: 1, reason: 'json_parse_error' } });
     validateAnalysis(result);
     return { result, inputTokens, outputTokens };
   }
@@ -258,6 +261,7 @@ I'd welcome a conversation about how my background maps to what you're building.
   } catch (err) {
     logger.warn({ err }, 'Claude rewrite call failed, retrying with stricter instruction');
     const { result, inputTokens, outputTokens } = await callClaude(prompt, 5000, true);
+    logEvent('claude_retry', { properties: { call: 2, reason: 'json_parse_error' } });
     validateRewrites(result);
     return { result, inputTokens, outputTokens };
   }

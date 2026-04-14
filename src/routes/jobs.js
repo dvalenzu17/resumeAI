@@ -47,7 +47,19 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
       throw AppError.badRequest('Invalid email address', 'INVALID_EMAIL');
     }
 
-    const resumeText = await extractText(req.file.buffer);
+    let resumeText;
+    try {
+      resumeText = await extractText(req.file.buffer);
+    } catch (err) {
+      if (err.code === 'PDF_EMPTY') {
+        logEvent('pdf_rejected', {
+          ...parseUA(req.headers['user-agent'] || ''),
+          country: extractCountry(req),
+          properties: { reason: 'PDF_EMPTY', fileSize: req.file.size },
+        });
+      }
+      throw err;
+    }
 
     const job = await db.job.create({
       data: { tier, jobDescription, resumeText, status: 'ANALYZING', email },

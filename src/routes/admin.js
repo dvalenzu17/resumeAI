@@ -367,3 +367,105 @@ adminRouter.get('/niche', requireAdminSecret, async (req, res) => {
     res.status(500).json({ error: 'Niche query failed' });
   }
 });
+
+// GET /api/admin/performance
+// Processing time percentiles, Claude retry rate, PDF rejection rate
+adminRouter.get('/performance', requireAdminSecret, async (req, res) => {
+  try {
+    const [teaserEvents, fullEvents, retryCount, pdfRejected, totalUploads] = await Promise.all([
+      db.analyticsEvent.findMany({
+        where: { event: 'teaser_complete' },
+        select: { properties: true },
+        take: 500,
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.analyticsEvent.findMany({
+        where: { event: 'full_report_complete' },
+        select: { properties: true },
+        take: 500,
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.analyticsEvent.count({ where: { event: 'claude_retry' } }),
+      db.analyticsEvent.count({ where: { event: 'pdf_rejected' } }),
+      db.analyticsEvent.count({ where: { event: 'job_created' } }),
+    ]);
+
+    function percentiles(durations) {
+      if (!durations.length) return { p50: 0, p75: 0, p95: 0, p99: 0, avg: 0, count: 0 };
+      const s = [...durations].sort((a, b) => a - b);
+      const p = (pct) => s[Math.floor(s.length * pct / 100)] || 0;
+      return {
+        p50: p(50), p75: p(75), p95: p(95), p99: p(99),
+        avg: Math.round(s.reduce((a, b) => a + b, 0) / s.length),
+        count: s.length,
+      };
+    }
+
+    const teaserDur = teaserEvents.map(e => e.properties?.durationMs).filter(n => typeof n === 'number');
+    const fullDur = fullEvents.map(e => e.properties?.durationMs).filter(n => typeof n === 'number');
+    const totalJobs = teaserDur.length + fullDur.length;
+
+    res.json({
+      teaserAnalysis: percentiles(teaserDur),
+      fullReport: percentiles(fullDur),
+      claudeRetryRate: {
+        retries: retryCount,
+        totalJobs,
+        rate: totalJobs > 0 ? Math.round(retryCount / totalJobs * 10000) / 100 : 0,
+      },
+      pdfRejectionRate: {
+        rejected: pdfRejected,
+        totalUploads,
+        rate: totalUploads > 0 ? Math.round(pdfRejected / totalUploads * 10000) / 100 : 0,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin performance query failed');
+    res.status(500).json({ error: 'Performance query failed' });
+  }
+});
+
+// GET /api/admin/attribution
+// Channel LTV by UTM source, blog conversion attribution
+adminRouter.get('/attribution', requireAdminSecret, async (req, res) => {
+  try {
+    const [jobEvents, completeJobs] = await Promise.all([
+      db.analyticsEvent.findMany({
+        where: { event: 'job_created', jobId: { not: null } },
+        select: { jobId: true, utmSource: true, referrer: true },
+      }),
+      db.job.findMany({
+        where: { status: 'COMPLETE' },
+        select: { id: true, tier: true },
+      }),
+    ]);
+
+    const metaByJob = {};
+    for (const e of jobEvents) {
+      if (e.jobId) metaByJob[e.jobId] = { utmSource: e.utmSource, referrer: e.referrer };
+    }
+
+    const channelMap = {};
+    for (const job of completeJobs) {
+      const meta = metaByJob[job.id];
+      const channel = meta?.utmSource || (meta?.referrer?.includes('/blog/') ? 'blog' : 'direct');
+      if (!channelMap[channel]) channelMap[channel] = { count: 0, revenue: 0 };
+      channelMap[channel].count++;
+      channelMap[channel].revenue += job.tier === 'FULL' ? 29 : 12;
+    }
+
+    const attribution = Object.entries(channelMap)
+      .map(([channel, d]) => ({
+        channel,
+        count: d.count,
+        revenue: d.revenue,
+        avgRevenue: Math.round(d.revenue / d.count * 100) / 100,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    res.json({ attribution });
+  } catch (err) {
+    logger.error({ err }, 'Admin attribution query failed');
+    res.status(500).json({ error: 'Attribution query failed' });
+  }
+});

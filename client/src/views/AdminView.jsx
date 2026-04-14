@@ -88,6 +88,8 @@ export default function AdminView() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [funnelData, setFunnelData] = useState(null);
   const [nicheData, setNicheData] = useState(null);
+  const [healthData, setHealthData] = useState(null);
+  const [attrData, setAttrData] = useState(null);
 
   const fetchDashboard = useCallback(async (s) => {
     setLoading(true);
@@ -133,13 +135,25 @@ export default function AdminView() {
     } catch {}
   }, []);
 
+  const fetchHealth = useCallback(async (s) => {
+    try {
+      const [perfRes, attrRes] = await Promise.all([
+        fetch('/api/admin/performance', { headers: { 'X-Admin-Secret': s } }),
+        fetch('/api/admin/attribution', { headers: { 'X-Admin-Secret': s } }),
+      ]);
+      if (perfRes.ok) setHealthData(await perfRes.json());
+      if (attrRes.ok) setAttrData(await attrRes.json());
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (secret) {
       fetchDashboard(secret);
       fetchFunnel(secret);
       fetchNiche(secret);
+      fetchHealth(secret);
     }
-  }, [secret, fetchDashboard, fetchFunnel, fetchNiche]);
+  }, [secret, fetchDashboard, fetchFunnel, fetchNiche, fetchHealth]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -188,18 +202,18 @@ export default function AdminView() {
         </div>
         <div className={styles.headerRight}>
           <div className={styles.tabs}>
-            {['dashboard', 'funnel', 'niche'].map(tab => (
+            {['dashboard', 'funnel', 'niche', 'health'].map(tab => (
               <button
                 key={tab}
                 className={`${styles.tabBtn} ${activeTab === tab ? styles.tabActive : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : 'Niche Finder'}
+                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : tab === 'niche' ? 'Niche Finder' : 'Health'}
               </button>
             ))}
           </div>
           <span className={styles.genAt}>Updated {new Date(generatedAt).toLocaleTimeString()}</span>
-          <button className={styles.refreshBtn} onClick={() => { fetchDashboard(secret); fetchFunnel(secret); fetchNiche(secret); }}>Refresh</button>
+          <button className={styles.refreshBtn} onClick={() => { fetchDashboard(secret); fetchFunnel(secret); fetchNiche(secret); fetchHealth(secret); }}>Refresh</button>
         </div>
       </div>
 
@@ -431,6 +445,79 @@ export default function AdminView() {
                     sub={nicheData.jobsAnalyzed > 0 ? `${Math.round(count / nicheData.jobsAnalyzed * 100)}%` : '0%'}
                   />
                 ))}
+              </div>
+            )}
+          </Section>
+        </div>
+      )}
+
+      {activeTab === 'health' && (
+        <div className={styles.body}>
+          <Section title="Processing Time Percentiles">
+            {!healthData ? <p>Loading...</p> : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr><th>Pipeline</th><th>Count</th><th>Avg</th><th>p50</th><th>p75</th><th>p95</th><th>p99</th></tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Teaser analysis', healthData.teaserAnalysis],
+                      ['Full report', healthData.fullReport],
+                    ].map(([label, p]) => (
+                      <tr key={label}>
+                        <td>{label}</td>
+                        <td className={styles.mono}>{fmtN(p.count)}</td>
+                        <td className={styles.mono}>{p.avg ? `${(p.avg / 1000).toFixed(1)}s` : '-'}</td>
+                        <td className={styles.mono}>{p.p50 ? `${(p.p50 / 1000).toFixed(1)}s` : '-'}</td>
+                        <td className={styles.mono}>{p.p75 ? `${(p.p75 / 1000).toFixed(1)}s` : '-'}</td>
+                        <td className={styles.mono}>{p.p95 ? `${(p.p95 / 1000).toFixed(1)}s` : '-'}</td>
+                        <td className={styles.mono}>{p.p99 ? `${(p.p99 / 1000).toFixed(1)}s` : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+
+          {healthData && (
+            <Section title="Error Rates">
+              <div className={styles.cardGrid}>
+                <Card
+                  label="Claude retry rate"
+                  value={`${healthData.claudeRetryRate.rate}%`}
+                  sub={`${fmtN(healthData.claudeRetryRate.retries)} retries / ${fmtN(healthData.claudeRetryRate.totalJobs)} jobs`}
+                  accent={healthData.claudeRetryRate.rate > 5}
+                />
+                <Card
+                  label="PDF rejection rate"
+                  value={`${healthData.pdfRejectionRate.rate}%`}
+                  sub={`${fmtN(healthData.pdfRejectionRate.rejected)} rejected / ${fmtN(healthData.pdfRejectionRate.totalUploads)} uploads`}
+                  accent={healthData.pdfRejectionRate.rate > 10}
+                />
+              </div>
+            </Section>
+          )}
+
+          <Section title="Channel Attribution (LTV)">
+            {!attrData ? <p>Loading...</p> : attrData.attribution.length === 0 ? <p className={styles.empty}>No paid conversions yet.</p> : (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr><th>Channel</th><th>Conversions</th><th>Revenue</th><th>Avg/conversion</th></tr>
+                  </thead>
+                  <tbody>
+                    {attrData.attribution.map(row => (
+                      <tr key={row.channel}>
+                        <td>{row.channel || 'direct'}</td>
+                        <td className={styles.mono}>{fmtN(row.count)}</td>
+                        <td className={styles.mono}>{fmt$(row.revenue)}</td>
+                        <td className={styles.mono}>{fmt$(row.avgRevenue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </Section>

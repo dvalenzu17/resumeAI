@@ -267,6 +267,9 @@ export default function UploadView() {
   const [isTouch, setIsTouch] = useState(false);
   const fileInputRef = useRef(null);
   const pricingRef = useRef(null);
+  const howRef = useRef(null);
+  const resultRef = useRef(null);
+  const faqRef = useRef(null);
   const total = useStats();
   const { t } = useT();
 
@@ -274,8 +277,17 @@ export default function UploadView() {
   useEffect(() => { setIsTouch('ontouchstart' in window); }, []);
 
   useEffect(() => {
-    track('page_view', { page: 'landing', screenWidth: window.screen.width, lang: navigator.language });
-    return trackOnce(pricingRef.current, 'scroll_to_pricing', { page: 'landing' });
+    const returning = !!localStorage.getItem('sl_visited');
+    localStorage.setItem('sl_visited', '1');
+    track('page_view', { page: 'landing', screenWidth: window.screen.width, lang: navigator.language, returning });
+    const cleanups = [
+      trackOnce(howRef.current,     'scroll_depth',    { depth: 25 }),
+      trackOnce(resultRef.current,  'scroll_depth',    { depth: 50 }),
+      trackOnce(pricingRef.current, 'scroll_to_pricing', { page: 'landing' }),
+      trackOnce(pricingRef.current, 'scroll_depth',    { depth: 75 }),
+      trackOnce(faqRef.current,     'scroll_depth',    { depth: 100 }),
+    ];
+    return () => cleanups.forEach(fn => fn());
   }, []);
 
   const handleFile = (f) => {
@@ -399,8 +411,8 @@ export default function UploadView() {
         </div>
       </section>
 
-      <HowItWorks />
-      <ResultsPreview />
+      <div ref={howRef}><HowItWorks /></div>
+      <div ref={resultRef}><ResultsPreview /></div>
 
       {/* ── FORM ────────────────────────────── */}
       <main id="analyse" className={styles.main}>
@@ -476,6 +488,7 @@ export default function UploadView() {
                 placeholder={t('form_jd_placeholder')}
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
+                onBlur={(e) => { if (e.target.value.length > 50) track('jd_started', { charCount: e.target.value.length }); }}
                 rows={8}
                 required
               />
@@ -530,7 +543,7 @@ export default function UploadView() {
       </main>
 
       <div ref={pricingRef}><Pricing /></div>
-      <FAQ />
+      <div ref={faqRef}><FAQ /></div>
 
       {/* ── WHY THIS EXISTS ─────────────────── */}
       <section className={styles.testimonialSection}>

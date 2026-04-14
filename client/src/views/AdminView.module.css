@@ -568,6 +568,12 @@
   text-align: right;
 }
 
+.empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 12px 0;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .body { padding: 20px 16px 48px; }
