@@ -315,7 +315,7 @@ export default function PreviewView() {
                   >
                     <div className={styles.tierBadge}>{t('preview_tier_badge')}</div>
                     <div className={styles.tierName}>{t('tier_full_name')}</div>
-                    <div className={styles.tierDesc}>Everything + AI bullet rewrites · cover letter · 8 interview questions with STAR answers</div>
+                    <div className={styles.tierDesc}>Everything + tailored CV ready to submit · cover letter · 8 interview questions with STAR answers</div>
                     <div className={styles.tierPrice}>$29</div>
                   </button>
                 </div>

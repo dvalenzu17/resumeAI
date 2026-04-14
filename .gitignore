@@ -3,6 +3,7 @@ client/node_modules/
 .env
 *.pdf
 !client/public/sample-report.pdf
+!client/public/sample-cv.pdf
 dist/
 client/dist/
 .DS_Store

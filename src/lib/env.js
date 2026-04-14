@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
+// z.coerce.boolean() treats "false" as true (non-empty string). Use this instead.
+const envBool = z.string().optional().transform((v) => v === 'true' || v === '1').pipe(z.boolean());
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
-  SKIP_PAYMENT: z.coerce.boolean().default(false),
-  MOCK_CLAUDE: z.coerce.boolean().default(false),
+  SKIP_PAYMENT: envBool.default(false),
+  MOCK_CLAUDE: envBool.default(false),
   STATS_SEED: z.coerce.number().default(0),
   // Used in dev when SKIP_PAYMENT=true (no LS checkout to capture email)
   DEV_EMAIL: z.string().default('dev@localhost'),

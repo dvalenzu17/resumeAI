@@ -125,9 +125,9 @@ function Pricing() {
   ];
   const glowup = [
     'Everything in The Audit',
-    'Top 5 bullet rewrites (AI-powered)',
-    'Full resume summary rewrite',
-    'Tailored skills section',
+    'Tailored CV — fully rewritten, ready to submit',
+    'Professional summary rewrite',
+    'Skills section reordered to match the JD',
     'Personalised cover letter',
     '8 interview questions with STAR answers',
     'Salary negotiation script',
@@ -192,6 +192,10 @@ function Pricing() {
           {t('pricing_sample')}{' '}
           <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
             {t('pricing_sample_link')}
+          </a>
+          {' '}or{' '}
+          <a href="/sample-cv.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
+            see the tailored CV
           </a>
           {' '}{t('pricing_sample_suffix')}
         </p>

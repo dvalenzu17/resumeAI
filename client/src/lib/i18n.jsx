@@ -92,7 +92,7 @@ const translations = {
     tier_basic_name: 'The Audit',
     tier_basic_desc: 'Everything wrong with your resume, and exactly how to fix it.',
     tier_full_name: 'The Glow-Up',
-    tier_full_desc: 'Not just the analysis. The actual rewrites. Ready to paste in.',
+    tier_full_desc: 'Not just the analysis. A fully rewritten CV, tailored to the job. Ready to submit.',
     tier_most_popular: 'Most popular',
 
     // FAQ
@@ -153,7 +153,7 @@ const translations = {
     preview_section_linkedin: 'LinkedIn Headline',
     preview_gap_found: 'found',
     preview_paywall_heading_suffix: 'keyword gaps found. Here\'s the full picture.',
-    preview_paywall_sub: 'Every gap, every match, every fix. Delivered as a PDF in about 60 seconds. Apply to the same role tomorrow with a resume that actually passes.',
+    preview_paywall_sub: 'Every gap, every match, every fix. The Glow-Up also delivers a fully rewritten CV tailored to this exact role — download it and submit. Done in 60 seconds.',
     preview_email_label: 'Where should we send your report?',
     preview_email_placeholder: 'you@example.com',
     preview_unlock_btn: 'Unlock',
@@ -183,7 +183,7 @@ const translations = {
     teaser_before_bullet: 'Responsible for managing the team and delivering projects on time within budget.',
     teaser_after: 'After The Glow-Up',
     teaser_after_bullet: 'Led a cross-functional team of 6 to deliver 4 product features on schedule, reducing scope creep by 40% through weekly stakeholder alignment.',
-    teaser_note: 'The Glow-Up rewrites your top 5 bullets, rewrites your summary, writes your cover letter, and gives you 8 interview questions with STAR answers.',
+    teaser_note: 'The Glow-Up delivers a fully rewritten CV tailored to this role, rewrites your summary, writes your cover letter, and prepares you with 8 interview questions with STAR answers. Download it. Submit it. Done.',
 
     // Success view
     success_heading: 'Your report is on its way.',
@@ -279,7 +279,7 @@ const translations = {
     tier_basic_name: 'The Audit',
     tier_basic_desc: 'Todo lo que esta mal en tu CV, y exactamente como corregirlo.',
     tier_full_name: 'The Glow-Up',
-    tier_full_desc: 'No solo el analisis. Las correcciones reales. Listas para copiar y pegar.',
+    tier_full_desc: 'No solo el analisis. Un CV completamente reescrito, adaptado al puesto. Listo para enviar.',
     tier_most_popular: 'Mas popular',
 
     // FAQ
@@ -340,7 +340,7 @@ const translations = {
     preview_section_linkedin: 'Titular de LinkedIn',
     preview_gap_found: 'encontradas',
     preview_paywall_heading_suffix: 'brechas de palabras clave encontradas. Aqui esta el panorama completo.',
-    preview_paywall_sub: 'Cada brecha, cada coincidencia, cada correccion. Entregado como PDF en unos 60 segundos. Aplica al mismo puesto manana con un CV que realmente pasa.',
+    preview_paywall_sub: 'Cada brecha, cada coincidencia, cada correccion. The Glow-Up tambien entrega un CV completamente reescrito adaptado a este puesto exacto. Descargalo y envialo. Listo en 60 segundos.',
     preview_email_label: 'Donde enviamos tu reporte?',
     preview_email_placeholder: 'tu@ejemplo.com',
     preview_unlock_btn: 'Desbloquear',
@@ -370,7 +370,7 @@ const translations = {
     teaser_before_bullet: 'Responsable de gestionar el equipo y entregar proyectos a tiempo y dentro del presupuesto.',
     teaser_after: 'Con The Glow-Up',
     teaser_after_bullet: 'Lidere un equipo multifuncional de 6 personas para entregar 4 funcionalidades a tiempo, reduciendo los cambios de alcance un 40% mediante alineacion semanal con stakeholders.',
-    teaser_note: 'The Glow-Up reescribe tus 5 mejores puntos, reescribe tu resumen, redacta tu carta de presentacion y te da 8 preguntas de entrevista con respuestas STAR.',
+    teaser_note: 'The Glow-Up entrega un CV completamente reescrito adaptado a este puesto, reescribe tu resumen, redacta tu carta de presentacion y te prepara con 8 preguntas de entrevista con respuestas STAR. Descargalo. Envialo. Listo.',
 
     // Success view
     success_heading: 'Tu reporte esta en camino.',
