@@ -6,22 +6,52 @@ const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 const FROM = 'Shortlisted <reports@getshortlisted.fyi>';
 
-const LOGO_HTML = `<p style="font-size:20px;font-weight:800;letter-spacing:-0.5px;margin:0 0 32px;">
-    short<span style="color:#e85d04;">listed</span>
-  </p>`;
-
 const EMAIL_BASE = (content) => `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:system-ui,-apple-system,sans-serif;color:#0f0f0f;background:#f9fafb;margin:0;padding:40px 16px;">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:40px 36px;border:1px solid #e5e7eb;">
-    ${LOGO_HTML}
-    ${content}
-    <hr style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 24px;">
-    <p style="font-size:12px;color:#9ca3af;margin:0;line-height:1.6;">
-      getshortlisted.fyi · Built for job seekers who are done getting ghosted<br>
-      Questions? Reply to this email — we actually read them.
-    </p>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <style>
+    body { margin:0; padding:0; background:#f4f4f5; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; color:#0f0f0f; -webkit-font-smoothing:antialiased; }
+    .wrapper { padding:40px 16px; }
+    .card { max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04); }
+    .accent-bar { height:4px; background:linear-gradient(90deg,#e85d04 0%,#f97316 50%,#06b6d4 100%); }
+    .card-body { padding:40px 40px 32px; }
+    .logo { font-size:21px; font-weight:800; letter-spacing:-0.6px; margin:0 0 32px; color:#0f0f0f; }
+    .logo span { color:#e85d04; }
+    .content h1 { font-size:22px; font-weight:700; letter-spacing:-0.4px; margin:0 0 12px; color:#0f0f0f; line-height:1.3; }
+    .content p { font-size:15px; line-height:1.75; color:#374151; margin:0 0 16px; }
+    .content p:last-child { margin-bottom:0; }
+    .btn-primary { display:inline-block; background:linear-gradient(135deg,#e85d04,#f97316); color:#ffffff !important; text-decoration:none; padding:14px 28px; border-radius:10px; font-weight:700; font-size:15px; letter-spacing:-0.2px; }
+    .btn-dark { display:inline-block; background:#0f0f0f; color:#ffffff !important; text-decoration:none; padding:14px 28px; border-radius:10px; font-weight:700; font-size:15px; }
+    .btn-ghost { display:inline-block; color:#6b7280 !important; text-decoration:none; padding:13px 16px; font-size:14px; }
+    .divider { border:none; border-top:1px solid #f3f4f6; margin:32px 0 24px; }
+    .footer { font-size:12px; color:#9ca3af; line-height:1.7; margin:0; }
+    .meta { font-size:12px; color:#9ca3af; margin:20px 0 0; line-height:1.6; }
+    code.job-id { background:#f3f4f6; padding:2px 6px; border-radius:4px; font-size:12px; }
+    @media (max-width:600px) {
+      .card-body { padding:28px 24px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper" style="padding:40px 16px;background:#f4f4f5;">
+    <div class="card" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;">
+      <div class="accent-bar" style="height:4px;background:linear-gradient(90deg,#e85d04 0%,#f97316 50%,#06b6d4 100%);"></div>
+      <div class="card-body" style="padding:40px 40px 32px;">
+        <p class="logo" style="font-size:21px;font-weight:800;letter-spacing:-0.6px;margin:0 0 32px;color:#0f0f0f;font-family:system-ui,-apple-system,sans-serif;">
+          short<span style="color:#e85d04;">listed</span>
+        </p>
+        <div class="content">
+          ${content}
+        </div>
+        <hr class="divider" style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 24px;">
+        <p class="footer" style="font-size:12px;color:#9ca3af;margin:0;line-height:1.7;font-family:system-ui,-apple-system,sans-serif;">
+          getshortlisted.fyi &middot; Built for job seekers who are done getting ghosted<br>
+        </p>
+      </div>
+    </div>
   </div>
 </body>
 </html>`;

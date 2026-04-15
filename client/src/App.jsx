@@ -5,6 +5,7 @@ import PreviewView from './views/PreviewView.jsx';
 import SuccessView from './views/SuccessView.jsx';
 import PrivacyView from './views/PrivacyView.jsx';
 import TermsView from './views/TermsView.jsx';
+import RefundView from './views/RefundView.jsx';
 import NotFoundView from './views/NotFoundView.jsx';
 import FeedbackView from './views/FeedbackView.jsx';
 import AdminView from './views/AdminView.jsx';
@@ -22,6 +23,7 @@ export default function App() {
       <Route path="/success" element={<SuccessView />} />
       <Route path="/privacy" element={<PrivacyView />} />
       <Route path="/terms" element={<TermsView />} />
+      <Route path="/refunds" element={<RefundView />} />
       <Route path="/feedback" element={<FeedbackView />} />
       <Route path="/admin" element={<AdminView />} />
       <Route path="/blog" element={<BlogIndex />} />

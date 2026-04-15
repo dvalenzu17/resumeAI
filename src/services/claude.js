@@ -5,7 +5,7 @@ import { logEvent } from './analytics.js';
 
 const MOCK = env.MOCK_CLAUDE;
 const client = MOCK ? null : new Anthropic({ maxRetries: 0 }); // We handle retries ourselves
-const MODEL = 'claude-sonnet-4-5';
+const MODEL = 'claude-sonnet-4-6';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

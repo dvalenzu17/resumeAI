@@ -8,7 +8,7 @@ Two tiers: The Audit ($12) and The Glow-Up ($29). No accounts. Email delivery of
 ## Stack
 - **Backend:** Node.js + Express, TypeScript
 - **Database:** PostgreSQL via Prisma ORM
-- **AI:** Anthropic Claude API (claude-sonnet-4-5) — two-call prompt chain
+- **AI:** Anthropic Claude API (claude-sonnet-4-6) — two-call prompt chain
 - **Payments:** Lemon Squeezy (one-time, no subscriptions in v1)
 - **PDF parsing:** pdf-parse
 - **PDF generation:** Puppeteer → HTML template → PDF
