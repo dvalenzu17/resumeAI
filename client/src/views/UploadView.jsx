@@ -59,11 +59,11 @@ function ResultsPreview() {
               <div className={styles.mockupRing}>
                 <svg viewBox="0 0 120 120">
                   <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="#d97706" strokeWidth="10"
-                    strokeDasharray="196 327" strokeLinecap="round" transform="rotate(-90 60 60)" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#dc2626" strokeWidth="10"
+                    strokeDasharray="190 327" strokeLinecap="round" transform="rotate(-90 60 60)" />
                 </svg>
                 <div className={styles.mockupRingInner}>
-                  <span className={styles.mockupScore} style={{ color: '#d97706' }}>62</span>
+                  <span className={styles.mockupScore} style={{ color: '#dc2626' }}>58</span>
                   <span className={styles.mockupScoreLabel}>ATS Score</span>
                 </div>
               </div>
@@ -71,10 +71,10 @@ function ResultsPreview() {
                 <svg viewBox="0 0 120 120">
                   <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="10" />
                   <circle cx="60" cy="60" r="52" fill="none" stroke="#059669" strokeWidth="10"
-                    strokeDasharray="262 327" strokeLinecap="round" transform="rotate(-90 60 60)" />
+                    strokeDasharray="252 327" strokeLinecap="round" transform="rotate(-90 60 60)" />
                 </svg>
                 <div className={styles.mockupRingInner}>
-                  <span className={styles.mockupScore} style={{ color: '#059669' }}>80</span>
+                  <span className={styles.mockupScore} style={{ color: '#059669' }}>77</span>
                   <span className={styles.mockupScoreLabel}>Experience</span>
                 </div>
               </div>
@@ -323,6 +323,9 @@ export default function UploadView() {
     setError('');
     if (!file) return setError(t('form_err_file'));
     if (jobDescription.length < 100) return setError(t('form_err_jd'));
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return setError(t('form_err_email_required'));
+    }
     setLoading(true);
     try {
       const formData = new FormData();
@@ -515,7 +518,7 @@ export default function UploadView() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
-              <p className={styles.hint}>{t('form_email_hint')}</p>
+              <p className={styles.hint}>{t('form_email_hint_required')}</p>
             </div>
 
             {error && (

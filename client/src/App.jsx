@@ -9,6 +9,7 @@ import RefundView from './views/RefundView.jsx';
 import NotFoundView from './views/NotFoundView.jsx';
 import FeedbackView from './views/FeedbackView.jsx';
 import AdminView from './views/AdminView.jsx';
+import RedownloadView from './views/RedownloadView.jsx';
 import BlogIndex from './views/blog/BlogIndex.jsx';
 import HowAtsSystemsWork from './views/blog/HowAtsSystemsWork.jsx';
 import ResumeKeywords from './views/blog/ResumeKeywords.jsx';
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/refunds" element={<RefundView />} />
       <Route path="/feedback" element={<FeedbackView />} />
       <Route path="/admin" element={<AdminView />} />
+      <Route path="/redownload" element={<RedownloadView />} />
       <Route path="/blog" element={<BlogIndex />} />
       <Route path="/blog/how-ats-systems-work" element={<HowAtsSystemsWork />} />
       <Route path="/blog/resume-keywords" element={<ResumeKeywords />} />

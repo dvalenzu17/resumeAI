@@ -1,15 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './ProcessingView.module.css';
 
 const POLL_INTERVAL = 3000;
-
-const STEPS = [
-  { label: 'Resume received', subtitle: 'Text extracted successfully' },
-  { label: 'Scoring against job description', subtitle: 'Checking keywords, experience, gaps' },
-  { label: 'Building your preview', subtitle: 'Almost there' },
-];
 
 export default function ProcessingView() {
   const [params] = useSearchParams();
@@ -19,32 +13,40 @@ export default function ProcessingView() {
   const [reportUrl, setReportUrl] = useState(null);
   const [cvUrl, setCvUrl] = useState(null);
   const [error, setError] = useState('');
-  const [activeStep, setActiveStep] = useState(1);
+  const [teaserStep, setTeaserStep] = useState(1);
+  const [fullStep, setFullStep] = useState(1);
+  const fullStepStarted = useRef(false);
   const { t } = useT();
 
-  // Simulate step progression — teaser analysis is ~15-25s
+  // Teaser step progression (~15-25s total)
   useEffect(() => {
-    const timings = [3000, 12000];
-    const timers = timings.map((ms, i) =>
-      setTimeout(() => setActiveStep((s) => Math.max(s, i + 2)), ms)
-    );
+    const timers = [
+      setTimeout(() => setTeaserStep(s => Math.max(s, 2)), 3000),
+      setTimeout(() => setTeaserStep(s => Math.max(s, 3)), 12000),
+    ];
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  // Full report step progression — starts when PROCESSING is detected
+  useEffect(() => {
+    if (status !== 'PROCESSING') return;
+    if (fullStepStarted.current) return;
+    fullStepStarted.current = true;
+    const timers = [
+      setTimeout(() => setFullStep(s => Math.max(s, 2)), 25000),
+      setTimeout(() => setFullStep(s => Math.max(s, 3)), 55000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [status]);
+
   // Poll for status
   useEffect(() => {
-    if (!jobId) {
-      setError('Missing job ID.');
-      return;
-    }
-
+    if (!jobId) { setError('Missing job ID.'); return; }
     let stopped = false;
 
     const poll = async () => {
       try {
         const res = await fetch(`/api/jobs/${jobId}/status`);
-        // Hard-fail on 4xx (job not found, bad request) — retrying won't help.
-        // Retry on 429 (rate limited) and 5xx (transient server / deploy blip).
         if (!res.ok) {
           if (res.status >= 400 && res.status < 500 && res.status !== 429) {
             setError('Could not retrieve status.');
@@ -61,12 +63,11 @@ export default function ProcessingView() {
           if (data.cvUrl) setCvUrl(data.cvUrl);
         }
         if (data.status === 'PREVIEW_READY') {
-          setActiveStep(3);
+          setTeaserStep(3);
           setTimeout(() => navigate(`/preview?jobId=${jobId}`), 600);
           return;
         }
         if (data.status === 'FAILED') return;
-        if (data.status === 'PENDING_PAYMENT') return;
         setTimeout(poll, POLL_INTERVAL);
       } catch {
         if (!stopped) setTimeout(poll, POLL_INTERVAL);
@@ -92,20 +93,6 @@ export default function ProcessingView() {
     );
   }
 
-  if (status === 'PENDING_PAYMENT') {
-    return (
-      <Shell>
-        <div className={styles.stateCard}>
-          <div className={`${styles.stateIcon} ${styles.success}`}>
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-          </div>
-          <h1 className={styles.stateHeading}>{t('processing_confirming')}</h1>
-          <p className={styles.stateBody}>{t('processing_confirming_sub')}</p>
-        </div>
-      </Shell>
-    );
-  }
-
   if (status === 'COMPLETE') {
     return (
       <Shell>
@@ -118,17 +105,11 @@ export default function ProcessingView() {
             <>
               <p className={styles.stateBody}>Your report is ready. Download it below — the link expires in 72 hours.</p>
               <a href={reportUrl} className={styles.btn} download>Download Report</a>
-              {cvUrl && (
-                <a href={cvUrl} className={styles.btn} download style={{ marginTop: '12px' }}>Download Tailored CV</a>
-              )}
-              <p className={styles.stateBodySub} style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-subtle)' }}>
-                A copy has also been sent to your email.
-              </p>
+              {cvUrl && <a href={cvUrl} className={styles.btn} download style={{ marginTop: '12px' }}>Download Tailored CV</a>}
+              <p style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-subtle)' }}>A copy has also been sent to your email.</p>
             </>
           ) : (
-            <p className={styles.stateBody}>
-              Check your inbox. The PDF is waiting for you. If it's not there, check your spam.
-            </p>
+            <p className={styles.stateBody}>Check your inbox. The PDF is waiting for you. If it's not there, check your spam.</p>
           )}
           <Link to="/" className={styles.btn} style={{ marginTop: '16px' }}>{t('success_another')}</Link>
         </div>
@@ -145,11 +126,32 @@ export default function ProcessingView() {
           </div>
           <h1 className={styles.stateHeading}>{t('processing_failed')}</h1>
           <p className={styles.stateBody}>{t('processing_failed_sub')}</p>
-          <Link to="/" className={styles.btn}>{t('processing_start_over')}</Link>
+          <p className={styles.stateBody} style={{ marginTop: '8px', fontSize: '14px' }}>
+            A refund email is on its way. If you don't see it in 10 minutes, reply to your confirmation email or contact{' '}
+            <a href="mailto:hello@getshortlisted.fyi" style={{ color: 'var(--accent)' }}>hello@getshortlisted.fyi</a>.
+          </p>
+          <Link to="/" className={styles.btn} style={{ marginTop: '20px' }}>{t('processing_start_over')}</Link>
         </div>
       </Shell>
     );
   }
+
+  const isFullReport = status === 'PROCESSING';
+
+  const teaserSteps = [
+    { labelKey: 'processing_step1_label', subKey: 'processing_step1_sub' },
+    { labelKey: 'processing_step2_label', subKey: 'processing_step2_sub' },
+    { labelKey: 'processing_step3_label', subKey: 'processing_step3_sub' },
+  ];
+
+  const fullSteps = [
+    { labelKey: 'processing_full_step1_label', subKey: 'processing_full_step1_sub' },
+    { labelKey: 'processing_full_step2_label', subKey: 'processing_full_step2_sub' },
+    { labelKey: 'processing_full_step3_label', subKey: 'processing_full_step3_sub' },
+  ];
+
+  const steps = isFullReport ? fullSteps : teaserSteps;
+  const activeStep = isFullReport ? fullStep : teaserStep;
 
   return (
     <Shell>
@@ -159,21 +161,21 @@ export default function ProcessingView() {
           <div className={styles.spinnerInner} />
         </div>
 
-        <h1 className={styles.processingHeading}>Reading every line. Judging accordingly.</h1>
+        <h1 className={styles.processingHeading}>
+          {isFullReport ? t('processing_full_heading') : t('processing_teaser_heading')}
+        </h1>
         <p className={styles.processingBody}>
-          Comparing your resume against the job description word by word,
-          scoring keywords, experience fit, and every gap the ATS would catch.
-          About 15–25 seconds.
+          {isFullReport ? t('processing_full_body') : t('processing_teaser_body')}
         </p>
 
         <div className={styles.steps}>
-          {STEPS.map((step, i) => {
+          {steps.map((step, i) => {
             const stepNum = i + 1;
             const isDone = stepNum < activeStep;
             const isActive = stepNum === activeStep;
             return (
               <div
-                key={step.label}
+                key={step.labelKey}
                 className={`${styles.step} ${isDone ? styles.stepDone : ''} ${isActive ? styles.stepActive : ''}`}
               >
                 <div className={styles.stepIndicator}>
@@ -187,8 +189,8 @@ export default function ProcessingView() {
                   )}
                 </div>
                 <div className={styles.stepText}>
-                  <div className={styles.stepLabel}>{step.label}</div>
-                  {isActive && <div className={styles.stepSubtitle}>{step.subtitle}</div>}
+                  <div className={styles.stepLabel}>{t(step.labelKey)}</div>
+                  {isActive && <div className={styles.stepSubtitle}>{t(step.subKey)}</div>}
                 </div>
               </div>
             );

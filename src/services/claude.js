@@ -39,7 +39,8 @@ Analyse the resume against the job description and return ONLY a JSON object —
     "high": <integer, upper market rate in USD>,
     "notes": <string, 1-2 sentences on key factors affecting this range — seniority, industry, location signals from JD>
   },
-  "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD — reference actual signals from the posting where possible>
+  "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD — reference actual signals from the posting where possible>,
+  "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement — the weakest, most passive bullet you can find. If no bullet points exist, return an empty string.>
 }
 
 RESUME:
@@ -458,6 +459,7 @@ function validateAnalysis(obj) {
   if (typeof obj.salary_range.low !== 'number') throw new Error('salary_range.low must be a number');
   if (typeof obj.salary_range.mid !== 'number') throw new Error('salary_range.mid must be a number');
   if (typeof obj.salary_range.high !== 'number') throw new Error('salary_range.high must be a number');
+  // sample_weak_bullet is optional — older jobs won't have it
 }
 
 function validateRewrites(obj) {

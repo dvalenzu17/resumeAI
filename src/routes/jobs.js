@@ -8,6 +8,7 @@ import { runTeaserAnalysis, runFullReport } from '../services/analyser.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import { logEvent, parseUA, extractCountry } from '../services/analytics.js';
+import { generateFreshSignedUrl } from '../services/storage.js';
 
 export const jobsRouter = Router();
 
@@ -192,10 +193,49 @@ jobsRouter.get('/:id/status', async (req, res, next) => {
         weaknesses_count: weaknesses.length,
         jd_red_flag_count: Array.isArray(a.jd_red_flags) ? a.jd_red_flags.length : 0,
         keyword_gaps_teaser: gaps.slice(0, 2),
+        // Actual weak bullet from resume for the teaser (optional — absent on older jobs)
+        sample_weak_bullet: typeof a.sample_weak_bullet === 'string' && a.sample_weak_bullet ? a.sample_weak_bullet : null,
+        // Personalise questions derived from the analysis
+        personalise_prompts: {
+          q1: gaps.length > 0
+            ? `The JD requires "${gaps[0]}"${gaps[1] ? ` and "${gaps[1]}"` : ''} — skills not clearly in your resume. Tell us about any experience you have with these, even if indirect.`
+            : 'Why do you want this specific role?',
+          q2: weaknesses.length > 0
+            ? `Your resume was flagged for: "${weaknesses[0]}". Tell us about a real achievement that addresses this directly.`
+            : 'What\'s the most relevant achievement from your background for this role?',
+          q3: 'What makes you a non-obvious choice for this role — something that doesn\'t show up clearly on your resume?',
+        },
       };
     }
 
     res.json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/jobs/:id/download?email=xxx
+// Re-generates a fresh 72h signed URL. Requires email to match job record.
+jobsRouter.get('/:id/download', async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    if (!email) throw AppError.badRequest('email query parameter is required');
+
+    const job = await db.job.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, status: true, email: true, tier: true, reportUrl: true, cvUrl: true },
+    });
+
+    if (!job) throw AppError.notFound('Job not found');
+    if (job.status !== 'COMPLETE') throw AppError.badRequest('Report is not ready yet');
+    if (!job.email || job.email.toLowerCase().trim() !== email.toLowerCase().trim()) {
+      throw AppError.badRequest('Email does not match this job', 'EMAIL_MISMATCH');
+    }
+
+    const reportUrl = await generateFreshSignedUrl(job.id, 'report');
+    const cvUrl = job.tier === 'FULL' ? await generateFreshSignedUrl(job.id, 'cv') : null;
+
+    res.json({ reportUrl, cvUrl });
   } catch (err) {
     next(err);
   }

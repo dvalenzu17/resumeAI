@@ -32,6 +32,11 @@ export default function SuccessView() {
           </div>
 
           <div className={styles.badge}>Payment confirmed</div>
+          {jobId && (
+            <p style={{ fontFamily: 'monospace', fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', letterSpacing: '0.02em' }}>
+              Job ID: {jobId}
+            </p>
+          )}
 
           <h1 className={styles.heading}>
             Report incoming.<br />
@@ -48,6 +53,13 @@ export default function SuccessView() {
             <a href="mailto:hello@getshortlisted.fyi" className={styles.contactLink}>
               hello@getshortlisted.fyi
             </a>
+          </p>
+          <p className={styles.spamNote} style={{ marginTop: '8px' }}>
+            Link expired?{' '}
+            <Link to={`/redownload`} className={styles.contactLink}>
+              Re-generate your download links
+            </Link>
+            {' '}using your Job ID and email.
           </p>
 
           <p className={styles.body2}>

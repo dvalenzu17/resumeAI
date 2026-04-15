@@ -133,6 +133,27 @@ const translations = {
       'Calculating ATS compatibility',
       'Finding keyword gaps',
     ],
+    // Processing — teaser phase
+    processing_teaser_heading: 'Reading every line. Judging accordingly.',
+    processing_teaser_body: 'Comparing your resume against the job description word by word, scoring keywords, experience fit, and every gap the ATS would catch. About 15–25 seconds.',
+    processing_step1_label: 'Resume received',
+    processing_step1_sub: 'Text extracted successfully',
+    processing_step2_label: 'Scoring against job description',
+    processing_step2_sub: 'Checking keywords, experience, gaps',
+    processing_step3_label: 'Building your preview',
+    processing_step3_sub: 'Almost there',
+    // Processing — full report phase
+    processing_full_heading: 'Rewriting. Rebuilding. Almost done.',
+    processing_full_body: 'Rewriting your bullets, generating the tailored CV, writing your cover letter, preparing interview questions. About 45–90 seconds.',
+    processing_full_step1_label: 'Rewriting bullets and summary',
+    processing_full_step1_sub: 'Tailoring every line to this specific role',
+    processing_full_step2_label: 'Generating your PDF report and CV',
+    processing_full_step2_sub: 'Formatting analysis, rewrites, and cover letter',
+    processing_full_step3_label: 'Sending to your inbox',
+    processing_full_step3_sub: 'Almost done',
+    // Email required
+    form_err_email_required: 'Your email is required — we send the report and your free score there.',
+    form_email_hint_required: 'Required. We send your free score and full report here.',
 
     // Preview view
     preview_score_header: 'Your free score',
@@ -320,6 +341,27 @@ const translations = {
       'Calculando compatibilidad ATS',
       'Encontrando brechas de palabras clave',
     ],
+    // Processing — teaser phase
+    processing_teaser_heading: 'Leyendo cada linea. Juzgando en consecuencia.',
+    processing_teaser_body: 'Comparando tu CV con la descripcion del puesto palabra por palabra, evaluando palabras clave, experiencia y cada brecha que detectaria el ATS. Unos 15–25 segundos.',
+    processing_step1_label: 'CV recibido',
+    processing_step1_sub: 'Texto extraido correctamente',
+    processing_step2_label: 'Evaluando contra la descripcion del puesto',
+    processing_step2_sub: 'Verificando palabras clave, experiencia y brechas',
+    processing_step3_label: 'Preparando tu vista previa',
+    processing_step3_sub: 'Ya casi',
+    // Processing — full report phase
+    processing_full_heading: 'Reescribiendo. Reconstruyendo. Casi listo.',
+    processing_full_body: 'Reescribiendo tus puntos, generando el CV personalizado, redactando tu carta de presentacion y preparando preguntas de entrevista. Unos 45–90 segundos.',
+    processing_full_step1_label: 'Reescribiendo puntos y resumen',
+    processing_full_step1_sub: 'Adaptando cada linea a este puesto especifico',
+    processing_full_step2_label: 'Generando tu informe PDF y CV',
+    processing_full_step2_sub: 'Formateando analisis, reescrituras y carta',
+    processing_full_step3_label: 'Enviando a tu correo',
+    processing_full_step3_sub: 'Ya casi termina',
+    // Email required
+    form_err_email_required: 'Tu correo es obligatorio — ahi enviamos el informe y tu puntuacion gratuita.',
+    form_email_hint_required: 'Obligatorio. Enviamos tu puntuacion gratuita e informe completo aqui.',
 
     // Preview view
     preview_score_header: 'Tu puntuacion gratis',

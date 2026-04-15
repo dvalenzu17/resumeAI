@@ -54,3 +54,14 @@ export async function uploadReport(jobId, pdfBuffer) {
 export async function uploadCv(jobId, pdfBuffer) {
   return uploadPdf(jobId, pdfBuffer, 'cvs', 'cv');
 }
+
+export async function generateFreshSignedUrl(jobId, type) {
+  if (!s3) throw new Error('R2 not configured');
+  const prefix = type === 'cv' ? 'cvs' : 'reports';
+  const key = `${prefix}/${jobId}.pdf`;
+  return getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: key }),
+    { expiresIn: SIGNED_URL_EXPIRY }
+  );
+}

@@ -266,7 +266,7 @@ export default function PreviewView() {
               <p className={styles.rewriteColLabel}>{t('teaser_before')}</p>
               <div className={styles.rewriteBullet} style={{ opacity: 0.6 }}>
                 <span className={styles.bulletDot} />
-                <span>{t('teaser_before_bullet')}</span>
+                <span>{preview.sample_weak_bullet || t('teaser_before_bullet')}</span>
               </div>
             </div>
             <div className={styles.rewriteArrow}>
@@ -356,7 +356,7 @@ export default function PreviewView() {
                 </div>
                 <div className={styles.personaliseForm}>
                   <label className={styles.personaliseLabel}>
-                    {t('preview_cl_q1')}
+                    {preview.personalise_prompts?.q1 || t('preview_cl_q1')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
@@ -366,7 +366,7 @@ export default function PreviewView() {
                     />
                   </label>
                   <label className={styles.personaliseLabel}>
-                    {t('preview_cl_q2')}
+                    {preview.personalise_prompts?.q2 || t('preview_cl_q2')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
@@ -376,7 +376,7 @@ export default function PreviewView() {
                     />
                   </label>
                   <label className={styles.personaliseLabel}>
-                    {t('preview_cl_q3')}
+                    {preview.personalise_prompts?.q3 || t('preview_cl_q3')}
                     <textarea
                       className={styles.personaliseInput}
                       rows={2}
