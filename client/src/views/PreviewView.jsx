@@ -74,6 +74,7 @@ export default function PreviewView() {
         setPreview(data.preview);
         setTier(data.tier);
         setSelectedTier(data.tier);
+        if (data.email) setEmail(data.email);
         trackPreviewViewed({ ats_score: data.preview?.ats_score, tier: data.tier });
         previewLoadedAt.current = Date.now();
         track('preview_loaded', { ats_score: data.preview?.ats_score, gap_count: data.preview?.gap_count }, jobId);
