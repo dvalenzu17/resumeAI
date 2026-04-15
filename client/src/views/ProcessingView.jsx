@@ -42,9 +42,9 @@ export default function ProcessingView() {
       try {
         const res = await fetch(`/api/jobs/${jobId}/status`);
         // Hard-fail on 4xx (job not found, bad request) — retrying won't help.
-        // Retry on 5xx / 502 / 503 (transient server or deploy blip).
+        // Retry on 429 (rate limited) and 5xx (transient server / deploy blip).
         if (!res.ok) {
-          if (res.status >= 400 && res.status < 500) {
+          if (res.status >= 400 && res.status < 500 && res.status !== 429) {
             setError('Could not retrieve status.');
             return;
           }

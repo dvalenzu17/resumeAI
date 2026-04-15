@@ -20,8 +20,8 @@ function r2(n) { return Math.round(n * 100) / 100; }
 function pct(n) { return Math.round(n * 10000) / 100; } // e.g. 0.4234 → 42.34
 
 function claudeCostForJob(j) {
-  const totalIn  = (j.tokensInCall1 || 0) + (j.tokensInCall2 || 0);
-  const totalOut = (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0);
+  const totalIn  = (j.tokensInCall1 || 0) + (j.tokensInCall2 || 0) + (j.tokensInCall3 || 0);
+  const totalOut = (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0) + (j.tokensOutCall3 || 0);
   return totalIn * CLAUDE_INPUT_PRICE + totalOut * CLAUDE_OUTPUT_PRICE;
 }
 
@@ -55,13 +55,14 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     const ago60 = startOfDay(60);
 
     // All queries in parallel
-    const [completeJobs, statusGroups, allJobs] = await Promise.all([
+    const [completeJobs, statusGroups, allJobs, tokenTotals] = await Promise.all([
       db.job.findMany({
         where: { status: 'COMPLETE' },
         select: {
           id: true, tier: true, email: true, createdAt: true,
           tokensInCall1: true, tokensOutCall1: true,
           tokensInCall2: true, tokensOutCall2: true,
+          tokensInCall3: true, tokensOutCall3: true,
           feedbackResult: true,
         },
       }),
@@ -73,7 +74,16 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
           id: true, email: true, tier: true, status: true, createdAt: true,
           tokensInCall1: true, tokensOutCall1: true,
           tokensInCall2: true, tokensOutCall2: true,
+          tokensInCall3: true, tokensOutCall3: true,
           feedbackResult: true,
+        },
+      }),
+      // All-jobs token aggregate — captures teaser tokens from non-converting jobs too
+      db.job.aggregate({
+        _sum: {
+          tokensInCall1: true, tokensOutCall1: true,
+          tokensInCall2: true, tokensOutCall2: true,
+          tokensInCall3: true, tokensOutCall3: true,
         },
       }),
     ]);
@@ -134,9 +144,19 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
     };
 
     // ── Costs ─────────────────────────────────────────────────────────────
-    const totalIn  = completeJobs.reduce((s, j) => s + (j.tokensInCall1 || 0)  + (j.tokensInCall2 || 0),  0);
-    const totalOut = completeJobs.reduce((s, j) => s + (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0), 0);
-    const totalClaudeCost = r4(totalIn * CLAUDE_INPUT_PRICE + totalOut * CLAUDE_OUTPUT_PRICE);
+    // All-jobs token totals (every job, every call — including unconverted teasers)
+    const s = tokenTotals._sum;
+    const allIn  = (s.tokensInCall1  || 0) + (s.tokensInCall2  || 0) + (s.tokensInCall3  || 0);
+    const allOut = (s.tokensOutCall1 || 0) + (s.tokensOutCall2 || 0) + (s.tokensOutCall3 || 0);
+    const teaserIn  = s.tokensInCall1  || 0;
+    const teaserOut = s.tokensOutCall1 || 0;
+    const paidIn    = (s.tokensInCall2  || 0) + (s.tokensInCall3  || 0);
+    const paidOut   = (s.tokensOutCall2 || 0) + (s.tokensOutCall3 || 0);
+    const totalClaudeCost = r4(allIn * CLAUDE_INPUT_PRICE + allOut * CLAUDE_OUTPUT_PRICE);
+
+    // For per-job averages, still use complete jobs (accurate unit economics)
+    const totalIn  = completeJobs.reduce((s, j) => s + (j.tokensInCall1 || 0) + (j.tokensInCall2 || 0) + (j.tokensInCall3 || 0), 0);
+    const totalOut = completeJobs.reduce((s, j) => s + (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0) + (j.tokensOutCall3 || 0), 0);
 
     const jobsWithEmail = completeJobs.filter(j => j.email && j.email !== '').length;
     const estimatedEmails = jobsWithEmail; // 1 report email per job; follow-ups sent separately
@@ -154,10 +174,19 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
 
     const costs = {
       claude: {
-        totalInputTokens: totalIn,
-        totalOutputTokens: totalOut,
+        // All-jobs totals (true spend — includes unconverted teaser calls)
+        totalInputTokens: allIn,
+        totalOutputTokens: allOut,
         totalCost: totalClaudeCost,
+        teaserTokensIn: teaserIn,
+        teaserTokensOut: teaserOut,
+        paidTokensIn: paidIn,
+        paidTokensOut: paidOut,
+        // Per-job averages from complete jobs only
         avgCostPerJob: completeJobs.length > 0 ? r4(totalClaudeCost / completeJobs.length) : 0,
+        // Complete-jobs token subtotals (for unit economics accuracy)
+        completedInputTokens: totalIn,
+        completedOutputTokens: totalOut,
       },
       processor: {
         totalCost: totalProcessorFee,
@@ -382,8 +411,8 @@ adminRouter.get('/dashboard', requireAdminSecret, async (req, res) => {
       tier: j.tier,
       status: j.status,
       createdAt: j.createdAt,
-      tokensIn:  (j.tokensInCall1  || 0) + (j.tokensInCall2  || 0),
-      tokensOut: (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0),
+      tokensIn:  (j.tokensInCall1  || 0) + (j.tokensInCall2  || 0) + (j.tokensInCall3  || 0),
+      tokensOut: (j.tokensOutCall1 || 0) + (j.tokensOutCall2 || 0) + (j.tokensOutCall3 || 0),
       claudeCost: r4(claudeCostForJob(j)),
       feedbackResult: j.feedbackResult || null,
     }));

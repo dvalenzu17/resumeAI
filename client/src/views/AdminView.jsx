@@ -329,8 +329,10 @@ export default function AdminView() {
                 <div className={styles.costCard}>
                   <div className={styles.costTitle}>Claude API</div>
                   <div className={styles.costAmount}>{fmt$4(costs.claude.totalCost)}</div>
-                  <div className={styles.costMeta}>{fmtN(costs.claude.totalInputTokens)} in / {fmtN(costs.claude.totalOutputTokens)} out</div>
-                  <div className={styles.costMeta}>{fmt$4(costs.claude.avgCostPerJob)} per job</div>
+                  <div className={styles.costMeta}>{fmtN(costs.claude.totalInputTokens)} in / {fmtN(costs.claude.totalOutputTokens)} out (all jobs)</div>
+                  <div className={styles.costMeta}>Teaser: {fmtN(costs.claude.teaserTokensIn)}↑ {fmtN(costs.claude.teaserTokensOut)}↓</div>
+                  <div className={styles.costMeta}>Paid: {fmtN(costs.claude.paidTokensIn)}↑ {fmtN(costs.claude.paidTokensOut)}↓</div>
+                  <div className={styles.costMeta}>{fmt$4(costs.claude.avgCostPerJob)} avg per completed job</div>
                 </div>
                 <div className={styles.costCard}>
                   <div className={styles.costTitle}>Resend email</div>

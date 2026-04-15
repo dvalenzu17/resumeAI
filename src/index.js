@@ -44,8 +44,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // would break Lemon Squeezy checkout redirect
 }));
 
-// Rate limiter for job submissions — 5 per IP per 10 minutes
-const jobRateLimit = rateLimit({
+// Rate limiter for job creation only — 5 submissions per IP per 10 minutes
+const jobCreateRateLimit = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
   standardHeaders: true,
@@ -70,7 +70,8 @@ app.use(express.json());
 
 app.use('/api', healthRouter);
 app.use('/api/stats', statsRateLimit, statsRouter);
-app.use('/api/jobs', jobRateLimit, jobsRouter);
+app.post('/api/jobs', jobCreateRateLimit);  // rate-limit creation only, not status polls
+app.use('/api/jobs', jobsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/cron', cronRouter);
 app.use('/api/feedback', feedbackRouter);
