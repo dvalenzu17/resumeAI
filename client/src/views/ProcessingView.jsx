@@ -41,7 +41,16 @@ export default function ProcessingView() {
     const poll = async () => {
       try {
         const res = await fetch(`/api/jobs/${jobId}/status`);
-        if (!res.ok) { setError('Could not retrieve status.'); return; }
+        // Hard-fail on 4xx (job not found, bad request) — retrying won't help.
+        // Retry on 5xx / 502 / 503 (transient server or deploy blip).
+        if (!res.ok) {
+          if (res.status >= 400 && res.status < 500) {
+            setError('Could not retrieve status.');
+            return;
+          }
+          if (!stopped) setTimeout(poll, POLL_INTERVAL);
+          return;
+        }
         const data = await res.json();
         if (stopped) return;
         setStatus(data.status);
