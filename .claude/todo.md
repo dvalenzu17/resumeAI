@@ -61,12 +61,18 @@
 - [x] Cost tracking + analytics dashboard (/admin)
 - [x] Prisma schema: previewNudgeSentAt, followUp1SentAt, followUp2SentAt fields
 
+### Quality improvements (post-launch feedback)
+- [x] Fix email double-ask: status endpoint returns email, PreviewView pre-fills it
+- [x] Rewrite prompt: outcome-first bullets, 7 weakest bullets (was 5), no em dashes, inject keyword gaps, infer metrics, structural transformation required
+- [x] CV PDF redesigned: two-column layout, navy header, orange accent, bullet character, comma-separated skills, attribution footer
+- [x] Salary section: shows monthly AND annual figures
+
 ---
 
 ## Blocked — manual actions required
 
 ### Domain (do first — unlocks everything else)
-- [ ] Purchase getshortlisted.fyi and point DNS to Railway
+- [x] Purchase getshortlisted.fyi and point DNS to Railway
 
 ### Railway deploy
 - [ ] Push to GitHub (or it's already there — confirm)

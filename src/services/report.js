@@ -45,14 +45,17 @@ function buildHtml(job, analysis, rewrites) {
       </section>`;
 
   const salaryRange = analysis.salary_range;
+  const salaryMonthlyLow = salaryRange ? Math.round((salaryRange.low || 0) / 12).toLocaleString() : null;
+  const salaryMonthlyMid = salaryRange ? Math.round((salaryRange.mid || 0) / 12).toLocaleString() : null;
+  const salaryMonthlyHigh = salaryRange ? Math.round((salaryRange.high || 0) / 12).toLocaleString() : null;
   const salarySection = salaryRange
     ? `<section>
         <h2>Salary Intelligence</h2>
         <div class="salary-bar-wrap">
           <div class="salary-labels">
-            <span>Low<br><strong>$${salaryRange.low?.toLocaleString()}</strong></span>
-            <span class="salary-mid">Market Mid<br><strong>$${salaryRange.mid?.toLocaleString()}</strong></span>
-            <span style="text-align:right">High<br><strong>$${salaryRange.high?.toLocaleString()}</strong></span>
+            <span>Low<br><strong>$${salaryRange.low?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyLow}/mo</span></span>
+            <span class="salary-mid">Market Mid<br><strong>$${salaryRange.mid?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyMid}/mo</span></span>
+            <span style="text-align:right">High<br><strong>$${salaryRange.high?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyHigh}/mo</span></span>
           </div>
           <div class="salary-bar">
             <div class="salary-bar-fill"></div>
@@ -173,6 +176,7 @@ function buildHtml(job, analysis, rewrites) {
   .salary-bar-fill { position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: linear-gradient(to right, #fde68a, #16a34a); border-radius: 9999px; }
   .salary-bar-dot { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: #1a1a1a; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
   .salary-notes { font-size: 12px; color: #6b7280; margin-top: 10px; }
+  .salary-monthly { font-size: 11px; color: #9ca3af; font-weight: 400; }
   /* Cover letter */
   .cover-letter-section { page-break-before: always; }
   .cover-letter-body {
@@ -284,46 +288,46 @@ function buildCvHtml(cvData) {
   const experienceHtml = (experience || []).map(exp => `
     <div class="cv-role">
       <div class="cv-role-header">
-        <div>
+        <div class="cv-role-left">
           <div class="cv-role-title">${exp.title}</div>
-          <div class="cv-role-company">${exp.company}${exp.location ? ` &middot; ${exp.location}` : ''}</div>
+          <div class="cv-role-company">${exp.company}${exp.location ? `, ${exp.location}` : ''}</div>
         </div>
         <div class="cv-role-dates">${exp.dates || ''}</div>
       </div>
-      <ul class="cv-bullets">
-        ${(exp.bullets || []).map(b => `<li>${b}</li>`).join('')}
-      </ul>
+      <div class="cv-bullets">
+        ${(exp.bullets || []).map(b => `<div class="cv-bullet"><span class="cv-bullet-dot">&#8226;</span><span>${b}</span></div>`).join('')}
+      </div>
     </div>
   `).join('');
 
   const educationHtml = (education || []).map(edu => `
     <div class="cv-edu-row">
-      <div>
-        <div class="cv-edu-degree">${edu.degree}</div>
-        <div class="cv-edu-school">${edu.school}</div>
-      </div>
-      ${edu.dates ? `<div class="cv-role-dates">${edu.dates}</div>` : ''}
+      <div class="cv-edu-degree">${edu.degree}</div>
+      <div class="cv-edu-school">${edu.school}</div>
+      ${edu.dates ? `<div class="cv-edu-dates">${edu.dates}</div>` : ''}
     </div>
   `).join('');
 
   const certHtml = (certifications || []).length > 0
-    ? `<div class="cv-section">
+    ? `<div class="cv-left-section">
         <div class="cv-section-title">Certifications</div>
         ${certifications.map(c => `
           <div class="cv-cert-row">
-            <span class="cv-cert-name">${c.name}</span>
-            ${c.issuer ? `<span class="cv-cert-issuer">${c.issuer}${c.year ? ` &middot; ${c.year}` : ''}</span>` : ''}
+            <div class="cv-cert-name">${c.name}</div>
+            ${c.issuer ? `<div class="cv-cert-meta">${c.issuer}${c.year ? `, ${c.year}` : ''}</div>` : ''}
           </div>
         `).join('')}
       </div>`
     : '';
 
   const langHtml = (languages || []).length > 0
-    ? `<div class="cv-section">
+    ? `<div class="cv-left-section">
         <div class="cv-section-title">Languages</div>
-        <p class="cv-skills-list">${languages.join(' &middot; ')}</p>
+        <p class="cv-lang-list">${languages.join(', ')}</p>
       </div>`
     : '';
+
+  const skillsText = (skills || []).join(', ');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -332,127 +336,174 @@ function buildCvHtml(cvData) {
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Georgia', serif;
+    font-family: system-ui, -apple-system, Arial, sans-serif;
     color: #1a1a1a;
-    font-size: 13px;
+    font-size: 12.5px;
     line-height: 1.55;
     background: #fff;
   }
+
+  /* ── Full-width header ── */
   .cv-header {
     background: #0f172a;
     color: #fff;
-    padding: 36px 56px 28px;
+    padding: 32px 48px 24px;
   }
   .cv-name {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     margin-bottom: 4px;
-    font-family: system-ui, sans-serif;
   }
   .cv-title {
-    font-size: 13px;
-    color: #e85d04;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 600;
-    font-family: system-ui, sans-serif;
-    margin-bottom: 12px;
-  }
-  .cv-contact {
     font-size: 11.5px;
-    color: #94a3b8;
-    font-family: system-ui, sans-serif;
-  }
-  .cv-contact span { margin-right: 16px; }
-  .cv-body { padding: 32px 56px 48px; }
-  .cv-section { margin-bottom: 24px; }
-  .cv-section-title {
-    font-size: 11px;
-    font-weight: 700;
+    color: #E8571A;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #e85d04;
-    font-family: system-ui, sans-serif;
-    border-bottom: 1.5px solid #e85d04;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .cv-contact {
+    font-size: 11px;
+    color: #94a3b8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+  }
+  .cv-contact-item { margin-right: 18px; }
+
+  /* ── Two-column body ── */
+  .cv-columns {
+    display: flex;
+    align-items: flex-start;
+    min-height: 0;
+  }
+
+  /* Left column */
+  .cv-left {
+    width: 32%;
+    background: #f8fafc;
+    border-right: 1px solid #e5e7eb;
+    padding: 28px 20px 40px 24px;
+    min-height: 100%;
+  }
+
+  /* Right column */
+  .cv-right {
+    width: 68%;
+    padding: 28px 40px 40px 28px;
+  }
+
+  /* Section titles */
+  .cv-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: #E8571A;
+    border-bottom: 1.5px solid #E8571A;
     padding-bottom: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
-  .cv-profile {
+  .cv-left-section { margin-bottom: 22px; }
+  .cv-right-section { margin-bottom: 22px; }
+
+  /* Left column content */
+  .cv-skills-text {
+    font-size: 12px;
     color: #374151;
-    font-size: 13px;
-    line-height: 1.65;
+    line-height: 1.75;
   }
-  .cv-role { margin-bottom: 18px; }
+  .cv-edu-row { margin-bottom: 12px; }
+  .cv-edu-degree {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .cv-edu-school {
+    font-size: 11.5px;
+    color: #6b7280;
+    margin-top: 1px;
+  }
+  .cv-edu-dates {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 1px;
+  }
+  .cv-cert-row { margin-bottom: 10px; }
+  .cv-cert-name {
+    font-size: 12px;
+    color: #1a1a1a;
+    line-height: 1.4;
+  }
+  .cv-cert-meta {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 1px;
+  }
+  .cv-lang-list {
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.75;
+  }
+
+  /* Right column content */
+  .cv-profile {
+    font-size: 12.5px;
+    color: #374151;
+    line-height: 1.7;
+  }
+  .cv-role { margin-bottom: 16px; }
   .cv-role-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
+  .cv-role-left { flex: 1; }
   .cv-role-title {
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 700;
-    font-family: system-ui, sans-serif;
     color: #0f172a;
   }
   .cv-role-company {
     font-size: 12px;
     color: #6b7280;
-    font-family: system-ui, sans-serif;
-    margin-top: 2px;
+    margin-top: 1px;
   }
   .cv-role-dates {
-    font-size: 11.5px;
-    color: #6b7280;
-    font-family: system-ui, sans-serif;
+    font-size: 11px;
+    color: #9ca3af;
     white-space: nowrap;
-    margin-left: 12px;
+    margin-left: 10px;
     margin-top: 2px;
+    text-align: right;
   }
-  .cv-bullets {
-    padding-left: 18px;
-    color: #374151;
-  }
-  .cv-bullets li { margin-bottom: 4px; font-size: 12.5px; }
-  .cv-edu-row {
+  .cv-bullets { margin-top: 4px; }
+  .cv-bullet {
     display: flex;
-    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 4px;
     align-items: flex-start;
-    margin-bottom: 10px;
   }
-  .cv-edu-degree {
-    font-size: 13px;
-    font-weight: 600;
-    font-family: system-ui, sans-serif;
-    color: #0f172a;
+  .cv-bullet-dot {
+    color: #E8571A;
+    font-size: 11px;
+    margin-top: 2px;
+    flex-shrink: 0;
   }
-  .cv-edu-school {
+  .cv-bullet span:last-child {
     font-size: 12px;
-    color: #6b7280;
-    font-family: system-ui, sans-serif;
-  }
-  .cv-skills-list {
-    font-family: system-ui, sans-serif;
-    font-size: 12.5px;
     color: #374151;
-    line-height: 1.8;
+    line-height: 1.55;
   }
-  .cv-cert-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-    font-family: system-ui, sans-serif;
-  }
-  .cv-cert-name { font-size: 12.5px; color: #1a1a1a; }
-  .cv-cert-issuer { font-size: 11.5px; color: #6b7280; }
-  .cv-watermark {
+
+  /* Attribution */
+  .cv-attribution {
     text-align: center;
-    font-size: 10px;
+    font-size: 9.5px;
     color: #d1d5db;
-    font-family: system-ui, sans-serif;
-    margin-top: 32px;
-    padding-top: 16px;
+    padding: 14px 48px 18px;
     border-top: 1px solid #f3f4f6;
   }
 </style>
@@ -462,30 +513,42 @@ function buildCvHtml(cvData) {
     <div class="cv-name">${name}</div>
     <div class="cv-title">${title}</div>
     <div class="cv-contact">
-      ${contactParts.map(p => `<span>${p}</span>`).join('')}
+      ${contactParts.map(p => `<span class="cv-contact-item">${p}</span>`).join('')}
     </div>
   </div>
-  <div class="cv-body">
-    <div class="cv-section">
-      <div class="cv-section-title">Profile</div>
-      <p class="cv-profile">${profile}</p>
+
+  <div class="cv-columns">
+    <!-- Left column: Skills, Education, Certifications, Languages -->
+    <div class="cv-left">
+      <div class="cv-left-section">
+        <div class="cv-section-title">Skills</div>
+        <p class="cv-skills-text">${skillsText}</p>
+      </div>
+
+      <div class="cv-left-section">
+        <div class="cv-section-title">Education</div>
+        ${educationHtml}
+      </div>
+
+      ${certHtml}
+      ${langHtml}
     </div>
-    <div class="cv-section">
-      <div class="cv-section-title">Experience</div>
-      ${experienceHtml}
+
+    <!-- Right column: Profile, Experience -->
+    <div class="cv-right">
+      <div class="cv-right-section">
+        <div class="cv-section-title">Profile</div>
+        <p class="cv-profile">${profile}</p>
+      </div>
+
+      <div class="cv-right-section">
+        <div class="cv-section-title">Experience</div>
+        ${experienceHtml}
+      </div>
     </div>
-    <div class="cv-section">
-      <div class="cv-section-title">Education</div>
-      ${educationHtml}
-    </div>
-    <div class="cv-section">
-      <div class="cv-section-title">Skills</div>
-      <p class="cv-skills-list">${(skills || []).join(' &middot; ')}</p>
-    </div>
-    ${certHtml}
-    ${langHtml}
-    <div class="cv-watermark">Tailored by Shortlisted &middot; getshortlisted.fyi</div>
   </div>
+
+  <div class="cv-attribution">Tailored by Shortlisted &middot; getshortlisted.fyi</div>
 </body>
 </html>`;
 }

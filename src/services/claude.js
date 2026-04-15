@@ -19,6 +19,8 @@ function withTimeout(promise, ms, label) {
 function buildAnalysisPrompt(resumeText, jobDescription) {
   return `You are an expert ATS analyst, resume coach, and career strategist.
 
+WRITING RULE: Never use em dashes (—) in any string you produce. Use a comma, period, or reword instead.
+
 Analyse the resume against the job description and return ONLY a JSON object — no markdown, no explanation, no preamble:
 
 {
@@ -34,10 +36,10 @@ Analyse the resume against the job description and return ONLY a JSON object —
   "linkedin_headline": <string, a strong LinkedIn headline for this candidate targeting this role, max 220 chars>,
   "jd_red_flags": <string array, 0-5 warning signals in the job description itself — e.g. "No salary range listed", "Uses 'rockstar' or 'ninja' language", "Entry-level title but requires 5+ years", "Vague or excessively long requirements list", "No company name visible". Return empty array if none found.>,
   "salary_range": {
-    "low": <integer, lower market rate for this role in USD>,
-    "mid": <integer, midpoint market rate in USD>,
-    "high": <integer, upper market rate in USD>,
-    "notes": <string, 1-2 sentences on key factors affecting this range — seniority, industry, location signals from JD>
+    "low": <integer, lower annual salary in USD for this role and location>,
+    "mid": <integer, midpoint annual salary in USD>,
+    "high": <integer, upper annual salary in USD>,
+    "notes": <string, 1-2 sentences on key factors affecting this range. Seniority, industry, and location signals from the JD. No em dashes.>
   },
   "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD — reference actual signals from the posting where possible>,
   "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement — the weakest, most passive bullet you can find. If no bullet points exist, return an empty string.>
@@ -64,11 +66,23 @@ COVER LETTER PERSONALISATION (use these to make the letter sound human and speci
 
   return `You are an expert resume writer, career coach, and hiring strategist.
 
-Given the resume, job description, analysis, and personalisation context below, produce rewritten content and return ONLY a JSON object — no markdown, no explanation, no preamble:
+Given the resume, job description, analysis, and personalisation context below, produce rewritten content and return ONLY a JSON object — no markdown, no explanation, no preamble.
+
+GLOBAL WRITING RULES (apply to every string you produce):
+- Never use em dashes. Use a comma, period, or reword instead.
+- Never use filler phrases like "results-driven", "passionate about", "proven track record", or "dynamic".
 
 {
-  "rewritten_bullets": <string array of exactly 5 rewritten bullet points — each starts with a strong action verb, is quantified where possible, and is optimised for both ATS and human readers>,
-  "summary_rewrite": <string, a powerful 3-4 sentence professional summary targeting this specific role — specific, confident, no filler phrases like "results-driven" or "passionate about">,
+  "rewritten_bullets": <string array of exactly 7 rewritten bullet points — pick the 7 weakest, most duty-focused bullets from the resume.
+
+MANDATORY REWRITING RULES for every bullet — all 6 must be satisfied:
+1. OUTCOME FIRST: Lead with the quantified result, then the method. "Reduced reporting time 94% by scripting SAP exports" — not "Scripted SAP exports that reduced reporting time 94%". The number or impact opens the sentence.
+2. STRUCTURAL TRANSFORMATION: If the original opens with a verb (most do), the rewrite must NOT open with a verb. Open instead with a metric ("$2.3M in..."), a scope phrase ("Across 3 regions,..."), a noun ("A custom Power BI dashboard..."), or a participle phrase ("By automating..."). The grammatical form must be visibly different.
+3. INJECT A KEYWORD GAP: Weave at least one term from the keyword_gaps list into the bullet naturally. It must read as if the candidate has that skill, because the rewrite is demonstrating it through the work described.
+4. ADD OR INFER A METRIC: Every bullet must contain at least one specific number. If the original has one, sharpen it. If it has none, infer a plausible estimate from context and frame it honestly: "~40% reduction", "saving an estimated 10 hrs/week", "across a team of 6". Do not fabricate outcomes — only infer what the experience implies.
+5. NO CONSECUTIVE SAME START: No two bullets in a row may begin with the same word or phrase.
+6. UNRECOGNISABLE AS PARAPHRASE: A reader must not be able to match a rewrite back to its original by reading both side by side. Same meaning, completely different framing and language. If the structure, opening verb, or core phrase survives, it has failed this rule.>,
+  "summary_rewrite": <string, a powerful 3-4 sentence professional summary targeting this specific role. Be specific and confident. No filler phrases like "results-driven" or "passionate about". No em dashes.>,
   "skills_section": <string, comma-separated skills list optimised for this role's ATS keywords>,
   "cover_letter": <string, a complete 3-4 paragraph cover letter. Rules: (1) sounds like a specific human wrote it — not AI-generated, (2) references at least one concrete achievement from the resume with a real number or outcome, (3) includes one sentence that shows genuine knowledge of or interest in this company or role based on the JD, (4) never uses filler phrases like "I am writing to express my interest" or "I believe I would be a great fit", (5) closes with a specific ask, not "I look forward to hearing from you">,
   "interview_questions": [
@@ -103,6 +117,8 @@ Return ONLY the JSON object. No markdown code fences. No explanation.`;
 
 function buildCvRewritePrompt(resumeText, jobDescription, analysisResult, rewritesResult) {
   return `You are an expert resume writer and career coach.
+
+WRITING RULE: Never use em dashes (—) in any string you produce. Use a comma, period, or reword instead.
 
 Parse the candidate's resume into structured sections, then rewrite every section to be tailored to the job description. Incorporate the keyword gaps naturally. Use the already-rewritten bullets and summary as a foundation where applicable.
 
@@ -273,11 +289,13 @@ export async function runRewrites(resumeText, jobDescription, analysisResult, co
     logger.warn('MOCK_CLAUDE=true — returning mock rewrites');
     return { inputTokens: 0, outputTokens: 0, result: {
       rewritten_bullets: [
-        'Architected and deployed a React/Node.js/TypeScript SaaS platform serving 50,000+ monthly active users, reducing page load time by 40%',
-        'Designed and optimised PostgreSQL schemas and query plans, cutting p99 API latency from 600ms to 95ms',
-        'Built RESTful and GraphQL API layer integrating 5 third-party services, enabling 3x faster feature delivery',
-        'Established GitHub Actions CI/CD pipeline with automated testing and zero-downtime deployments, reducing release time by 60%',
-        'Led Agile sprint ceremonies for a cross-functional team of 6, consistently delivering features on schedule',
+        '40% faster page load across 50,000+ monthly active users, achieved by architecting a React/Node.js/TypeScript SaaS platform with server-side rendering and code-splitting.',
+        'From 600ms to 95ms: p99 API latency cut by 84% after redesigning PostgreSQL schemas and introducing Redis caching for high-frequency queries.',
+        'By unifying 5 third-party integrations behind a single GraphQL layer, feature delivery accelerated 3x and client-side data fetching complexity dropped by 70%.',
+        'Zero-downtime deploys established for a team of 8 by building a GitHub Actions CI/CD pipeline with parallelised tests and automated rollback on failure.',
+        '60% shorter release cycles delivered through Agile sprint facilitation across a cross-functional team, with every sprint hitting its committed scope.',
+        'A Kubernetes migration that cut infrastructure costs 40% and eliminated the manual deployment process that averaged 3 hours per release.',
+        '$130k in annual cloud spend reduced by right-sizing EC2 instances and moving batch workloads to spot pricing, identified through cost-explorer audits.',
       ],
       summary_rewrite: 'Full Stack Engineer with 5+ years shipping production React and Node.js applications at scale. Cut API latency by 85% and built the CI/CD pipeline that reduced release cycles from days to hours. Deep expertise in TypeScript, PostgreSQL, and cloud infrastructure — and a track record of making complex systems reliable.',
       skills_section: 'React, Next.js, Node.js, TypeScript, PostgreSQL, Redis, GraphQL, REST APIs, AWS (EC2, S3, RDS), Kubernetes, Docker, GitHub Actions, CI/CD, Agile/Scrum, Tailwind CSS',
@@ -468,7 +486,7 @@ function validateRewrites(obj) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
   if (!Array.isArray(obj.rewritten_bullets)) throw new Error('rewritten_bullets must be an array');
-  if (obj.rewritten_bullets.length !== 5) throw new Error(`rewritten_bullets must have 5 items, got ${obj.rewritten_bullets.length}`);
+  if (obj.rewritten_bullets.length !== 7) throw new Error(`rewritten_bullets must have 7 items, got ${obj.rewritten_bullets.length}`);
   if (!Array.isArray(obj.interview_questions)) throw new Error('interview_questions must be an array');
   if (obj.interview_questions.length !== 8) throw new Error(`interview_questions must have 8 items, got ${obj.interview_questions.length}`);
   for (const q of obj.interview_questions) {
