@@ -17,15 +17,21 @@ function withTimeout(promise, ms, label) {
 }
 
 function buildAnalysisPrompt(resumeText, jobDescription) {
-  return `You are an expert ATS analyst, resume coach, and career strategist.
+  return `You are an expert ATS analyst, resume coach, and career strategist operating globally.
 
-WRITING RULE: Never use em dashes (—) in any string you produce. Use a comma, period, or reword instead.
+LANGUAGE RULE: Detect the primary language of the RESUME TEXT. Write ALL narrative string values (notes, strengths, weaknesses, summaries, tips, headlines, red flags) in that same language. Technical terms, tool names, and proper nouns stay in their original form regardless of language. JSON field names remain in English.
 
-Analyse the resume against the job description and return ONLY a JSON object — no markdown, no explanation, no preamble:
+WRITING RULES:
+- Never use em dashes (—). Use a comma, period, or reword instead.
+- No filler phrases like "results-driven" or "passionate about".
+
+SALARY RULE: Detect the job market location from the resume and JD (city, country, region). Use actual LOCAL market rates for that specific location. If the role is in Panama City, use Panama rates. If London, use London rates. Express amounts in the currency most natural for that market (e.g. USD for Panama and US roles, GBP for UK, EUR for EU). In salary_range.notes, state the location and currency basis explicitly.
+
+Analyse the resume against the job description and return ONLY a JSON object. No markdown, no explanation, no preamble:
 
 {
   "ats_score": <integer 0-100, overall ATS keyword and formatting compatibility>,
-  "human_score": <integer 0-100, how compelling this resume is to a human recruiter with 7 seconds — considers narrative clarity, achievement specificity, absence of filler language, career story coherence>,
+  "human_score": <integer 0-100, how compelling this resume is to a human recruiter with 7 seconds. Considers narrative clarity, achievement specificity, absence of filler language, career story coherence>,
   "human_score_notes": <string, 1-2 sentences on what most hurts human appeal>,
   "experience_match": <integer 0-100, how well the candidate's experience level matches role requirements>,
   "experience_match_notes": <string, 1-2 sentences explaining the experience match rating>,
@@ -34,15 +40,17 @@ Analyse the resume against the job description and return ONLY a JSON object —
   "strengths": <string array, 3-5 specific strengths of this resume for this role>,
   "weaknesses": <string array, 3-5 specific weaknesses of this resume for this role>,
   "linkedin_headline": <string, a strong LinkedIn headline for this candidate targeting this role, max 220 chars>,
-  "jd_red_flags": <string array, 0-5 warning signals in the job description itself — e.g. "No salary range listed", "Uses 'rockstar' or 'ninja' language", "Entry-level title but requires 5+ years", "Vague or excessively long requirements list", "No company name visible". Return empty array if none found.>,
+  "jd_red_flags": <string array, 0-5 warning signals in the job description itself. Examples: "No salary range listed", "Uses rockstar or ninja language", "Entry-level title but requires 5+ years", "Vague or excessively long requirements list", "No company name visible". Return empty array if none found>,
   "salary_range": {
-    "low": <integer, lower annual salary in USD for this role and location>,
-    "mid": <integer, midpoint annual salary in USD>,
-    "high": <integer, upper annual salary in USD>,
-    "notes": <string, 1-2 sentences on key factors affecting this range. Seniority, industry, and location signals from the JD. No em dashes.>
+    "low": <number, lower salary at local market rates>,
+    "mid": <number, midpoint salary at local market rates>,
+    "high": <number, upper salary at local market rates>,
+    "currency": <string, ISO currency code, e.g. "USD", "GBP", "EUR", "COP">,
+    "period": <string, "annual" or "monthly" — use whichever is the standard quoting convention for this job market>,
+    "notes": <string, 1-2 sentences stating the detected location, currency, and key factors affecting the range>
   },
-  "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD — reference actual signals from the posting where possible>,
-  "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement — the weakest, most passive bullet you can find. If no bullet points exist, return an empty string.>
+  "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD. Reference actual signals from the posting where possible>,
+  "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement. The weakest, most passive bullet you can find. If no bullet points exist, return empty string>
 }
 
 RESUME:
@@ -64,9 +72,9 @@ COVER LETTER PERSONALISATION (use these to make the letter sound human and speci
 `
     : '';
 
-  return `You are an expert resume writer, career coach, and hiring strategist.
+  return `You are an expert resume writer, career coach, and hiring strategist operating globally.
 
-Given the resume, job description, analysis, and personalisation context below, produce rewritten content and return ONLY a JSON object — no markdown, no explanation, no preamble.
+LANGUAGE RULE: Detect the primary language of the RESUME TEXT. Write ALL string values (bullets, summary, skills, cover letter, interview questions) in that same language. Technical terms, tool names, and proper nouns stay in their original form. JSON field names remain in English.
 
 GLOBAL WRITING RULES (apply to every string you produce):
 - Never use em dashes. Use a comma, period, or reword instead.
@@ -116,7 +124,9 @@ Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }
 
 function buildCvRewritePrompt(resumeText, jobDescription, analysisResult, rewritesResult) {
-  return `You are an expert resume writer and career coach.
+  return `You are an expert resume writer and career coach operating globally.
+
+LANGUAGE RULE: Detect the primary language of the RESUME TEXT. Write ALL string values (profile, bullets, section content) in that same language. Technical terms, tool names, and proper nouns stay in their original form. JSON field names remain in English.
 
 WRITING RULE: Never use em dashes (—) in any string you produce. Use a comma, period, or reword instead.
 
@@ -477,6 +487,7 @@ function validateAnalysis(obj) {
   if (typeof obj.salary_range.low !== 'number') throw new Error('salary_range.low must be a number');
   if (typeof obj.salary_range.mid !== 'number') throw new Error('salary_range.mid must be a number');
   if (typeof obj.salary_range.high !== 'number') throw new Error('salary_range.high must be a number');
+  // currency and period are optional — default gracefully if absent
   // sample_weak_bullet is optional — older jobs won't have it
 }
 

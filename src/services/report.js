@@ -45,17 +45,26 @@ function buildHtml(job, analysis, rewrites) {
       </section>`;
 
   const salaryRange = analysis.salary_range;
-  const salaryMonthlyLow = salaryRange ? Math.round((salaryRange.low || 0) / 12).toLocaleString() : null;
-  const salaryMonthlyMid = salaryRange ? Math.round((salaryRange.mid || 0) / 12).toLocaleString() : null;
-  const salaryMonthlyHigh = salaryRange ? Math.round((salaryRange.high || 0) / 12).toLocaleString() : null;
+  const salaryCurrency = salaryRange?.currency || 'USD';
+  const salaryPeriod = salaryRange?.period || 'annual';
+  const currencySymbols = { USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', MXN: 'MX$', COP: 'COP ', PEN: 'S/ ', CLP: 'CLP ', BRL: 'R$' };
+  const currSym = currencySymbols[salaryCurrency] || (salaryCurrency + ' ');
+  const fmt = (n) => (n || 0).toLocaleString();
+  // If Claude returned annual, show both annual and monthly. If monthly, show both monthly and annual.
+  const buildSalaryAmounts = (val) => {
+    if (salaryPeriod === 'annual') {
+      return `<strong>${currSym}${fmt(val)}/yr</strong><br><span class="salary-monthly">${currSym}${fmt(Math.round(val / 12))}/mo</span>`;
+    }
+    return `<strong>${currSym}${fmt(val)}/mo</strong><br><span class="salary-monthly">${currSym}${fmt(Math.round(val * 12))}/yr</span>`;
+  };
   const salarySection = salaryRange
     ? `<section>
         <h2>Salary Intelligence</h2>
         <div class="salary-bar-wrap">
           <div class="salary-labels">
-            <span>Low<br><strong>$${salaryRange.low?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyLow}/mo</span></span>
-            <span class="salary-mid">Market Mid<br><strong>$${salaryRange.mid?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyMid}/mo</span></span>
-            <span style="text-align:right">High<br><strong>$${salaryRange.high?.toLocaleString()}/yr</strong><br><span class="salary-monthly">$${salaryMonthlyHigh}/mo</span></span>
+            <span>Low<br>${buildSalaryAmounts(salaryRange.low)}</span>
+            <span class="salary-mid">Market Mid<br>${buildSalaryAmounts(salaryRange.mid)}</span>
+            <span style="text-align:right">High<br>${buildSalaryAmounts(salaryRange.high)}</span>
           </div>
           <div class="salary-bar">
             <div class="salary-bar-fill"></div>
@@ -295,35 +304,37 @@ function buildCvHtml(cvData) {
         <div class="cv-role-dates">${exp.dates || ''}</div>
       </div>
       <div class="cv-bullets">
-        ${(exp.bullets || []).map(b => `<div class="cv-bullet"><span class="cv-bullet-dot">&#8226;</span><span>${b}</span></div>`).join('')}
+        ${(exp.bullets || []).map(b => `<div class="cv-bullet"><span class="cv-bullet-dot">&#8226;</span><span class="cv-bullet-text">${b}</span></div>`).join('')}
       </div>
     </div>
   `).join('');
 
   const educationHtml = (education || []).map(edu => `
     <div class="cv-edu-row">
-      <div class="cv-edu-degree">${edu.degree}</div>
-      <div class="cv-edu-school">${edu.school}</div>
+      <div>
+        <div class="cv-edu-degree">${edu.degree}</div>
+        <div class="cv-edu-school">${edu.school}</div>
+      </div>
       ${edu.dates ? `<div class="cv-edu-dates">${edu.dates}</div>` : ''}
     </div>
   `).join('');
 
   const certHtml = (certifications || []).length > 0
-    ? `<div class="cv-left-section">
+    ? `<div class="cv-section">
         <div class="cv-section-title">Certifications</div>
         ${certifications.map(c => `
           <div class="cv-cert-row">
             <div class="cv-cert-name">${c.name}</div>
-            ${c.issuer ? `<div class="cv-cert-meta">${c.issuer}${c.year ? `, ${c.year}` : ''}</div>` : ''}
+            ${c.issuer ? `<span class="cv-cert-meta">${c.issuer}${c.year ? `, ${c.year}` : ''}</span>` : ''}
           </div>
         `).join('')}
       </div>`
     : '';
 
   const langHtml = (languages || []).length > 0
-    ? `<div class="cv-left-section">
+    ? `<div class="cv-section">
         <div class="cv-section-title">Languages</div>
-        <p class="cv-lang-list">${languages.join(', ')}</p>
+        <p class="cv-lang-text">${languages.join(', ')}</p>
       </div>`
     : '';
 
@@ -337,88 +348,116 @@ function buildCvHtml(cvData) {
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: system-ui, -apple-system, Arial, sans-serif;
-    color: #1a1a1a;
+    color: #111827;
     font-size: 12.5px;
     line-height: 1.55;
     background: #fff;
+    padding: 40px 52px 52px;
   }
 
-  /* ── Full-width header ── */
+  /* Header */
   .cv-header {
-    background: #0f172a;
-    color: #fff;
-    padding: 32px 48px 24px;
+    border-bottom: 2px solid #111827;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
   }
   .cv-name {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     letter-spacing: -0.3px;
-    margin-bottom: 4px;
+    color: #111827;
+    margin-bottom: 3px;
   }
   .cv-title {
-    font-size: 11.5px;
-    color: #E8571A;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 600;
-    margin-bottom: 14px;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
   }
   .cv-contact {
     font-size: 11px;
-    color: #94a3b8;
+    color: #6b7280;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 0;
+    gap: 0;
   }
-  .cv-contact-item { margin-right: 18px; }
+  .cv-contact-sep { margin: 0 8px; color: #d1d5db; }
 
-  /* ── Two-column body ── */
-  .cv-columns {
-    display: flex;
-    align-items: flex-start;
-    min-height: 0;
-  }
-
-  /* Left column */
-  .cv-left {
-    width: 32%;
-    background: #f8fafc;
-    border-right: 1px solid #e5e7eb;
-    padding: 28px 20px 40px 24px;
-    min-height: 100%;
-  }
-
-  /* Right column */
-  .cv-right {
-    width: 68%;
-    padding: 28px 40px 40px 28px;
-  }
-
-  /* Section titles */
+  /* Sections */
+  .cv-section { margin-bottom: 20px; }
   .cv-section-title {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: #E8571A;
-    border-bottom: 1.5px solid #E8571A;
-    padding-bottom: 4px;
+    letter-spacing: 0.1em;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 3px;
     margin-bottom: 10px;
   }
-  .cv-left-section { margin-bottom: 22px; }
-  .cv-right-section { margin-bottom: 22px; }
 
-  /* Left column content */
-  .cv-skills-text {
+  /* Profile */
+  .cv-profile {
+    font-size: 12.5px;
+    color: #374151;
+    line-height: 1.7;
+  }
+
+  /* Experience */
+  .cv-role { margin-bottom: 14px; }
+  .cv-role-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+  .cv-role-left { flex: 1; min-width: 0; }
+  .cv-role-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .cv-role-company {
+    font-size: 11.5px;
+    color: #6b7280;
+    margin-top: 1px;
+  }
+  .cv-role-dates {
+    font-size: 11px;
+    color: #9ca3af;
+    white-space: nowrap;
+    margin-left: 12px;
+    margin-top: 2px;
+  }
+  .cv-bullets { margin-top: 4px; }
+  .cv-bullet {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 3px;
+    align-items: flex-start;
+  }
+  .cv-bullet-dot {
+    color: #9ca3af;
+    font-size: 10px;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  .cv-bullet-text {
     font-size: 12px;
     color: #374151;
-    line-height: 1.75;
+    line-height: 1.55;
   }
-  .cv-edu-row { margin-bottom: 12px; }
+
+  /* Education */
+  .cv-edu-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
   .cv-edu-degree {
     font-size: 12.5px;
     font-weight: 600;
-    color: #0f172a;
+    color: #111827;
   }
   .cv-edu-school {
     font-size: 11.5px;
@@ -428,127 +467,74 @@ function buildCvHtml(cvData) {
   .cv-edu-dates {
     font-size: 11px;
     color: #9ca3af;
-    margin-top: 1px;
-  }
-  .cv-cert-row { margin-bottom: 10px; }
-  .cv-cert-name {
-    font-size: 12px;
-    color: #1a1a1a;
-    line-height: 1.4;
-  }
-  .cv-cert-meta {
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 1px;
-  }
-  .cv-lang-list {
-    font-size: 12px;
-    color: #374151;
-    line-height: 1.75;
+    white-space: nowrap;
+    margin-left: 10px;
+    margin-top: 2px;
   }
 
-  /* Right column content */
-  .cv-profile {
+  /* Skills */
+  .cv-skills-text {
     font-size: 12.5px;
     color: #374151;
     line-height: 1.7;
   }
-  .cv-role { margin-bottom: 16px; }
-  .cv-role-header {
+
+  /* Certifications */
+  .cv-cert-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
   }
-  .cv-role-left { flex: 1; }
-  .cv-role-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #0f172a;
-  }
-  .cv-role-company {
+  .cv-cert-name {
     font-size: 12px;
-    color: #6b7280;
-    margin-top: 1px;
+    color: #111827;
   }
-  .cv-role-dates {
+  .cv-cert-meta {
     font-size: 11px;
     color: #9ca3af;
     white-space: nowrap;
     margin-left: 10px;
-    margin-top: 2px;
-    text-align: right;
-  }
-  .cv-bullets { margin-top: 4px; }
-  .cv-bullet {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 4px;
-    align-items: flex-start;
-  }
-  .cv-bullet-dot {
-    color: #E8571A;
-    font-size: 11px;
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
-  .cv-bullet span:last-child {
-    font-size: 12px;
-    color: #374151;
-    line-height: 1.55;
   }
 
-  /* Attribution */
-  .cv-attribution {
-    text-align: center;
-    font-size: 9.5px;
-    color: #d1d5db;
-    padding: 14px 48px 18px;
-    border-top: 1px solid #f3f4f6;
+  /* Languages */
+  .cv-lang-text {
+    font-size: 12.5px;
+    color: #374151;
   }
 </style>
 </head>
 <body>
   <div class="cv-header">
     <div class="cv-name">${name}</div>
-    <div class="cv-title">${title}</div>
+    ${title ? `<div class="cv-title">${title}</div>` : ''}
     <div class="cv-contact">
-      ${contactParts.map(p => `<span class="cv-contact-item">${p}</span>`).join('')}
+      ${contactParts.map((p, i) => `${i > 0 ? '<span class="cv-contact-sep">|</span>' : ''}<span>${p}</span>`).join('')}
     </div>
   </div>
 
-  <div class="cv-columns">
-    <!-- Left column: Skills, Education, Certifications, Languages -->
-    <div class="cv-left">
-      <div class="cv-left-section">
-        <div class="cv-section-title">Skills</div>
-        <p class="cv-skills-text">${skillsText}</p>
-      </div>
-
-      <div class="cv-left-section">
-        <div class="cv-section-title">Education</div>
-        ${educationHtml}
-      </div>
-
-      ${certHtml}
-      ${langHtml}
-    </div>
-
-    <!-- Right column: Profile, Experience -->
-    <div class="cv-right">
-      <div class="cv-right-section">
-        <div class="cv-section-title">Profile</div>
-        <p class="cv-profile">${profile}</p>
-      </div>
-
-      <div class="cv-right-section">
-        <div class="cv-section-title">Experience</div>
-        ${experienceHtml}
-      </div>
-    </div>
+  <div class="cv-section">
+    <div class="cv-section-title">Profile</div>
+    <p class="cv-profile">${profile}</p>
   </div>
 
-  <div class="cv-attribution">Tailored by Shortlisted &middot; getshortlisted.fyi</div>
+  <div class="cv-section">
+    <div class="cv-section-title">Experience</div>
+    ${experienceHtml}
+  </div>
+
+  <div class="cv-section">
+    <div class="cv-section-title">Skills</div>
+    <p class="cv-skills-text">${skillsText}</p>
+  </div>
+
+  <div class="cv-section">
+    <div class="cv-section-title">Education</div>
+    ${educationHtml}
+  </div>
+
+  ${certHtml}
+  ${langHtml}
 </body>
 </html>`;
 }
