@@ -25,7 +25,12 @@ WRITING RULES:
 - Never use em dashes (—). Use a comma, period, or reword instead.
 - No filler phrases like "results-driven" or "passionate about".
 
-SALARY RULE: Detect the job market location from the resume and JD (city, country, region). Use actual LOCAL market rates for that specific location. If the role is in Panama City, use Panama rates. If London, use London rates. Express amounts in the currency most natural for that market (e.g. USD for Panama and US roles, GBP for UK, EUR for EU). In salary_range.notes, state the location and currency basis explicitly.
+SALARY RULE: Determine the job market using this priority order:
+1. Explicit location in the JD (city, country, or region stated in the posting).
+2. If the JD has no location, use the candidate's location from the resume contact info or address.
+3. If the JD says "remote" with no country, use the candidate's country as the market basis.
+4. If location cannot be determined from either document, use US remote-worker market rates and note the assumption.
+Use actual local market rates for the detected location. Express amounts in the currency most natural for that market (USD for Panama and US roles, GBP for UK, EUR for EU, etc.). In salary_range.notes, state the detected location, the source of that detection (JD, resume, or assumed), and the currency basis.
 
 Analyse the resume against the job description and return ONLY a JSON object. No markdown, no explanation, no preamble:
 
