@@ -16,6 +16,8 @@ export default function ProcessingView() {
   const navigate = useNavigate();
   const jobId = params.get('jobId');
   const [status, setStatus] = useState('ANALYZING');
+  const [reportUrl, setReportUrl] = useState(null);
+  const [cvUrl, setCvUrl] = useState(null);
   const [error, setError] = useState('');
   const [activeStep, setActiveStep] = useState(1);
   const { t } = useT();
@@ -54,6 +56,10 @@ export default function ProcessingView() {
         const data = await res.json();
         if (stopped) return;
         setStatus(data.status);
+        if (data.status === 'COMPLETE') {
+          if (data.reportUrl) setReportUrl(data.reportUrl);
+          if (data.cvUrl) setCvUrl(data.cvUrl);
+        }
         if (data.status === 'PREVIEW_READY') {
           setActiveStep(3);
           setTimeout(() => navigate(`/preview?jobId=${jobId}`), 600);
@@ -108,10 +114,23 @@ export default function ProcessingView() {
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <h1 className={styles.stateHeading}>{t('processing_done')}</h1>
-          <p className={styles.stateBody}>
-            Check your inbox. The PDF is waiting for you. If it's not there, check your spam. It happens to the best of us.
-          </p>
-          <Link to="/" className={styles.btn}>{t('success_another')}</Link>
+          {reportUrl ? (
+            <>
+              <p className={styles.stateBody}>Your report is ready. Download it below — the link expires in 72 hours.</p>
+              <a href={reportUrl} className={styles.btn} download>Download Report</a>
+              {cvUrl && (
+                <a href={cvUrl} className={styles.btn} download style={{ marginTop: '12px' }}>Download Tailored CV</a>
+              )}
+              <p className={styles.stateBodySub} style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-subtle)' }}>
+                A copy has also been sent to your email.
+              </p>
+            </>
+          ) : (
+            <p className={styles.stateBody}>
+              Check your inbox. The PDF is waiting for you. If it's not there, check your spam.
+            </p>
+          )}
+          <Link to="/" className={styles.btn} style={{ marginTop: '16px' }}>{t('success_another')}</Link>
         </div>
       </Shell>
     );

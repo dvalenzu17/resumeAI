@@ -177,10 +177,10 @@ const translations = {
 
     // Rewrite teaser
     teaser_badge: 'The Glow-Up',
-    teaser_title: 'This is what your top bullet looks like after the rewrite.',
-    teaser_sub: 'Same experience. Different framing. The ATS reads it differently. So do recruiters.',
-    teaser_before: 'Your bullet now',
-    teaser_before_bullet: 'Responsible for managing the team and delivering projects on time within budget.',
+    teaser_title: 'Example of how a weak bullet gets rewritten.',
+    teaser_sub: 'Every bullet in your resume goes through this. Duties become achievements. Vague becomes specific.',
+    teaser_before: 'Typical weak bullet',
+    teaser_before_bullet: 'Managed projects and coordinated with team members to meet deadlines.',
     teaser_after: 'After The Glow-Up',
     teaser_after_bullet: 'Led a cross-functional team of 6 to deliver 4 product features on schedule, reducing scope creep by 40% through weekly stakeholder alignment.',
     teaser_note: 'The Glow-Up delivers a fully rewritten CV tailored to this role, rewrites your summary, writes your cover letter, and prepares you with 8 interview questions with STAR answers. Download it. Submit it. Done.',
@@ -364,10 +364,10 @@ const translations = {
 
     // Rewrite teaser
     teaser_badge: 'The Glow-Up',
-    teaser_title: 'Asi se ve tu punto principal despues de la reescritura.',
-    teaser_sub: 'La misma experiencia. Diferente enfoque. El ATS lo lee diferente. Los reclutadores tambien.',
-    teaser_before: 'Tu punto ahora',
-    teaser_before_bullet: 'Responsable de gestionar el equipo y entregar proyectos a tiempo y dentro del presupuesto.',
+    teaser_title: 'Ejemplo de como se reescribe un punto debil.',
+    teaser_sub: 'Cada punto de tu CV pasa por esto. Las responsabilidades se convierten en logros. Lo vago se vuelve especifico.',
+    teaser_before: 'Punto tipico debil',
+    teaser_before_bullet: 'Gestioné proyectos y coordine con miembros del equipo para cumplir plazos.',
     teaser_after: 'Con The Glow-Up',
     teaser_after_bullet: 'Lidere un equipo multifuncional de 6 personas para entregar 4 funcionalidades a tiempo, reduciendo los cambios de alcance un 40% mediante alineacion semanal con stakeholders.',
     teaser_note: 'The Glow-Up entrega un CV completamente reescrito adaptado a este puesto, reescribe tu resumen, redacta tu carta de presentacion y te prepara con 8 preguntas de entrevista con respuestas STAR. Descargalo. Envialo. Listo.',

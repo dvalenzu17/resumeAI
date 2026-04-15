@@ -284,6 +284,8 @@ export default function AdminView() {
                 <Card label="Avg profit / job" value={fmt$(profit.avgProfitPerJob)} sub={`avg cost ${fmt$4(profit.avgCostPerJob)}`} />
                 <Card label="Today" value={fmt$(revenue.today.revenue)} sub={`${fmtN(revenue.today.jobCount)} jobs`} />
                 <Card label="Last 7 days" value={fmt$(revenue.last7days.revenue)} sub={`${fmtN(revenue.last7days.jobCount)} jobs`} />
+                <Card label="Claude spend (all jobs)" value={fmt$4(costs.claude.totalCost)} sub={`${fmtN(costs.claude.totalInputTokens + costs.claude.totalOutputTokens)} total tokens`} accent />
+                <Card label="Claude tokens" value={fmtN(costs.claude.totalInputTokens)} sub={`↑ in · ${fmtN(costs.claude.totalOutputTokens)} ↓ out`} />
               </div>
             </Section>
 

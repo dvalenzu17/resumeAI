@@ -163,12 +163,17 @@ jobsRouter.get('/:id/status', async (req, res, next) => {
   try {
     const job = await db.job.findUnique({
       where: { id: req.params.id },
-      select: { id: true, status: true, tier: true, analysisResult: true, createdAt: true },
+      select: { id: true, status: true, tier: true, analysisResult: true, createdAt: true, reportUrl: true, cvUrl: true },
     });
 
     if (!job) throw AppError.notFound('Job not found');
 
     const response = { id: job.id, status: job.status, tier: job.tier, createdAt: job.createdAt };
+
+    if (job.status === 'COMPLETE') {
+      response.reportUrl = job.reportUrl || null;
+      response.cvUrl = job.cvUrl || null;
+    }
 
     if (job.status === 'PREVIEW_READY' && job.analysisResult) {
       const a = job.analysisResult;
