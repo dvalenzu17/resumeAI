@@ -393,6 +393,30 @@ export default function PreviewView() {
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
                   {loading ? t('preview_redirecting') : t('preview_continue_checkout')}
                 </button>
+                <p style={{ textAlign: 'center', marginTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      setError('');
+                      try {
+                        const res = await fetch(`/api/jobs/${jobId}/checkout`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ tier: selectedTier, coverLetterContext: null, email }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+                        if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+                        else { navigate(`/processing?jobId=${jobId}`); }
+                      } catch (err) { setError(err.message); setLoading(false); }
+                    }}
+                    disabled={loading}
+                    style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                  >
+                    Skip, generate without personalisation
+                  </button>
+                </p>
                 <p className={styles.paywallNote}>{t('preview_sending_to')} {email} · {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a></p>
               </>
             )}
