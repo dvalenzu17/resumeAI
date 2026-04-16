@@ -75,21 +75,21 @@
 - [x] Purchase getshortlisted.fyi and point DNS to Railway
 
 ### Railway deploy
-- [ ] Push to GitHub (or it's already there — confirm)
-- [ ] Connect repo in Railway dashboard
-- [ ] Add all production env vars (see .env.example)
-- [ ] Set CRON_SECRET env var (any long random string)
-- [ ] Set ADMIN_SECRET env var (any long random string)
+- [x] Push to GitHub (or it's already there — confirm)
+- [x] Connect repo in Railway dashboard
+- [x] Add all production env vars (see .env.example)
+- [x] Set CRON_SECRET env var (any long random string)
+- [x] Set ADMIN_SECRET env var (any long random string)
 - [ ] Set MOCK_CLAUDE=false, SKIP_PAYMENT=false
-- [ ] Confirm /api/health returns { status: 'ok', db: 'connected' }
+- [x] Confirm /api/health returns { status: 'ok', db: 'connected' }
 - [ ] Run live end-to-end test with real Lemon Squeezy test purchase
 
 ### After domain is live
-- [ ] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
-- [ ] Set up cron-job.org: POST https://getshortlisted.fyi/api/cron/followups hourly, header X-Cron-Secret: <CRON_SECRET>
-- [ ] Set up Google Search Console + verify domain
-- [ ] Verify getshortlisted.fyi in Resend dashboard (domain verification)
-- [ ] Update Lemon Squeezy webhook URL to https://getshortlisted.fyi/api/webhooks/lemonsqueezy
+- [x] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
+- [x] Set up cron-job.org: POST https://getshortlisted.fyi/api/cron/followups hourly, header X-Cron-Secret: <CRON_SECRET>
+- [x] Set up Google Search Console + verify domain
+- [x] Verify getshortlisted.fyi in Resend dashboard (domain verification)
+- [x] Update Lemon Squeezy webhook URL to https://getshortlisted.fyi/api/webhooks/lemonsqueezy
 - [ ] Set STATS_SEED in Railway env once real completed jobs exist
 - [ ] Drop daniel.jpg into client/public/images/daniel.jpg
 - [ ] Screenshot og-template.html at 1200x630 → save as client/public/og-image.png
