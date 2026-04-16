@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import CookieBanner from './lib/CookieBanner.jsx';
 import UploadView from './views/UploadView.jsx';
 import ProcessingView from './views/ProcessingView.jsx';
 import PreviewView from './views/PreviewView.jsx';
@@ -17,6 +18,8 @@ import SoftwareEngineerResume from './views/blog/SoftwareEngineerResume.jsx';
 
 export default function App() {
   return (
+    <>
+    <CookieBanner />
     <Routes>
       <Route path="/" element={<UploadView />} />
       <Route path="/processing" element={<ProcessingView />} />
@@ -34,5 +37,6 @@ export default function App() {
       <Route path="/blog/software-engineer-resume" element={<SoftwareEngineerResume />} />
       <Route path="*" element={<NotFoundView />} />
     </Routes>
+    </>
   );
 }

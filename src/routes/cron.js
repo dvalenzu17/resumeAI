@@ -24,12 +24,13 @@ cronRouter.post('/followups', async (req, res) => {
   let sent2 = 0;
 
   try {
-    // Preview nudge: PREVIEW_READY, 2+ hours ago, email present, nudge not yet sent
+    // Preview nudge: PREVIEW_READY, 2+ hours ago, email present, nudge not yet sent, not opted out
     const needsNudge = await db.job.findMany({
       where: {
         status: 'PREVIEW_READY',
         email: { not: '' },
         previewNudgeSentAt: null,
+        marketingOptOut: false,
         createdAt: { lte: twoHoursAgo },
       },
       select: { id: true, email: true, analysisResult: true },
@@ -51,12 +52,13 @@ cronRouter.post('/followups', async (req, res) => {
       }
     }
 
-    // Follow-up 1: COMPLETE, 3+ days ago, email present, not yet sent
+    // Follow-up 1: COMPLETE, 3+ days ago, email present, not opted out, not yet sent
     const needsFollowUp1 = await db.job.findMany({
       where: {
         status: 'COMPLETE',
         email: { not: '' },
         followUp1SentAt: null,
+        marketingOptOut: false,
         updatedAt: { lte: day3Ago },
       },
       select: { id: true, email: true },
@@ -73,13 +75,14 @@ cronRouter.post('/followups', async (req, res) => {
       }
     }
 
-    // Follow-up 2: COMPLETE, 7+ days ago, email present, followUp1 sent, followUp2 not yet sent
+    // Follow-up 2: COMPLETE, 7+ days ago, email present, followUp1 sent, not opted out, followUp2 not yet sent
     const needsFollowUp2 = await db.job.findMany({
       where: {
         status: 'COMPLETE',
         email: { not: '' },
         followUp1SentAt: { not: null },
         followUp2SentAt: null,
+        marketingOptOut: false,
         updatedAt: { lte: day7Ago },
       },
       select: { id: true, email: true },
@@ -87,7 +90,7 @@ cronRouter.post('/followups', async (req, res) => {
 
     for (const job of needsFollowUp2) {
       try {
-        await sendFollowUp2Email(job.email, env.APP_URL);
+        await sendFollowUp2Email(job.email, job.id, env.APP_URL);
         await db.job.update({ where: { id: job.id }, data: { followUp2SentAt: now } });
         sent2++;
         logger.info({ jobId: job.id }, 'Follow-up 2 sent');

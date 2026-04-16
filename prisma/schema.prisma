@@ -61,6 +61,7 @@ model Job {
   followUp1SentAt   DateTime?
   followUp2SentAt   DateTime?
   feedbackResult    String?   // 'yes' | 'no'
+  marketingOptOut   Boolean   @default(false)
   tokensInCall1     Int       @default(0)
   tokensOutCall1    Int       @default(0)
   tokensInCall2     Int       @default(0)

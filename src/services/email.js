@@ -6,7 +6,8 @@ const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 const FROM = 'Shortlisted <reports@getshortlisted.fyi>';
 
-const EMAIL_BASE = (content) => `<!DOCTYPE html>
+// unsubUrl is required for marketing emails (nudge, follow-ups), omit for transactional (report, failure)
+const EMAIL_BASE = (content, unsubUrl = null) => `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -48,7 +49,7 @@ const EMAIL_BASE = (content) => `<!DOCTYPE html>
         </div>
         <hr class="divider" style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 24px;">
         <p class="footer" style="font-size:12px;color:#9ca3af;margin:0;line-height:1.7;font-family:system-ui,-apple-system,sans-serif;">
-          getshortlisted.fyi &middot; Built for job seekers who are done getting ghosted<br>
+          getshortlisted.fyi &middot; Built for job seekers who are done getting ghosted${unsubUrl ? `<br><a href="${unsubUrl}" style="color:#9ca3af;text-decoration:underline;">Unsubscribe from follow-up emails</a>` : ''}
         </p>
       </div>
     </div>
@@ -118,6 +119,7 @@ export async function sendFollowUp1Email(to, jobId, appUrl) {
 
   const yesUrl = `${appUrl}/feedback?jobId=${jobId}&v=yes`;
   const noUrl = `${appUrl}/feedback?jobId=${jobId}&v=no`;
+  const unsubUrl = `${appUrl}/api/unsubscribe?jobId=${jobId}`;
 
   const content = `
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;letter-spacing:-0.3px;">Quick question.</h1>
@@ -145,15 +147,17 @@ export async function sendFollowUp1Email(to, jobId, appUrl) {
     from: FROM,
     to,
     subject: 'Quick question about your report',
-    html: EMAIL_BASE(content),
+    html: EMAIL_BASE(content, unsubUrl),
   });
 }
 
-export async function sendFollowUp2Email(to, appUrl) {
+export async function sendFollowUp2Email(to, jobId, appUrl) {
   if (!resend) {
-    logger.warn({ to }, 'RESEND_API_KEY not set — skipping follow-up 2 email');
+    logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping follow-up 2 email');
     return;
   }
+
+  const unsubUrl = `${appUrl}/api/unsubscribe?jobId=${jobId}`;
 
   const content = `
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;letter-spacing:-0.3px;">One last thing.</h1>
@@ -178,7 +182,7 @@ export async function sendFollowUp2Email(to, appUrl) {
     from: FROM,
     to,
     subject: 'Know anyone else job hunting?',
-    html: EMAIL_BASE(content),
+    html: EMAIL_BASE(content, unsubUrl),
   });
 }
 
@@ -188,6 +192,7 @@ export async function sendPreviewNudgeEmail(to, jobId, appUrl, atsScore, firstGa
     return;
   }
 
+  const unsubUrl = `${appUrl}/api/unsubscribe?jobId=${jobId}`;
   const scoreColor = atsScore >= 75 ? '#059669' : atsScore >= 50 ? '#d97706' : '#dc2626';
   const scoreVerdict = atsScore >= 75
     ? 'That is solid, but there are still gaps costing you callbacks.'
@@ -224,7 +229,7 @@ export async function sendPreviewNudgeEmail(to, jobId, appUrl, atsScore, firstGa
     from: FROM,
     to,
     subject: `Your ATS score: ${atsScore}/100 — here's what's holding you back`,
-    html: EMAIL_BASE(content),
+    html: EMAIL_BASE(content, unsubUrl),
   });
 }
 
