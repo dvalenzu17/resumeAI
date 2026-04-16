@@ -55,7 +55,8 @@ Analyse the resume against the job description and return ONLY a JSON object. No
     "notes": <string, 1-2 sentences stating the detected location, currency, and key factors affecting the range>
   },
   "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD. Reference actual signals from the posting where possible>,
-  "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement. The weakest, most passive bullet you can find. If no bullet points exist, return empty string>
+  "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement. The weakest, most passive bullet you can find. If no bullet points exist, return empty string>,
+  "detected_language": <string, ISO 639-1 code of the resume's primary language — "en", "es", "fr", "pt", "de", "it", "nl", "zh", "ar", "ja", "ko", etc. Default "en" if unclear>
 }
 
 RESUME:
@@ -202,6 +203,17 @@ ${JSON.stringify({
 Return ONLY the JSON object. No markdown code fences. No explanation.`;
 }
 
+function stripEmDashes(val) {
+  if (typeof val === 'string') return val.replace(/ — /g, ', ').replace(/—/g, ' ');
+  if (Array.isArray(val)) return val.map(stripEmDashes);
+  if (val && typeof val === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(val)) out[k] = stripEmDashes(v);
+    return out;
+  }
+  return val;
+}
+
 async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
   const finalPrompt = retryWithStricter
     ? prompt + '\n\nCRITICAL: Your previous response was not valid JSON. Return ONLY raw JSON. No text before or after the opening { and closing }.'
@@ -224,7 +236,7 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
       const text = message.content[0]?.text?.trim() ?? '';
       const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       return {
-        result: JSON.parse(cleaned),
+        result: stripEmDashes(JSON.parse(cleaned)),
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0,
       };
@@ -282,6 +294,7 @@ export async function runAnalysis(resumeText, jobDescription) {
         'They emphasise "fast-paced environment" — use this to negotiate a 90-day performance review with a raise tied to clear goals.',
         'If base salary is fixed, ask for a $5-10k signing bonus and an extra week of PTO — these are lower-friction concessions for employers.',
       ],
+      detected_language: 'en',
     } };
   }
 
@@ -502,7 +515,7 @@ function validateRewrites(obj) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
   if (!Array.isArray(obj.rewritten_bullets)) throw new Error('rewritten_bullets must be an array');
-  if (obj.rewritten_bullets.length !== 7) throw new Error(`rewritten_bullets must have 7 items, got ${obj.rewritten_bullets.length}`);
+  if (obj.rewritten_bullets.length < 5 || obj.rewritten_bullets.length > 10) throw new Error(`rewritten_bullets must have 5-10 items, got ${obj.rewritten_bullets.length}`);
   if (!Array.isArray(obj.interview_questions)) throw new Error('interview_questions must be an array');
   if (obj.interview_questions.length !== 8) throw new Error(`interview_questions must have 8 items, got ${obj.interview_questions.length}`);
   for (const q of obj.interview_questions) {
