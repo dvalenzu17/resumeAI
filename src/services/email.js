@@ -272,6 +272,58 @@ export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
   });
 }
 
+export async function sendDailyPulseEmail(adminEmail, stats) {
+  if (!resend) return;
+
+  const { date, revenue, basicCount, fullCount, jobsCreated, failedJobs, nudgesSent, fu1Sent, fu2Sent } = stats;
+  const totalSales = basicCount + fullCount;
+
+  const revenueColor = revenue > 0 ? '#059669' : '#6b7280';
+  const failedSection = failedJobs.length > 0
+    ? `<p style="margin:0 0 8px;font-size:14px;color:#dc2626;font-weight:600;">Failed jobs (${failedJobs.length}):</p>
+       <ul style="margin:0 0 16px;padding-left:20px;">${failedJobs.map(j => `<li style="font-size:12px;font-family:monospace;color:#374151;">${j.id}${j.email ? ' — ' + j.email : ''}</li>`).join('')}</ul>`
+    : `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;">No failed jobs.</p>`;
+
+  const content = `
+    <h1 style="font-size:20px;font-weight:700;margin:0 0 4px;letter-spacing:-0.3px;">Daily pulse — ${date}</h1>
+    <p style="font-size:12px;color:#9ca3af;margin:0 0 28px;">Shortlisted · 6am summary</p>
+
+    <div style="display:flex;gap:12px;margin-bottom:24px;">
+      <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:32px;font-weight:800;color:${revenueColor};letter-spacing:-1px;">$${revenue}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Revenue</div>
+      </div>
+      <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:32px;font-weight:800;color:#111827;">${totalSales}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Sales</div>
+      </div>
+      <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:32px;font-weight:800;color:#111827;">${jobsCreated}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;text-transform:uppercase;letter-spacing:0.06em;">Uploads</div>
+      </div>
+    </div>
+
+    ${totalSales > 0 ? `<p style="margin:0 0 16px;font-size:13px;color:#374151;">${basicCount} Audit × $12 &nbsp;+&nbsp; ${fullCount} Glow-Up × $29</p>` : ''}
+
+    <p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 6px;">Email sequence</p>
+    <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">
+      Preview nudges: ${nudgesSent} &nbsp;·&nbsp; Day-3 follow-ups: ${fu1Sent} &nbsp;·&nbsp; Day-7 follow-ups: ${fu2Sent}
+    </p>
+
+    ${failedSection}
+
+    <a href="${env.APP_URL}/admin" style="background:#0f0f0f;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:700;display:inline-block;font-size:13px;">
+      Open admin dashboard →
+    </a>`;
+
+  await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `[Shortlisted] ${date} — $${revenue} revenue · ${totalSales} sale${totalSales !== 1 ? 's' : ''}`,
+    html: EMAIL_BASE(content),
+  });
+}
+
 export async function sendFailureEmail(to, jobId) {
   if (!resend) {
     logger.warn({ to, jobId }, 'RESEND_API_KEY not set — skipping failure email');

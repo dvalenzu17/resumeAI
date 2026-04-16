@@ -21,6 +21,7 @@ const schema = z.object({
   LEMONSQUEEZY_VARIANT_ID_FULL: z.string().default(''),
   // Email — optional until ready
   RESEND_API_KEY: z.string().default(''),
+  RESEND_WEBHOOK_SECRET: z.string().default(''),
   // R2 — optional until ready
   R2_ACCOUNT_ID: z.string().default(''),
   R2_ACCESS_KEY_ID: z.string().default(''),

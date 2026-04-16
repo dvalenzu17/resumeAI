@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
-import { sendFollowUp1Email, sendFollowUp2Email, sendPreviewNudgeEmail, sendWebhookAlertEmail } from '../services/email.js';
+import { sendFollowUp1Email, sendFollowUp2Email, sendPreviewNudgeEmail, sendWebhookAlertEmail, sendDailyPulseEmail } from '../services/email.js';
 
 export const cronRouter = Router();
 
@@ -123,5 +123,63 @@ cronRouter.post('/followups', async (req, res) => {
   } catch (err) {
     logger.error({ err }, 'Follow-up cron failed');
     res.status(500).json({ error: 'Cron failed' });
+  }
+});
+
+// Called once daily at 6am by an external cron service.
+// Sends a revenue + activity summary to the admin email.
+cronRouter.post('/daily-pulse', async (req, res) => {
+  if (!env.CRON_SECRET || req.headers['x-cron-secret'] !== env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const now = new Date();
+
+  // Yesterday: UTC midnight-to-midnight
+  const yesterdayStart = new Date(now);
+  yesterdayStart.setUTCHours(0, 0, 0, 0);
+  yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+  const yesterdayEnd = new Date(now);
+  yesterdayEnd.setUTCHours(0, 0, 0, 0);
+
+  const dateStr = yesterdayStart.toISOString().slice(0, 10);
+
+  try {
+    const [completedYesterday, jobsCreated, failedJobs, nudgesSent, fu1Sent, fu2Sent] = await Promise.all([
+      db.job.findMany({
+        where: { status: 'COMPLETE', updatedAt: { gte: yesterdayStart, lt: yesterdayEnd } },
+        select: { tier: true },
+      }),
+      db.job.count({ where: { createdAt: { gte: yesterdayStart, lt: yesterdayEnd } } }),
+      db.job.findMany({
+        where: { status: 'FAILED', updatedAt: { gte: yesterdayStart, lt: yesterdayEnd } },
+        select: { id: true, email: true },
+      }),
+      db.job.count({ where: { previewNudgeSentAt: { gte: yesterdayStart, lt: yesterdayEnd } } }),
+      db.job.count({ where: { followUp1SentAt:   { gte: yesterdayStart, lt: yesterdayEnd } } }),
+      db.job.count({ where: { followUp2SentAt:   { gte: yesterdayStart, lt: yesterdayEnd } } }),
+    ]);
+
+    const basicCount = completedYesterday.filter(j => j.tier === 'BASIC').length;
+    const fullCount  = completedYesterday.filter(j => j.tier === 'FULL').length;
+    const revenue    = basicCount * 12 + fullCount * 29;
+
+    await sendDailyPulseEmail('hello@getshortlisted.fyi', {
+      date: dateStr,
+      revenue,
+      basicCount,
+      fullCount,
+      jobsCreated,
+      failedJobs,
+      nudgesSent,
+      fu1Sent,
+      fu2Sent,
+    });
+
+    logger.info({ date: dateStr, revenue, sales: basicCount + fullCount }, 'Daily pulse sent');
+    res.json({ ok: true, date: dateStr, revenue, sales: basicCount + fullCount });
+  } catch (err) {
+    logger.error({ err }, 'Daily pulse cron failed');
+    res.status(500).json({ error: 'Daily pulse failed' });
   }
 });
