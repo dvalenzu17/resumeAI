@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../lib/db.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
-import { sendFollowUp1Email, sendFollowUp2Email, sendPreviewNudgeEmail } from '../services/email.js';
+import { sendFollowUp1Email, sendFollowUp2Email, sendPreviewNudgeEmail, sendWebhookAlertEmail } from '../services/email.js';
 
 export const cronRouter = Router();
 
@@ -16,6 +16,7 @@ cronRouter.post('/followups', async (req, res) => {
 
   const now = new Date();
   const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
+  const ninetyMinsAgo = new Date(now - 90 * 60 * 1000);
   const day3Ago = new Date(now - 3 * 24 * 60 * 60 * 1000);
   const day7Ago = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
@@ -99,8 +100,26 @@ cronRouter.post('/followups', async (req, res) => {
       }
     }
 
-    logger.info({ sentNudge, sent1, sent2 }, 'Follow-up cron complete');
-    res.json({ ok: true, sentNudge, sent1, sent2 });
+    // Webhook silence detector: jobs stuck in PENDING_PAYMENT for 90+ minutes
+    // means Lemon Squeezy is not delivering webhooks — customers have paid but got nothing.
+    const stuckJobs = await db.job.findMany({
+      where: {
+        status: 'PENDING_PAYMENT',
+        createdAt: { lte: ninetyMinsAgo },
+      },
+      select: { id: true, email: true, createdAt: true },
+    });
+    if (stuckJobs.length > 0) {
+      try {
+        await sendWebhookAlertEmail('hello@getshortlisted.fyi', stuckJobs);
+        logger.warn({ stuckCount: stuckJobs.length }, 'Webhook silence alert sent');
+      } catch (err) {
+        logger.error({ err }, 'Failed to send webhook silence alert');
+      }
+    }
+
+    logger.info({ sentNudge, sent1, sent2, stuckJobs: stuckJobs.length }, 'Follow-up cron complete');
+    res.json({ ok: true, sentNudge, sent1, sent2, webhookAlert: stuckJobs.length });
   } catch (err) {
     logger.error({ err }, 'Follow-up cron failed');
     res.status(500).json({ error: 'Cron failed' });

@@ -503,6 +503,13 @@
   box-shadow: none;
 }
 
+.guarantee {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
 .paywallNote {
   font-size: 12px;
   color: var(--hero-muted);

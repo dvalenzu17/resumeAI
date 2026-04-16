@@ -61,6 +61,8 @@ model Job {
   followUp1SentAt   DateTime?
   followUp2SentAt   DateTime?
   feedbackResult    String?   // 'yes' | 'no'
+  feedbackReason    String?   // e.g. 'wrong_salary' | 'wrong_role' | 'confusing' | 'other'
+  feedbackDetail    String?   // optional free-text
   marketingOptOut   Boolean   @default(false)
   tokensInCall1     Int       @default(0)
   tokensOutCall1    Int       @default(0)

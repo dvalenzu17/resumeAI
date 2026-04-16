@@ -124,6 +124,21 @@ export default function ProcessingView() {
     );
   }
 
+  if (status === 'PENDING_PAYMENT') {
+    return (
+      <Shell>
+        <div className={styles.processingCard}>
+          <div className={styles.spinnerWrap}>
+            <div className={styles.spinner} />
+            <div className={styles.spinnerInner} />
+          </div>
+          <h1 className={styles.processingHeading}>Payment received</h1>
+          <p className={styles.processingBody}>Confirming your order. This usually takes under 30 seconds. Please keep this page open.</p>
+        </div>
+      </Shell>
+    );
+  }
+
   if (status === 'FAILED') {
     return (
       <Shell>

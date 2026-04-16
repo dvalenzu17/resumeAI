@@ -100,7 +100,8 @@ export async function sendReportEmail(to, jobId, downloadUrl, tier, cvUrl = null
     </a>
     ${cvButton}
     <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
-      Links expire in 72 hours · Job ID: ${jobId}
+      Links expire in 72 hours · Job ID: ${jobId}<br>
+      If the links have expired, <a href="${env.APP_URL}/redownload" style="color:#9ca3af;text-decoration:underline;">re-download your report here</a>.
     </p>`;
 
   await resend.emails.send({
@@ -230,6 +231,44 @@ export async function sendPreviewNudgeEmail(to, jobId, appUrl, atsScore, firstGa
     to,
     subject: `Your ATS score: ${atsScore}/100 — here's what's holding you back`,
     html: EMAIL_BASE(content, unsubUrl),
+  });
+}
+
+// Internal alert — sent to the admin when the webhook silence detector fires.
+// Not customer-facing, no unsubscribe needed.
+export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
+  if (!resend) return;
+  const rows = stuckJobs.map(j =>
+    `<tr><td style="padding:4px 8px;font-family:monospace;font-size:12px;">${j.id}</td><td style="padding:4px 8px;font-size:12px;">${j.email || '—'}</td><td style="padding:4px 8px;font-size:12px;">${new Date(j.createdAt).toISOString()}</td></tr>`
+  ).join('');
+
+  const content = `
+    <h1 style="font-size:20px;font-weight:700;margin:0 0 12px;color:#dc2626;">Webhook silence alert</h1>
+    <p style="line-height:1.75;margin:0 0 16px;color:#374151;">
+      ${stuckJobs.length} job${stuckJobs.length !== 1 ? 's' : ''} ha${stuckJobs.length !== 1 ? 've' : 's'} been in
+      <strong>PENDING_PAYMENT</strong> for more than 90 minutes. Lemon Squeezy may not be delivering webhooks.
+    </p>
+    <p style="line-height:1.75;margin:0 0 20px;color:#374151;">
+      Check the Lemon Squeezy dashboard → Webhooks → Recent deliveries. If deliveries are failing,
+      customers have paid but received nothing.
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+      <thead><tr style="background:#f3f4f6;">
+        <th style="padding:6px 8px;text-align:left;font-size:12px;">Job ID</th>
+        <th style="padding:6px 8px;text-align:left;font-size:12px;">Email</th>
+        <th style="padding:6px 8px;text-align:left;font-size:12px;">Created at</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <a href="https://app.lemonsqueezy.com" style="background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;display:inline-block;font-size:14px;">
+      Check Lemon Squeezy →
+    </a>`;
+
+  await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `[Shortlisted] Webhook alert — ${stuckJobs.length} stuck payment${stuckJobs.length !== 1 ? 's' : ''}`,
+    html: EMAIL_BASE(content),
   });
 }
 

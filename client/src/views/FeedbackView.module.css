@@ -124,3 +124,66 @@
 .homeLink:hover {
   color: var(--text-muted);
 }
+
+/* ── Qualitative "no" form ── */
+.reasonForm {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+  line-height: 1.5;
+}
+
+.radioLabel:hover {
+  border-color: var(--accent);
+}
+
+.radioSelected {
+  border-color: var(--accent);
+  background: rgba(232, 93, 4, 0.05);
+  color: var(--text);
+}
+
+.radioInput {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.detailInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.detailInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}

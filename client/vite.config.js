@@ -8,4 +8,8 @@ export default defineConfig({
       '/api': 'http://localhost:3000',
     },
   },
+  define: {
+    // Expose SENTRY_DSN (Railway var name) to the client bundle at build time
+    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(process.env.SENTRY_DSN || ''),
+  },
 });

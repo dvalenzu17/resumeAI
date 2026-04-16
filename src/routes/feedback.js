@@ -7,11 +7,15 @@ export const feedbackRouter = Router();
 // POST /api/feedback
 // Records feedback result for a job. Called from the FeedbackView frontend page.
 feedbackRouter.post('/', async (req, res) => {
-  const { jobId, result } = req.body ?? {};
+  const { jobId, result, reason, detail } = req.body ?? {};
 
   if (!jobId || !['yes', 'no'].includes(result)) {
     return res.status(400).json({ error: 'jobId and result (yes|no) are required' });
   }
+
+  const VALID_REASONS = ['wrong_salary', 'wrong_role', 'confusing', 'other'];
+  const safeReason = reason && VALID_REASONS.includes(reason) ? reason : null;
+  const safeDetail = typeof detail === 'string' ? detail.slice(0, 500) : null;
 
   try {
     const job = await db.job.findUnique({ where: { id: jobId }, select: { id: true, feedbackResult: true } });
@@ -20,8 +24,11 @@ feedbackRouter.post('/', async (req, res) => {
 
     // Only record once — don't overwrite if already set
     if (!job.feedbackResult) {
-      await db.job.update({ where: { id: jobId }, data: { feedbackResult: result } });
-      logger.info({ jobId, result }, 'Feedback recorded');
+      await db.job.update({
+        where: { id: jobId },
+        data: { feedbackResult: result, feedbackReason: safeReason, feedbackDetail: safeDetail },
+      });
+      logger.info({ jobId, result, reason: safeReason }, 'Feedback recorded');
     }
 
     res.json({ ok: true });

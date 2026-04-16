@@ -341,6 +341,9 @@ export default function PreviewView() {
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
                   {loading ? t('preview_redirecting') : `${t('preview_unlock_btn')} ${tierLabel} ${t('preview_unlock_for')} ${price}`}
                 </button>
+                <p className={styles.guarantee}>
+                  Not happy with the report? Full refund, no questions. Email us.
+                </p>
                 <p className={styles.paywallNote}>
                   {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a>
                   {' · '}<Link to="/terms" className={styles.paywallContact}>Terms</Link>
