@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { trackResumeSubmitted } from '../lib/analytics.js';
-import { track, trackOnce, getSessionId, getUtm } from '../lib/tracker.js';
+import { track, trackOnce, getSessionId, getUtm, getClientCountry } from '../lib/tracker.js';
 import { Reveal } from '../lib/Reveal.jsx';
 import { useStats } from '../lib/useStats.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
@@ -269,6 +269,7 @@ export default function UploadView() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [isTouch, setIsTouch] = useState(false);
+  const [userLocation, setUserLocation] = useState(null); // null | { lat, lng } | 'denied'
   const fileInputRef = useRef(null);
   const pricingRef = useRef(null);
   const howRef = useRef(null);
@@ -306,6 +307,14 @@ export default function UploadView() {
     }
     setError('');
     setFile(f);
+    // Request geolocation for accurate salary ranges — silent, non-blocking
+    if (navigator.geolocation && userLocation === null) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude.toFixed(4), lng: pos.coords.longitude.toFixed(4) }),
+        () => setUserLocation('denied'),
+        { timeout: 6000, maximumAge: 3_600_000 }
+      );
+    }
   };
 
   const onDrop = useCallback((e) => {
@@ -329,7 +338,10 @@ export default function UploadView() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('analytics', JSON.stringify({ sessionId: getSessionId(), utm: getUtm(), referrer: document.referrer }));
+      formData.append('analytics', JSON.stringify({ sessionId: getSessionId(), utm: getUtm(), referrer: document.referrer, clientCountry: getClientCountry() }));
+      if (userLocation && userLocation !== 'denied') {
+        formData.append('userLocation', JSON.stringify(userLocation));
+      }
       formData.append('resume', file);
       formData.append('jobDescription', jobDescription);
       formData.append('tier', 'FULL');
@@ -457,7 +469,14 @@ export default function UploadView() {
                     </svg>
                     <div>
                       <p className={styles.fileName}>{file.name}</p>
-                      <p className={styles.fileSize}>{(file.size / 1024).toFixed(0)} KB · {t('form_ready')}</p>
+                      <p className={styles.fileSize}>
+                        {(file.size / 1024).toFixed(0)} KB · {t('form_ready')}
+                        {userLocation && userLocation !== 'denied' && (
+                          <span style={{ marginLeft: 8, color: 'var(--accent)', fontWeight: 600 }}>
+                            · Location detected — salary ranges will be localised
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
                 ) : (

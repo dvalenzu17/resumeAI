@@ -242,6 +242,7 @@ function buildHtml(job, analysis, rewrites, lang = 'en') {
   const currSym = currencySymbols[salaryCurrency] || (salaryCurrency + ' ');
   const fmt = (n) => (n || 0).toLocaleString();
   const buildSalaryAmounts = (val) => {
+    if (!val) return 'N/A';
     if (salaryPeriod === 'annual') {
       return `<strong>${currSym}${fmt(val)}/yr</strong><br><span class="salary-monthly">${currSym}${fmt(Math.round(val / 12))}/mo</span>`;
     }
@@ -290,7 +291,7 @@ function buildHtml(job, analysis, rewrites, lang = 'en') {
       <section class="cover-letter-section">
         <h2>${L.cover_title}</h2>
         <p class="section-note">${L.cover_note}</p>
-        <div class="cover-letter-body">${esc(rewrites.cover_letter).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div>
+        <div class="cover-letter-body"><p>${esc(rewrites.cover_letter).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></div>
       </section>` : ''}
 
       ${(rewrites.interview_questions || []).length > 0 ? `
@@ -414,7 +415,7 @@ function buildHtml(job, analysis, rewrites, lang = 'en') {
 </head>
 <body>
   <h1>${L.report_title} <span class="badge">${tier === 'FULL' ? 'The Glow-Up' : 'The Audit'}</span></h1>
-  <p class="subtitle">${L.generated_for} ${esc(job.email)} &middot; getshortlisted.fyi</p>
+  <p class="subtitle">${L.generated_for}${job.email ? ' ' + esc(job.email) + ' &middot;' : ''} getshortlisted.fyi</p>
 
   <div class="scores">
     <div class="score-card">

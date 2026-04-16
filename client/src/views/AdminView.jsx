@@ -89,6 +89,120 @@ function FunnelStep({ label, count, rate, last }) {
   );
 }
 
+// ── World tile heatmap ────────────────────────────────────────────────────────
+// Positions: [code, name, col, row] (1-indexed, 22 cols × 13 rows)
+const WORLD_TILES = [
+  // Americas
+  ['CA','Canada',2,2],['US','United States',2,3],['MX','Mexico',2,5],
+  ['CU','Cuba',3,5],['PA','Panama',2,6],['CO','Colombia',2,7],
+  ['VE','Venezuela',3,7],['EC','Ecuador',2,8],['PE','Peru',2,9],
+  ['BR','Brazil',4,8],['BO','Bolivia',3,9],['PY','Paraguay',4,10],
+  ['CL','Chile',2,11],['AR','Argentina',3,11],['UY','Uruguay',4,11],
+  // Europe
+  ['IS','Iceland',7,1],['NO','Norway',8,1],['SE','Sweden',9,1],
+  ['FI','Finland',10,1],['EE','Estonia',11,1],
+  ['IE','Ireland',7,2],['GB','United Kingdom',8,2],['NL','Netherlands',9,2],
+  ['DK','Denmark',10,2],['LV','Latvia',11,2],['LT','Lithuania',12,2],
+  ['RU','Russia',14,2],
+  ['FR','France',8,3],['BE','Belgium',9,3],['PL','Poland',10,3],
+  ['BY','Belarus',11,3],['UA','Ukraine',12,3],
+  ['PT','Portugal',7,4],['ES','Spain',8,4],['DE','Germany',9,4],
+  ['CZ','Czechia',10,4],['SK','Slovakia',11,4],['RO','Romania',12,4],
+  ['MD','Moldova',13,4],['GE','Georgia',14,4],['AZ','Azerbaijan',15,4],['KZ','Kazakhstan',16,4],
+  ['CH','Switzerland',8,5],['AT','Austria',9,5],['SI','Slovenia',10,5],
+  ['HU','Hungary',11,5],['RS','Serbia',12,5],['BG','Bulgaria',13,5],['TR','Turkey',14,5],
+  ['IT','Italy',9,6],['HR','Croatia',10,6],['GR','Greece',11,6],
+  ['CY','Cyprus',12,6],['IQ','Iraq',14,6],['IR','Iran',15,5],['AF','Afghanistan',16,5],
+  // N Africa & Middle East
+  ['MA','Morocco',8,6],['DZ','Algeria',9,7],['TN','Tunisia',10,7],
+  ['LY','Libya',11,7],['EG','Egypt',12,7],['IL','Israel',13,7],['JO','Jordan',14,7],
+  ['SA','Saudi Arabia',14,8],['AE','UAE',15,8],['YE','Yemen',15,9],
+  ['PK','Pakistan',16,7],
+  // Sub-Saharan Africa
+  ['NG','Nigeria',10,9],['ET','Ethiopia',13,9],['KE','Kenya',14,10],
+  ['TZ','Tanzania',13,11],['ZM','Zambia',12,12],['MZ','Mozambique',13,12],
+  ['ZA','South Africa',12,13],
+  // Asia
+  ['NP','Nepal',17,6],['IN','India',17,7],['BD','Bangladesh',18,7],
+  ['CN','China',18,5],['JP','Japan',21,5],['KR','South Korea',20,5],
+  ['TH','Thailand',18,8],['VN','Vietnam',19,8],['MY','Malaysia',19,9],
+  ['SG','Singapore',19,10],['ID','Indonesia',20,10],['PH','Philippines',20,8],
+  ['LK','Sri Lanka',17,9],
+  // Oceania
+  ['AU','Australia',20,12],['NZ','New Zealand',21,13],
+];
+
+const HEAT_COLORS = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe'];
+
+function getHeatColor(count, max) {
+  if (!count || !max) return null;
+  const ratio = count / max;
+  const idx = Math.min(HEAT_COLORS.length - 1, Math.floor(ratio * HEAT_COLORS.length));
+  return HEAT_COLORS[HEAT_COLORS.length - 1 - idx]; // dark = more traffic
+}
+
+function WorldHeatmap({ countries }) {
+  const countMap = {};
+  let maxCount = 0;
+  for (const { country, count } of countries) {
+    countMap[country] = count;
+    if (count > maxCount) maxCount = count;
+  }
+
+  return (
+    <div>
+      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(22, 26px)',
+          gridTemplateRows: 'repeat(13, 26px)',
+          gap: 3,
+          width: 'fit-content',
+          margin: '0 auto',
+        }}>
+          {WORLD_TILES.map(([code, name, col, row]) => {
+            const count = countMap[code] || 0;
+            const bg = count > 0 ? getHeatColor(count, maxCount) : '#1e293b';
+            const isActive = count > 0;
+            return (
+              <div
+                key={code}
+                title={`${name}: ${count} event${count !== 1 ? 's' : ''}`}
+                style={{
+                  gridColumn: col,
+                  gridRow: row,
+                  background: bg,
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 7,
+                  fontWeight: 700,
+                  color: isActive ? '#fff' : '#334155',
+                  cursor: isActive ? 'default' : 'default',
+                  border: isActive ? `1px solid ${bg}` : '1px solid #1e293b',
+                  letterSpacing: 0,
+                  lineHeight: 1,
+                  userSelect: 'none',
+                }}
+              >
+                {code}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>Less</span>
+        {[...HEAT_COLORS].reverse().map(c => (
+          <div key={c} style={{ width: 14, height: 14, borderRadius: 2, background: c }} />
+        ))}
+        <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>More</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Main view ─────────────────────────────────────────────────────────────────
 
 export default function AdminView() {
@@ -102,6 +216,7 @@ export default function AdminView() {
   const [nicheData, setNicheData] = useState(null);
   const [healthData, setHealthData] = useState(null);
   const [attrData, setAttrData] = useState(null);
+  const [geoData, setGeoData] = useState(null);
   const [simBasic, setSimBasic] = useState(10);
   const [simFull, setSimFull] = useState(5);
 
@@ -160,14 +275,22 @@ export default function AdminView() {
     } catch {}
   }, []);
 
+  const fetchGeo = useCallback(async (s) => {
+    try {
+      const res = await fetch('/api/admin/geo', { headers: { 'X-Admin-Secret': s } });
+      if (res.ok) setGeoData(await res.json());
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (secret) {
       fetchDashboard(secret);
       fetchFunnel(secret);
       fetchNiche(secret);
       fetchHealth(secret);
+      fetchGeo(secret);
     }
-  }, [secret, fetchDashboard, fetchFunnel, fetchNiche, fetchHealth]);
+  }, [secret, fetchDashboard, fetchFunnel, fetchNiche, fetchHealth, fetchGeo]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -255,18 +378,18 @@ export default function AdminView() {
         </div>
         <div className={styles.headerRight}>
           <div className={styles.tabs}>
-            {['dashboard', 'funnel', 'niche', 'health', 'simulator'].map(tab => (
+            {['dashboard', 'funnel', 'niche', 'health', 'simulator', 'geo'].map(tab => (
               <button
                 key={tab}
                 className={`${styles.tabBtn} ${activeTab === tab ? styles.tabActive : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : tab === 'niche' ? 'Niche Finder' : tab === 'health' ? 'Health' : 'P&L Sim'}
+                {tab === 'dashboard' ? 'Dashboard' : tab === 'funnel' ? 'Leakage Funnel' : tab === 'niche' ? 'Niche Finder' : tab === 'health' ? 'Health' : tab === 'simulator' ? 'P&L Sim' : 'Geography'}
               </button>
             ))}
           </div>
           <span className={styles.genAt}>Updated {new Date(generatedAt).toLocaleTimeString()}</span>
-          <button className={styles.refreshBtn} onClick={() => { fetchDashboard(secret); fetchFunnel(secret); fetchNiche(secret); fetchHealth(secret); }}>Refresh</button>
+          <button className={styles.refreshBtn} onClick={() => { fetchDashboard(secret); fetchFunnel(secret); fetchNiche(secret); fetchHealth(secret); fetchGeo(secret); }}>Refresh</button>
         </div>
       </div>
 
@@ -740,6 +863,42 @@ export default function AdminView() {
             </Section>
           )}
 
+        </div>
+      )}
+
+      {activeTab === 'geo' && (
+        <div className={styles.body}>
+          <Section title={`World Heatmap — ${geoData ? `${geoData.total.toLocaleString()} events across ${geoData.countries.length} countries` : 'Loading...'}`}>
+            {!geoData ? <p>Loading...</p> : geoData.countries.length === 0 ? (
+              <p className={styles.empty}>No country data yet. Country is detected from visitor browser locale and stored on each analytics event.</p>
+            ) : (
+              <WorldHeatmap countries={geoData.countries} />
+            )}
+          </Section>
+          {geoData && geoData.countries.length > 0 && (
+            <Section title="Top countries">
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead><tr><th>#</th><th>Country</th><th>Events</th><th>Share</th><th></th></tr></thead>
+                  <tbody>
+                    {geoData.countries.slice(0, 30).map((c, i) => (
+                      <tr key={c.country}>
+                        <td className={styles.mono}>{i + 1}</td>
+                        <td>{c.country}</td>
+                        <td className={styles.mono}>{fmtN(c.count)}</td>
+                        <td className={styles.mono}>{geoData.total > 0 ? Math.round(c.count / geoData.total * 100) : 0}%</td>
+                        <td style={{ width: 120 }}>
+                          <div style={{ height: 6, borderRadius: 3, background: '#1e293b', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${geoData.total > 0 ? Math.min(100, Math.round(c.count / geoData.countries[0].count * 100)) : 0}%`, background: '#3b82f6', borderRadius: 3 }} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+          )}
         </div>
       )}
 

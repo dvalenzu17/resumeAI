@@ -10,6 +10,7 @@ export default function ProcessingView() {
   const navigate = useNavigate();
   const jobId = params.get('jobId');
   const [status, setStatus] = useState('ANALYZING');
+  const [tier, setTier] = useState(null);
   const [reportUrl, setReportUrl] = useState(null);
   const [cvUrl, setCvUrl] = useState(null);
   const [error, setError] = useState('');
@@ -58,6 +59,7 @@ export default function ProcessingView() {
         const data = await res.json();
         if (stopped) return;
         setStatus(data.status);
+        if (data.tier) setTier(data.tier);
         if (data.status === 'COMPLETE') {
           if (data.reportUrl) setReportUrl(data.reportUrl);
           if (data.cvUrl) setCvUrl(data.cvUrl);
@@ -94,6 +96,7 @@ export default function ProcessingView() {
   }
 
   if (status === 'COMPLETE') {
+    const isFull = tier === 'FULL';
     return (
       <Shell>
         <div className={styles.stateCard}>
@@ -103,8 +106,12 @@ export default function ProcessingView() {
           <h1 className={styles.stateHeading}>{t('processing_done')}</h1>
           {reportUrl ? (
             <>
-              <p className={styles.stateBody}>Your report is ready. Download it below — the link expires in 72 hours.</p>
-              <a href={reportUrl} className={styles.btn} download>Download Report</a>
+              <p className={styles.stateBody}>
+                {isFull
+                  ? 'Your analysis report and tailored CV are ready. Download them below. Links expire in 72 hours.'
+                  : 'Your report is ready. Download it below. The link expires in 72 hours.'}
+              </p>
+              <a href={reportUrl} className={styles.btn} download>Download Analysis Report</a>
               {cvUrl && <a href={cvUrl} className={styles.btn} download style={{ marginTop: '12px' }}>Download Tailored CV</a>}
               <p style={{ marginTop: '16px', fontSize: '13px', color: 'var(--text-subtle)' }}>A copy has also been sent to your email.</p>
             </>

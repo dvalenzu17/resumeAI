@@ -16,7 +16,11 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]);
 }
 
-function buildAnalysisPrompt(resumeText, jobDescription) {
+function buildAnalysisPrompt(resumeText, jobDescription, userLocation = null) {
+  const gpsLine = userLocation
+    ? `5. If location still cannot be determined from the JD or resume, use the user's GPS coordinates (lat ${userLocation.lat}, lng ${userLocation.lng}) to infer the nearest city and country, and use that market as the basis.`
+    : `5. If location cannot be determined from either document, use US remote-worker market rates and note the assumption.`;
+
   return `You are an expert ATS analyst, resume coach, and career strategist operating globally.
 
 LANGUAGE RULE: Detect the primary language of the RESUME TEXT. Write ALL narrative string values (notes, strengths, weaknesses, summaries, tips, headlines, red flags) in that same language. Technical terms, tool names, and proper nouns stay in their original form regardless of language. JSON field names remain in English.
@@ -29,8 +33,9 @@ SALARY RULE: Determine the job market using this priority order:
 1. Explicit location in the JD (city, country, or region stated in the posting).
 2. If the JD has no location, use the candidate's location from the resume contact info or address.
 3. If the JD says "remote" with no country, use the candidate's country as the market basis.
-4. If location cannot be determined from either document, use US remote-worker market rates and note the assumption.
-Use actual local market rates for the detected location. Express amounts in the currency most natural for that market (USD for Panama and US roles, GBP for UK, EUR for EU, etc.). In salary_range.notes, state the detected location, the source of that detection (JD, resume, or assumed), and the currency basis.
+4. If location cannot be determined from either document, apply rule 5 below.
+${gpsLine}
+Use actual local market rates for the detected location. Express amounts in the currency most natural for that market (USD for Panama and US roles, GBP for UK, EUR for EU, etc.). In salary_range.notes, state the detected location, the source of that detection (JD, resume, GPS, or assumed), and the currency basis.
 
 Analyse the resume against the job description and return ONLY a JSON object. No markdown, no explanation, no preamble:
 
@@ -256,7 +261,7 @@ async function callClaude(prompt, maxTokens = 2048, retryWithStricter = false) {
   throw lastErr;
 }
 
-export async function runAnalysis(resumeText, jobDescription) {
+export async function runAnalysis(resumeText, jobDescription, userLocation = null) {
   if (MOCK) {
     logger.warn('MOCK_CLAUDE=true — returning mock analysis');
     return { inputTokens: 0, outputTokens: 0, result: {
@@ -290,15 +295,15 @@ export async function runAnalysis(resumeText, jobDescription) {
         notes: 'Mid-level full stack role at a likely Series B/C tech company. Range based on skills required and typical market for Node.js/React engineers.',
       },
       negotiation_tips: [
-        'The JD lists no salary range — open the conversation by anchoring at $130k and let them respond first.',
-        'They emphasise "fast-paced environment" — use this to negotiate a 90-day performance review with a raise tied to clear goals.',
-        'If base salary is fixed, ask for a $5-10k signing bonus and an extra week of PTO — these are lower-friction concessions for employers.',
+        'The JD lists no salary range. Open the conversation by anchoring at $130k and let them respond first.',
+        'They emphasise "fast-paced environment". Use this to negotiate a 90-day performance review with a raise tied to clear goals.',
+        'If base salary is fixed, ask for a $5-10k signing bonus and an extra week of PTO. These are lower-friction concessions for employers.',
       ],
       detected_language: 'en',
     } };
   }
 
-  const prompt = buildAnalysisPrompt(resumeText, jobDescription);
+  const prompt = buildAnalysisPrompt(resumeText, jobDescription, userLocation);
   try {
     const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000);
     validateAnalysis(result);
@@ -517,7 +522,7 @@ function validateRewrites(obj) {
   if (!Array.isArray(obj.rewritten_bullets)) throw new Error('rewritten_bullets must be an array');
   if (obj.rewritten_bullets.length < 5 || obj.rewritten_bullets.length > 10) throw new Error(`rewritten_bullets must have 5-10 items, got ${obj.rewritten_bullets.length}`);
   if (!Array.isArray(obj.interview_questions)) throw new Error('interview_questions must be an array');
-  if (obj.interview_questions.length !== 8) throw new Error(`interview_questions must have 8 items, got ${obj.interview_questions.length}`);
+  if (obj.interview_questions.length < 4 || obj.interview_questions.length > 12) throw new Error(`interview_questions must have 4-12 items, got ${obj.interview_questions.length}`);
   for (const q of obj.interview_questions) {
     if (!q.question || !q.why_likely || !q.star_framework) {
       throw new Error('Each interview_question must have question, why_likely, and star_framework fields');

@@ -4,92 +4,13 @@
 
 ---
 
-## Completed
-
-### Scaffold (Day 1)
-- [x] Full project scaffold — src/lib, src/middleware, src/routes, src/services
-- [x] Prisma schema — Job model, Tier + JobStatus enums
-- [x] React/Vite frontend — UploadView, ProcessingView, SuccessView
-- [x] scripts/test-chain.js smoke test
-- [x] package.json, railway.toml, .gitignore
-
-### Claude chain (Day 2)
-- [x] MOCK_CLAUDE=true bypass for dev without API credits
-- [x] Claude JSON retry — strips markdown fences, retries once with stricter prompt
-- [x] Double-failure path — marks job FAILED, sends failure email to user
-
-### Payment (Day 3)
-- [x] Replaced Stripe with Lemon Squeezy (Panama compatibility)
-- [x] SKIP_PAYMENT=true dev mode — bypasses checkout, fires analysis immediately
-- [x] Webhook handler — HMAC-SHA256 signature verification, order_created event
-
-### Pre-launch hardening (Day 3)
-- [x] Input truncation — resume capped at 6,000 chars, JD at 4,000 chars
-- [x] PDF empty guard — rejects if extracted text < 200 chars with PDF_EMPTY error code
-- [x] Webhook idempotency — atomic updateMany (prevents duplicate runs on webhook retry)
-- [x] R2 signed URL — 72h expiry set at job completion
-- [x] Puppeteer memory — --max-old-space-size=512 in Railway startCommand
-- [x] Rate limiting — express-rate-limit on POST /api/jobs (5 req / IP / 10 min)
-- [x] Error emails — sendFailureEmail() in analyseJob catch block
-- [x] Health check — GET /api/health returns { status: 'ok', db: 'connected' }
-- [x] Environment parity guard — server refuses to start if MOCK_CLAUDE or SKIP_PAYMENT=true in prod
-
-### Design + rename (Days 4–5)
-- [x] Gen-Z redesign — bold typography, gradient accents, hero section
-- [x] Pricing: The Audit $12 / The Glow-Up $29
-- [x] Email templates — branded, card layout, good copy
-- [x] PDF report header — tier labels
-- [x] Full local E2E test — real PDF, COMPLETE state, R2 upload, Resend email confirmed
-
-### Launch prep + market readiness (Day 6 code)
-- [x] i18n — en + es-419, LangSwitcher top-right, browser auto-detect, localStorage persist
-- [x] All UI strings translated (UploadView, PreviewView, ProcessingView, SuccessView, NotFoundView)
-- [x] Email capture at upload — email stored on job creation, enables nurture sequence
-- [x] Preview nudge email — PREVIEW_READY jobs 2h+ with email → ATS score + first gap CTA
-- [x] Follow-up email sequence — day 3 and day 7 (existing, unchanged)
-- [x] Blurred rewrite teaser on PreviewView — before/after bullet, blur on "after" side
-- [x] Urgency strip on PreviewView paywall — accent banner
-- [x] SuccessView referral — copy link + LinkedIn share button, clipboard bug fixed
-- [x] Sample report — regenerated as BASIC tier (no rewrites revealed)
-- [x] Hero sample link — "See a real sample report →" below primary CTA
-- [x] Mobile touch detection — "Tap to upload" vs "Drop here" based on ontouchstart
-- [x] Privacy note — shown only after file is selected
-- [x] Blog — 3 long-form posts: ATS systems, resume keywords, software engineer resume
-- [x] Blog nav link in hero nav
-- [x] Sitemap updated with blog URLs (priority 0.9, lastmod 2025-04-13)
-- [x] Blog routes in App.jsx
-- [x] Cost tracking + analytics dashboard (/admin)
-- [x] Prisma schema: previewNudgeSentAt, followUp1SentAt, followUp2SentAt fields
-
-### Quality improvements (post-launch feedback)
-- [x] Fix email double-ask: status endpoint returns email, PreviewView pre-fills it
-- [x] Rewrite prompt: outcome-first bullets, 7 weakest bullets (was 5), no em dashes, inject keyword gaps, infer metrics, structural transformation required
-- [x] CV PDF redesigned: two-column layout, navy header, orange accent, bullet character, comma-separated skills, attribution footer
-- [x] Salary section: shows monthly AND annual figures
-
----
-
 ## Blocked — manual actions required
 
-### Domain (do first — unlocks everything else)
-- [x] Purchase getshortlisted.fyi and point DNS to Railway
-
 ### Railway deploy
-- [x] Push to GitHub (or it's already there — confirm)
-- [x] Connect repo in Railway dashboard
-- [x] Add all production env vars (see .env.example)
-- [x] Set CRON_SECRET env var (any long random string)
-- [x] Set ADMIN_SECRET env var (any long random string)
 - [ ] Set MOCK_CLAUDE=false, SKIP_PAYMENT=false
-- [x] Confirm /api/health returns { status: 'ok', db: 'connected' }
 - [ ] Run live end-to-end test with real Lemon Squeezy test purchase
 
 ### After domain is live
-- [x] Replace G-XXXXXXXXXX in client/index.html with real GA4 measurement ID
-- [x] Set up cron-job.org: POST https://getshortlisted.fyi/api/cron/followups hourly, header X-Cron-Secret: <CRON_SECRET>
-- [x] Set up Google Search Console + verify domain
-- [x] Verify getshortlisted.fyi in Resend dashboard (domain verification)
-- [x] Update Lemon Squeezy webhook URL to https://getshortlisted.fyi/api/webhooks/lemonsqueezy
 - [ ] Set STATS_SEED in Railway env once real completed jobs exist
 - [ ] Drop daniel.jpg into client/public/images/daniel.jpg
 - [ ] Screenshot og-template.html at 1200x630 → save as client/public/og-image.png
@@ -119,3 +40,56 @@
 - MOCK_CLAUDE and SKIP_PAYMENT must be false in production (enforced at startup)
 - Input truncation: resume ≤ 6,000 chars, JD ≤ 4,000 chars
 - Never use em dashes in UI copy or AI-generated content
+
+---
+
+## Roadmap
+
+### V2 — Repeat purchase engine (months 2–3)
+- [ ] Add user accounts (use Clerk for auth — drop-in, no custom auth code)
+- [ ] Job tracker dashboard — user saves applied jobs, sees history
+- [ ] Re-run analysis on saved resume vs new JD at discounted repeat price ($7)
+- [ ] Store best-performing resume version per user in DB
+- [ ] Trigger email 3 days after purchase: "you applied — here's how to follow up"
+- [ ] Add createdAt-based cron job to send follow-up emails via Resend
+
+### V3 — LinkedIn profile analyser (months 3–4)
+- [ ] Scrape LinkedIn profile via Playwright given a URL input
+- [ ] Evaluate: use Proxycurl API instead of raw scraper (cheaper than maintenance cost of fighting LinkedIn bot detection, ~$0.01/profile)
+- [ ] Run same Claude analysis chain against LinkedIn sections vs target role
+- [ ] New report sections: headline score, about section rewrite, experience section gaps
+- [ ] Pricing: $15 audit / $35 full rewrite with suggested text per section
+- [ ] Add LinkedIn URL input field to upload form as optional second product entry point
+
+### V4 — Subscription tier (months 4–6)
+- [ ] Shortlisted Pro at $19/month via Lemon Squeezy subscription product
+- [ ] Unlimited CV analyses + unlimited LinkedIn scans for subscribers
+- [ ] Weekly job match email: cron job that scrapes/fetches 10 matching jobs and scores resume fit against each automatically
+- [ ] Evaluate job data sources: LinkedIn Jobs API, Indeed (check ToS), Coresignal, RapidAPI job search — do NOT roll a raw scraper against Indeed (legal risk)
+- [ ] Basic pro dashboard: usage history, saved resume versions, match scores over time
+- [ ] Target 3–5% conversion from free users to Pro
+
+### V5 — B2B university and bootcamp licences (months 6–12)
+- [ ] Build white-label skin system — career centre can add their logo and colours
+- [ ] Admin dashboard: aggregate student usage stats, average ATS score improvement, top keyword gaps by cohort
+- [ ] Pricing model: $3–5/student/month or flat annual licence $5k–$15k depending on cohort size
+- [ ] Sales target: one signed university contract by month 10
+- [ ] Identify targets: university career centres in Panama + Latin America first, then US bootcamps (App Academy, Flatiron, etc.)
+- [ ] Collateral needed before outreach: usage stats dashboard, one-pager PDF, case study from a real user showing score improvement and callback result
+- [ ] Sales cycle expectation: 2–4 months from first contact to signed contract — start outreach at month 6
+
+### V6 — Job market intelligence data product (year 2)
+- [ ] Prerequisite: 50,000+ resume/JD analysis data points before this is meaningful
+- [ ] Build anonymised aggregate reporting: which keywords correlate with callbacks by role and region
+- [ ] Package as monthly "Job Market Intelligence" report for recruiters and HR teams
+- [ ] Pricing: $299–$999/month per company
+- [ ] Privacy requirements before launch: explicit user consent in ToS for anonymised data use, proper anonymisation pipeline, legal review — do NOT skip this
+- [ ] Target buyers: in-house recruiters, HR tech companies, staffing agencies
+
+### Distribution milestones (cross-version)
+- [ ] $500 MRR — target within 60 days of payment processor going live (~18 Glow-Up sales/month)
+- [ ] 100 total analyses run — unlock social proof, update homepage counter
+- [ ] First r/cscareerquestions post with organic traction — screenshot and add to homepage
+- [ ] First testimonial with a specific outcome ("got a callback after fixing the gaps") — add to homepage immediately
+- [ ] 1,000 monthly active free users — triggers V4 subscription build
+- [ ] First B2B conversation booked — triggers V5 collateral build

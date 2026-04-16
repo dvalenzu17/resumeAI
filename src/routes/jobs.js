@@ -69,12 +69,24 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
     // Parse analytics metadata from form submission
     let clientMeta = {};
     try { clientMeta = req.body.analytics ? JSON.parse(req.body.analytics) : {}; } catch { /* skip */ }
+
+    // Parse optional GPS location for salary localisation — not stored, only used in Claude prompt
+    let userLocation = null;
+    try {
+      if (req.body.userLocation) {
+        const loc = JSON.parse(req.body.userLocation);
+        if (typeof loc.lat === 'string' && typeof loc.lng === 'string') userLocation = loc;
+      }
+    } catch { /* skip */ }
+
     const { device, browser, os } = parseUA(req.headers['user-agent'] || '');
+    const clientCountry = typeof clientMeta.clientCountry === 'string' && /^[A-Z]{2}$/.test(clientMeta.clientCountry)
+      ? clientMeta.clientCountry : null;
     logEvent('job_created', {
       jobId: job.id,
       sessionId: clientMeta.sessionId || null,
       device, browser, os,
-      country: extractCountry(req),
+      country: extractCountry(req) || clientCountry,
       utmSource:   clientMeta.utm?.utm_source   || null,
       utmMedium:   clientMeta.utm?.utm_medium   || null,
       utmCampaign: clientMeta.utm?.utm_campaign || null,
@@ -85,7 +97,7 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
     });
 
     // Fire teaser analysis — always runs before payment
-    runTeaserAnalysis(job.id).catch((err) => {
+    runTeaserAnalysis(job.id, userLocation).catch((err) => {
       logger.error({ jobId: job.id, err }, 'runTeaserAnalysis uncaught error');
     });
 

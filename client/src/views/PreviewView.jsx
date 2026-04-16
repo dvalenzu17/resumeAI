@@ -397,6 +397,7 @@ export default function PreviewView() {
                   <button
                     type="button"
                     onClick={async () => {
+                      track('personalise_skipped', { tier: selectedTier }, jobId);
                       setLoading(true);
                       setError('');
                       try {

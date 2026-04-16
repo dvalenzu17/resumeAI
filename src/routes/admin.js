@@ -707,6 +707,26 @@ adminRouter.get('/simulate', requireAdminSecret, async (req, res) => {
   }
 });
 
+// GET /api/admin/geo
+// Country breakdown from analytics events — powers the admin heatmap
+adminRouter.get('/geo', requireAdminSecret, async (req, res) => {
+  try {
+    const rows = await db.analyticsEvent.groupBy({
+      by: ['country'],
+      _count: { id: true },
+      where: { country: { not: null } },
+      orderBy: { _count: { id: 'desc' } },
+    });
+    const countries = rows
+      .filter(r => r.country && /^[A-Z]{2,3}$/.test(r.country.toUpperCase()))
+      .map(r => ({ country: r.country.toUpperCase(), count: r._count.id }));
+    res.json({ countries, total: countries.reduce((s, c) => s + c.count, 0) });
+  } catch (err) {
+    logger.error({ err }, 'Admin geo query failed');
+    res.status(500).json({ error: 'Geo query failed' });
+  }
+});
+
 // GET /api/admin/attribution
 // Channel LTV by UTM source, blog conversion attribution
 adminRouter.get('/attribution', requireAdminSecret, async (req, res) => {

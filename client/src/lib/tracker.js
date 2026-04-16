@@ -27,13 +27,27 @@ export function getUtm() {
   return saved ? JSON.parse(saved) : {};
 }
 
+// Derive 2-letter ISO country code from browser locale (e.g. "en-US" → "US").
+// Works for most users; falls back to null if unavailable.
+export function getClientCountry() {
+  try {
+    const parts = (navigator.language || '').split('-');
+    if (parts.length > 1) {
+      const code = parts[parts.length - 1].toUpperCase();
+      if (/^[A-Z]{2}$/.test(code)) return code;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function track(event, properties = {}, jobId = null) {
   const sessionId = getSessionId();
   const utm = getUtm();
+  const clientCountry = getClientCountry();
   fetch('/api/analytics/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event, jobId: jobId || undefined, sessionId, properties, utm, referrer: document.referrer || undefined }),
+    body: JSON.stringify({ event, jobId: jobId || undefined, sessionId, properties, utm, referrer: document.referrer || undefined, clientCountry }),
     keepalive: true,
   }).catch(() => {});
 }

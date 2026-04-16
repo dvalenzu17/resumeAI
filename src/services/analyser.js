@@ -26,7 +26,7 @@ const MAX_JD_CHARS = 4000;
 
 // Phase 1 — free teaser. Runs Claude Call 1, stores result, marks PREVIEW_READY.
 // Called immediately on job creation, before any payment.
-export async function runTeaserAnalysis(jobId) {
+export async function runTeaserAnalysis(jobId, userLocation = null) {
   const job = await db.job.findUnique({ where: { id: jobId } });
 
   if (!job) {
@@ -44,7 +44,7 @@ export async function runTeaserAnalysis(jobId) {
     const jobDescription = job.jobDescription.slice(0, MAX_JD_CHARS);
 
     const t0 = Date.now();
-    const { result: analysis, inputTokens, outputTokens } = await runAnalysis(resumeText, jobDescription);
+    const { result: analysis, inputTokens, outputTokens } = await runAnalysis(resumeText, jobDescription, userLocation);
     logger.info({ jobId, ats_score: analysis.ats_score }, 'Teaser analysis complete');
 
     await db.job.update({
