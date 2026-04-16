@@ -130,7 +130,7 @@ export async function runFullReport(jobId) {
       tokensOut3 = out3;
       logger.info({ jobId }, 'CV rewrite complete');
 
-      const cvBuffer = await generateCv(cvData);
+      const cvBuffer = await generateCv(cvData, analysis.detected_language || 'en');
       logger.info({ jobId }, 'CV PDF generated');
 
       cvUrl = await uploadCv(jobId, cvBuffer);
