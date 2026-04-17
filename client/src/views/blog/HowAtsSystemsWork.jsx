@@ -6,7 +6,7 @@ export default function HowAtsSystemsWork() {
     <BlogLayout
       title="How ATS Systems Actually Work — And Why Your Resume Keeps Getting Filtered"
       description="Most job seekers have no idea that a piece of software rejects their resume before a human ever sees it. Here is exactly how it works, and what you can do about it."
-      date="April 2025"
+
     >
       <p>
         You spend two hours tailoring your resume. You hit submit. You get nothing back. Not even a rejection email.

@@ -566,12 +566,17 @@
 /* ─────────────────────────────────────────────
    Form
 ───────────────────────────────────────────── */
+.sectionBridge {
+  height: 100px;
+  background: linear-gradient(to bottom, #0a0a0a 0%, #fafaf9 100%);
+}
+
 .main {
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 80px 24px 72px;
-  background: linear-gradient(to bottom, #0a0a0a 0%, #fafaf9 110px);
+  padding: 0 24px 72px;
+  background: #fafaf9;
 }
 
 .formCard {
@@ -1262,6 +1267,8 @@
   .statGrid { grid-template-columns: 1fr; }
 
   .rejectCard { max-width: 100%; }
+
+  .sectionBridge { height: 60px; }
 
   .howSection,
   .previewSection,

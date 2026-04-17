@@ -6,7 +6,7 @@ export default function SoftwareEngineerResume() {
     <BlogLayout
       title="ATS-Friendly Resume Tips for Software Engineers in 2025"
       description="Tech resumes have specific failure modes. Workday, Greenhouse, and Lever flag issues that differ from what hurts non-technical candidates. Here is what to fix."
-      date="April 2025"
+
     >
       <p>
         Software engineering resumes fail ATS systems for different reasons than most other roles.

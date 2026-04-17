@@ -6,7 +6,7 @@ export default function ResumeKeywords() {
     <BlogLayout
       title="The Exact Keywords Your Resume Is Missing (And How to Find Them)"
       description="ATS systems score your resume on keyword matches against the job description. Here is the systematic process for finding the right keywords and adding them without stuffing."
-      date="April 2025"
+
     >
       <p>
         The most common reason a qualified candidate's resume gets filtered out is not a weak work history.

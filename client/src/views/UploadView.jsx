@@ -425,6 +425,7 @@ export default function UploadView() {
 
       <div ref={howRef}><HowItWorks /></div>
       <div ref={resultRef}><ResultsPreview /></div>
+      <div className={styles.sectionBridge} aria-hidden="true" />
 
       {/* ── FORM ────────────────────────────── */}
       <main id="analyse" className={styles.main}>
