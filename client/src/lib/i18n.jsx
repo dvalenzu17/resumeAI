@@ -35,6 +35,8 @@ const translations = {
     stat1_desc: 'of resumes filtered before a human sees them',
     stat2_num: '7s',
     stat2_desc: 'average recruiter time per resume, if it gets through',
+    stat3_num: '62%',
+    stat3_desc: 'of resumes score below 70. Most people have no idea where they stand.',
 
     // How it works
     how_eyebrow: 'How it works',
@@ -96,7 +98,7 @@ const translations = {
     tier_most_popular: 'Most complete',
 
     // FAQ
-    faq_heading: 'Questions',
+    faq_heading: 'No surprises.',
     faq1_q: 'Is my resume data safe?',
     faq1_a: "Your resume is processed server-side to generate your report. It's never sold, shared, or used to train AI models. We store the text temporarily to run the analysis — that's it.",
     faq2_q: 'How accurate is the ATS score?',
@@ -243,6 +245,8 @@ const translations = {
     stat1_desc: 'de los CV son filtrados antes de que un humano los vea',
     stat2_num: '7s',
     stat2_desc: 'tiempo promedio del reclutador por CV, si es que llega',
+    stat3_num: '62%',
+    stat3_desc: 'de los CVs puntuan por debajo de 70. La mayoria no lo sabe.',
 
     // How it works
     how_eyebrow: 'Como funciona',
@@ -304,7 +308,7 @@ const translations = {
     tier_most_popular: 'Mas completo',
 
     // FAQ
-    faq_heading: 'Preguntas',
+    faq_heading: 'Sin sorpresas.',
     faq1_q: 'Estan seguros mis datos?',
     faq1_a: 'Tu CV se procesa en nuestros servidores para generar tu reporte. Nunca se vende, comparte ni usa para entrenar IA. Almacenamos el texto temporalmente para correr el analisis, nada mas.',
     faq2_q: 'Que tan precisa es la puntuacion ATS?',

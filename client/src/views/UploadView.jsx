@@ -413,10 +413,10 @@ export default function UploadView() {
             </div>
             <div className={styles.statItem}>
               <span className={styles.statNum}>
-                {total >= 500 ? `${total.toLocaleString()}+` : 'Free'}
+                {total >= 500 ? `${total.toLocaleString()}+` : t('stat3_num')}
               </span>
               <span className={styles.statDesc}>
-                {total >= 500 ? 'resumes scored and counting' : 'your ATS score, keyword gaps, and experience match'}
+                {total >= 500 ? 'resumes scored and counting' : t('stat3_desc')}
               </span>
             </div>
           </div>

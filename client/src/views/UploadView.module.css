@@ -570,9 +570,8 @@
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 72px 24px;
-  background: var(--bg-subtle);
-  border-top: 1px solid var(--border);
+  padding: 80px 24px 72px;
+  background: linear-gradient(to bottom, #0a0a0a 0%, #fafaf9 110px);
 }
 
 .formCard {

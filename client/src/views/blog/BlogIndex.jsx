@@ -45,8 +45,6 @@ export default function BlogIndex() {
           {posts.map((post) => (
             <Link key={post.slug} to={`/blog/${post.slug}`} className={styles.postCard}>
               <div className={styles.postMeta}>
-                <span className={styles.postDate}>{post.date}</span>
-                <span className={styles.postDot}>·</span>
                 <span className={styles.postReadTime}>{post.readTime}</span>
               </div>
               <h2 className={styles.postTitle}>{post.title}</h2>
