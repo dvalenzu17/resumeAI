@@ -771,3 +771,430 @@ adminRouter.get('/attribution', requireAdminSecret, async (req, res) => {
     res.status(500).json({ error: 'Attribution query failed' });
   }
 });
+
+// ── Cohort retention table ────────────────────────────────────────────────────
+// Rows = week of first purchase. Columns = week offset (0 = first week, 1 = returned
+// one week later, etc.). Cells = % of that cohort that came back.
+// Requires email to be present; anonymous jobs are excluded.
+adminRouter.get('/retention', requireAdminSecret, async (req, res) => {
+  try {
+    const jobs = await db.job.findMany({
+      where: { status: 'COMPLETE', email: { not: '' } },
+      select: { email: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (jobs.length === 0) return res.json({ table: [], maxOffset: 0 });
+
+    function isoWeekStr(date) {
+      const d = new Date(date);
+      d.setUTCHours(0, 0, 0, 0);
+      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+      return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+
+    function weeksBetween(earlier, later) {
+      return Math.floor((new Date(later) - new Date(earlier)) / (7 * 24 * 60 * 60 * 1000));
+    }
+
+    // First purchase date per email
+    const firstSeen = {};
+    for (const j of jobs) {
+      const e = j.email.toLowerCase().trim();
+      if (!firstSeen[e] || new Date(j.createdAt) < new Date(firstSeen[e])) {
+        firstSeen[e] = j.createdAt;
+      }
+    }
+
+    // Cohorts: week of first purchase → set of emails
+    const cohorts = {};
+    for (const [email, firstDate] of Object.entries(firstSeen)) {
+      const week = isoWeekStr(firstDate);
+      if (!cohorts[week]) cohorts[week] = { emails: new Set(), firstDate };
+      cohorts[week].emails.add(email);
+    }
+
+    // Per-email: which week offsets did they purchase?
+    const emailOffsets = {};
+    for (const j of jobs) {
+      const e = j.email.toLowerCase().trim();
+      const offset = weeksBetween(firstSeen[e], j.createdAt);
+      if (!emailOffsets[e]) emailOffsets[e] = new Set();
+      emailOffsets[e].add(offset);
+    }
+
+    const MAX_OFFSET = 8;
+    const cohortWeeks = Object.keys(cohorts).sort();
+
+    const table = cohortWeeks.map(week => {
+      const { emails } = cohorts[week];
+      const size = emails.size;
+      const retention = Array.from({ length: MAX_OFFSET + 1 }, (_, offset) => {
+        const retained = [...emails].filter(e => emailOffsets[e]?.has(offset)).length;
+        return { offset, count: retained, pct: size > 0 ? Math.round(retained / size * 1000) / 10 : 0 };
+      });
+      return { cohortWeek: week, cohortSize: size, retention };
+    });
+
+    res.json({ table, maxOffset: MAX_OFFSET });
+  } catch (err) {
+    logger.error({ err }, 'Admin retention query failed');
+    res.status(500).json({ error: 'Retention query failed' });
+  }
+});
+
+// ── Revenue forecast ──────────────────────────────────────────────────────────
+// Three-line forecast (pessimistic / base / optimistic) using rolling 7-day
+// growth rate mean and standard deviation over the last 60 days.
+adminRouter.get('/forecast', requireAdminSecret, async (req, res) => {
+  try {
+    const ago60 = startOfDay(60);
+    const jobs = await db.job.findMany({
+      where: { status: 'COMPLETE', createdAt: { gte: ago60 } },
+      select: { createdAt: true, tier: true },
+    });
+
+    // Build a 60-day daily revenue series
+    const dailyMap = {};
+    for (let i = 59; i >= 0; i--) {
+      dailyMap[toDateStr(startOfDay(i))] = 0;
+    }
+    for (const j of jobs) {
+      const d = toDateStr(new Date(j.createdAt));
+      if (dailyMap[d] !== undefined) dailyMap[d] += revenueForJob(j);
+    }
+    const historical = Object.entries(dailyMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, revenue]) => ({ date, revenue: r2(revenue) }));
+
+    // Need at least 14 days of non-zero data to forecast meaningfully
+    const nonZeroDays = historical.filter(d => d.revenue > 0).length;
+    if (nonZeroDays < 7) {
+      return res.json({ historical, forecast: null, projectedMonthly: null, message: 'Need 7+ days of revenue to forecast. Keep going.' });
+    }
+
+    // Compute rolling 7-day window-over-window growth rates
+    const W = 7;
+    const growthRates = [];
+    for (let i = 0; i + W * 2 <= historical.length; i++) {
+      const w1 = historical.slice(i, i + W).reduce((s, d) => s + d.revenue, 0);
+      const w2 = historical.slice(i + W, i + W * 2).reduce((s, d) => s + d.revenue, 0);
+      if (w1 > 0) growthRates.push((w2 - w1) / w1);
+    }
+
+    if (growthRates.length < 2) {
+      return res.json({ historical, forecast: null, projectedMonthly: null, message: 'Not enough variance yet for confidence intervals.' });
+    }
+
+    const mean = growthRates.reduce((s, g) => s + g, 0) / growthRates.length;
+    const variance = growthRates.reduce((s, g) => s + Math.pow(g - mean, 2), 0) / growthRates.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Base daily revenue from the most recent 7-day window
+    const baseDailyRevenue = historical.slice(-W).reduce((s, d) => s + d.revenue, 0) / W;
+
+    // Weekly rate → equivalent daily compounding rate
+    const dailyRate = (weeklyRate) => Math.pow(Math.max(0, 1 + weeklyRate), 1 / 7) - 1;
+    const baseRate       = dailyRate(mean);
+    const optimisticRate = dailyRate(mean + stdDev);
+    const pessimisticRate = dailyRate(Math.max(mean - stdDev, -0.9));
+
+    const today = new Date();
+    const forecast = Array.from({ length: 30 }, (_, i) => {
+      const date = new Date(today);
+      date.setUTCDate(date.getUTCDate() + i + 1);
+      const n = i + 1;
+      return {
+        date: toDateStr(date),
+        base:        r2(Math.max(0, baseDailyRevenue * Math.pow(1 + baseRate, n))),
+        optimistic:  r2(Math.max(0, baseDailyRevenue * Math.pow(1 + optimisticRate, n))),
+        pessimistic: r2(Math.max(0, baseDailyRevenue * Math.pow(1 + pessimisticRate, n))),
+      };
+    });
+
+    const sum = (arr, key) => r2(arr.reduce((s, d) => s + d[key], 0));
+
+    res.json({
+      historical,
+      forecast,
+      projectedMonthly: {
+        base:        sum(forecast, 'base'),
+        optimistic:  sum(forecast, 'optimistic'),
+        pessimistic: sum(forecast, 'pessimistic'),
+      },
+      model: {
+        baseDailyRevenue: r2(baseDailyRevenue),
+        weeklyGrowthRate: { meanPct: pct(mean), stdDevPct: pct(stdDev) },
+        windowsUsed: growthRates.length,
+        daysOfData: historical.length,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin forecast query failed');
+    res.status(500).json({ error: 'Forecast query failed' });
+  }
+});
+
+// ── User journey replay ───────────────────────────────────────────────────────
+// Timeline per job: every tracked step with timestamp.
+// GET /api/admin/journeys          → last 50 jobs with last-known step
+// GET /api/admin/journey/:jobId    → full event timeline for one job
+
+const JOURNEY_STEP_LABELS = {
+  job_created:          'Resume uploaded',
+  pdf_rejected:         'PDF rejected — text too short',
+  teaser_complete:      'Score calculated',
+  preview_loaded:       'Preview page loaded',
+  preview_viewed:       'Score shown to user',
+  scroll_to_paywall:    'Scrolled to paywall',
+  tier_selected:        'Tier switched',
+  checkout_initiated:   'Checkout started',
+  checkout_clicked:     'Checkout button clicked',
+  payment_completed:    'Payment received',
+  full_report_complete: 'Report generated and emailed',
+  full_report_failed:   'Report generation failed',
+  claude_retry:         'Claude retry triggered',
+};
+
+function statusToStep(status) {
+  const map = {
+    ANALYZING: 'Analysing resume',
+    PREVIEW_READY: 'Preview ready — awaiting payment',
+    PENDING_PAYMENT: 'Checkout started',
+    PROCESSING: 'Generating full report',
+    COMPLETE: 'Complete',
+    FAILED: 'Failed',
+  };
+  return map[status] || status;
+}
+
+adminRouter.get('/journeys', requireAdminSecret, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+
+    const recentJobs = await db.job.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: { id: true, email: true, tier: true, status: true, createdAt: true, updatedAt: true, errorMessage: true },
+    });
+
+    const jobIds = recentJobs.map(j => j.id);
+
+    // Batch-fetch analytics events for all jobs in one query
+    const events = await db.analyticsEvent.findMany({
+      where: { jobId: { in: jobIds } },
+      select: { jobId: true, event: true, createdAt: true, properties: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Group events by jobId
+    const eventsByJob = {};
+    for (const e of events) {
+      if (!eventsByJob[e.jobId]) eventsByJob[e.jobId] = [];
+      eventsByJob[e.jobId].push(e);
+    }
+
+    const journeys = recentJobs.map(job => {
+      const jobEvents = eventsByJob[job.id] || [];
+      const lastEvent = jobEvents[jobEvents.length - 1];
+      const lastStep = lastEvent
+        ? (JOURNEY_STEP_LABELS[lastEvent.event] || lastEvent.event)
+        : statusToStep(job.status);
+
+      // Determine drop-off: farthest step reached
+      const FUNNEL_ORDER = ['job_created', 'teaser_complete', 'preview_loaded', 'scroll_to_paywall', 'checkout_initiated', 'payment_completed', 'full_report_complete'];
+      const eventNames = new Set(jobEvents.map(e => e.event));
+      let farthestStep = 'uploaded';
+      for (const step of FUNNEL_ORDER) {
+        if (eventNames.has(step)) farthestStep = JOURNEY_STEP_LABELS[step] || step;
+      }
+
+      return {
+        id: job.id,
+        email: job.email || null,
+        tier: job.tier,
+        status: job.status,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        errorMessage: job.errorMessage || null,
+        farthestStep,
+        eventCount: jobEvents.length,
+        lastEventAt: lastEvent?.createdAt || null,
+      };
+    });
+
+    res.json({ journeys, total: journeys.length });
+  } catch (err) {
+    logger.error({ err }, 'Admin journeys list query failed');
+    res.status(500).json({ error: 'Journeys query failed' });
+  }
+});
+
+adminRouter.get('/journey/:jobId', requireAdminSecret, async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const [job, events] = await Promise.all([
+      db.job.findUnique({
+        where: { id: jobId },
+        select: {
+          id: true, email: true, tier: true, status: true,
+          createdAt: true, updatedAt: true, errorMessage: true,
+          reportUrl: true, cvUrl: true,
+          tokensInCall1: true, tokensOutCall1: true,
+          tokensInCall2: true, tokensOutCall2: true,
+          tokensInCall3: true, tokensOutCall3: true,
+          feedbackResult: true, feedbackReason: true,
+          previewNudgeSentAt: true, followUp1SentAt: true, followUp2SentAt: true,
+          analysisResult: true,
+        },
+      }),
+      db.analyticsEvent.findMany({
+        where: { jobId },
+        orderBy: { createdAt: 'asc' },
+        select: { event: true, createdAt: true, properties: true, device: true, browser: true, country: true, utmSource: true },
+      }),
+    ]);
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Build a unified chronological timeline from analytics events + known job milestones
+    const timeline = [];
+
+    const addMilestone = (label, timestamp, meta = {}) => {
+      if (timestamp) timeline.push({ type: 'milestone', label, timestamp, ...meta });
+    };
+
+    // Job lifecycle milestones from the job record itself
+    addMilestone('Resume uploaded', job.createdAt);
+    if (job.reportUrl) addMilestone('Report emailed', job.updatedAt, { reportUrl: job.reportUrl });
+    if (job.previewNudgeSentAt) addMilestone('Nudge email sent', job.previewNudgeSentAt);
+    if (job.followUp1SentAt) addMilestone('Follow-up 1 sent', job.followUp1SentAt);
+    if (job.followUp2SentAt) addMilestone('Follow-up 2 sent', job.followUp2SentAt);
+    if (job.feedbackResult) addMilestone(`Feedback: ${job.feedbackResult}${job.feedbackReason ? ` (${job.feedbackReason})` : ''}`, job.updatedAt);
+
+    // Analytics events
+    for (const e of events) {
+      timeline.push({
+        type: 'event',
+        label: JOURNEY_STEP_LABELS[e.event] || e.event,
+        event: e.event,
+        timestamp: e.createdAt,
+        properties: e.properties || null,
+        device: e.device || null,
+        browser: e.browser || null,
+        country: e.country || null,
+        utmSource: e.utmSource || null,
+      });
+    }
+
+    // Sort chronologically
+    timeline.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    // Time-gap annotation: flag gaps > 5 minutes between steps (shows where the user paused)
+    for (let i = 1; i < timeline.length; i++) {
+      const gapMs = new Date(timeline[i].timestamp) - new Date(timeline[i - 1].timestamp);
+      timeline[i].gapMinutes = Math.round(gapMs / 60000);
+    }
+
+    const score = job.analysisResult?.shortlist_match_rate ?? null;
+    const claudeCost = r4(
+      ((job.tokensInCall1 || 0) + (job.tokensInCall2 || 0) + (job.tokensInCall3 || 0)) * CLAUDE_INPUT_PRICE +
+      ((job.tokensOutCall1 || 0) + (job.tokensOutCall2 || 0) + (job.tokensOutCall3 || 0)) * CLAUDE_OUTPUT_PRICE
+    );
+
+    res.json({
+      job: {
+        id: job.id,
+        email: job.email || null,
+        tier: job.tier,
+        status: job.status,
+        shortlistMatchRate: score,
+        errorMessage: job.errorMessage || null,
+        claudeCost,
+        revenue: job.status === 'COMPLETE' ? revenueForJob(job) : 0,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      },
+      timeline,
+      eventCount: events.length,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin journey detail query failed');
+    res.status(500).json({ error: 'Journey query failed' });
+  }
+});
+
+// ── Keyword intelligence feed ─────────────────────────────────────────────────
+// Top 20 keyword gaps this week vs last week, with trend delta.
+// This week and last week compared to surface trending skills gaps.
+adminRouter.get('/keywords', requireAdminSecret, async (req, res) => {
+  try {
+    const ago7  = startOfDay(7);
+    const ago14 = startOfDay(14);
+
+    const [thisWeekJobs, lastWeekJobs] = await Promise.all([
+      db.job.findMany({
+        where: { analysisResult: { not: null }, createdAt: { gte: ago7 } },
+        select: { analysisResult: true },
+      }),
+      db.job.findMany({
+        where: { analysisResult: { not: null }, createdAt: { gte: ago14, lt: ago7 } },
+        select: { analysisResult: true },
+      }),
+    ]);
+
+    function countKeywords(jobs, field) {
+      const counts = {};
+      for (const job of jobs) {
+        const arr = job.analysisResult?.[field];
+        if (!Array.isArray(arr)) continue;
+        for (const kw of arr) {
+          if (typeof kw !== 'string' || !kw.trim()) continue;
+          const k = kw.toLowerCase().trim();
+          counts[k] = (counts[k] || 0) + 1;
+        }
+      }
+      return counts;
+    }
+
+    const thisGaps  = countKeywords(thisWeekJobs,  'keyword_gaps');
+    const lastGaps  = countKeywords(lastWeekJobs,  'keyword_gaps');
+    const thisMatch = countKeywords(thisWeekJobs,  'keyword_matches');
+
+    const top20Gaps = Object.entries(thisGaps)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([keyword, count]) => {
+        const prev = lastGaps[keyword] || 0;
+        const trend = prev === 0 ? 'new' : count > prev ? 'up' : count < prev ? 'down' : 'flat';
+        return { keyword, count, prev, trend, delta: prev === 0 ? null : count - prev };
+      });
+
+    // Keywords that dropped out of the top this week — worth knowing
+    const vanished = Object.entries(lastGaps)
+      .filter(([k]) => !thisGaps[k])
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([keyword, prev]) => ({ keyword, count: 0, prev, trend: 'gone', delta: -prev }));
+
+    // Top 10 matches this week (skills users already have that jobs want)
+    const top10Matches = Object.entries(thisMatch)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([keyword, count]) => ({ keyword, count }));
+
+    res.json({
+      thisWeek: { jobCount: thisWeekJobs.length, topGaps: top20Gaps },
+      lastWeek: { jobCount: lastWeekJobs.length },
+      vanished,
+      topMatches: top10Matches,
+      note: top20Gaps.length === 0 ? 'No analyses this week yet.' : null,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin keywords query failed');
+    res.status(500).json({ error: 'Keywords query failed' });
+  }
+});
