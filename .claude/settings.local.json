@@ -36,7 +36,12 @@
       "Bash(sed -i \"182a \\\\    logEvent\\(''claude_retry'', { properties: { call: 1, reason: ''json_parse_error'' } }\\);\" /c/dev/ResumeAI/src/services/claude.js)",
       "Bash(sed -i \"263a \\\\    logEvent\\(''claude_retry'', { properties: { call: 2, reason: ''json_parse_error'' } }\\);\" /c/dev/ResumeAI/src/services/claude.js)",
       "Bash(git push:*)",
-      "Bash(MOCK_CLAUDE=false node --env-file=.env scripts/generate-sample.js 2>&1)"
+      "Bash(MOCK_CLAUDE=false node --env-file=.env scripts/generate-sample.js 2>&1)",
+      "Bash(curl -s -L https://getshortlisted.fyi/)",
+      "Bash(curl:*)",
+      "Bash(ls /tmp/*.js)",
+      "Bash(head -30 grep -oP '.{200}how-ats-systems-work.{200}' /tmp/bundle.js)",
+      "Bash(ls C:/dev/ResumeAI/client/public/sample*.pdf)"
     ]
   }
 }

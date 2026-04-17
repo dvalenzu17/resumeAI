@@ -41,8 +41,15 @@ function HowItWorks() {
 // ─────────────────────────────────────────────
 //  Results Preview (static mockup)
 // ─────────────────────────────────────────────
+const MOCK_SCORES = [38, 42, 47, 51, 54, 58, 61, 65, 68, 71, 74];
+const C = 2 * Math.PI * 52; // circumference for r=52
+
 function ResultsPreview() {
   const { t } = useT();
+  const [mockScore] = useState(() => MOCK_SCORES[Math.floor(Math.random() * MOCK_SCORES.length)]);
+  const scoreColor = mockScore >= 75 ? '#059669' : mockScore >= 50 ? '#d97706' : '#dc2626';
+  const filled = Math.round((mockScore / 100) * C);
+
   return (
     <section className={styles.previewSection}>
       <div className={styles.sectionWrap}>
@@ -59,11 +66,11 @@ function ResultsPreview() {
               <div className={styles.mockupRing}>
                 <svg viewBox="0 0 120 120">
                   <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="#dc2626" strokeWidth="10"
-                    strokeDasharray="190 327" strokeLinecap="round" transform="rotate(-90 60 60)" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke={scoreColor} strokeWidth="10"
+                    strokeDasharray={`${filled} ${Math.round(C)}`} strokeLinecap="round" transform="rotate(-90 60 60)" />
                 </svg>
                 <div className={styles.mockupRingInner}>
-                  <span className={styles.mockupScore} style={{ color: '#dc2626' }}>58</span>
+                  <span className={styles.mockupScore} style={{ color: scoreColor }}>{mockScore}</span>
                   <span className={styles.mockupScoreLabel}>ATS Score</span>
                 </div>
               </div>
@@ -188,17 +195,6 @@ function Pricing() {
           </Reveal>
         </div>
         <p className={styles.pricingCoach}>{t('pricing_coach')}</p>
-        <p className={styles.sampleLink}>
-          {t('pricing_sample')}{' '}
-          <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
-            {t('pricing_sample_link')}
-          </a>
-          {' '}or{' '}
-          <a href="/sample-cv.pdf" target="_blank" rel="noopener noreferrer" className={styles.sampleAnchor}>
-            see the tailored CV
-          </a>
-          {' '}{t('pricing_sample_suffix')}
-        </p>
       </div>
     </section>
   );
@@ -377,7 +373,7 @@ export default function UploadView() {
 
           <div className={styles.trustBadge}>
             <span className={styles.trustDot} />
-            {total > 0 ? `${total.toLocaleString()}+ resumes scored · ` : ''}{t('hero_badge')}
+            {total >= 500 ? `${total.toLocaleString()}+ resumes scored · ` : ''}{t('hero_badge')}
           </div>
 
           <div className={styles.rejectCard}>
@@ -404,9 +400,6 @@ export default function UploadView() {
                 <path d="M10 4v12M4 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </a>
-            <a href="/sample-report.pdf" target="_blank" rel="noopener noreferrer" className={styles.heroSampleLink}>
-              {t('pricing_sample_link')} →
-            </a>
           </div>
 
           <div className={styles.statGrid}>
@@ -420,10 +413,10 @@ export default function UploadView() {
             </div>
             <div className={styles.statItem}>
               <span className={styles.statNum}>
-                {total > 0 ? `${total.toLocaleString()}+` : 'Free'}
+                {total >= 500 ? `${total.toLocaleString()}+` : 'Free'}
               </span>
               <span className={styles.statDesc}>
-                {total > 0 ? 'resumes scored and counting' : 'your ATS score, keyword gaps, and experience match'}
+                {total >= 500 ? 'resumes scored and counting' : 'your ATS score, keyword gaps, and experience match'}
               </span>
             </div>
           </div>
@@ -587,17 +580,7 @@ export default function UploadView() {
               <div className={styles.testimonialAvatar} style={{ display: 'none' }}>D</div>
               <div>
                 <p className={styles.testimonialName}>{t('founder_name')}</p>
-                <p className={styles.testimonialRole}>
-                  {t('founder_role')} ·{' '}
-                  <a
-                    href="https://www.linkedin.com/in/dvalenzu"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.testimonialLinkedin}
-                  >
-                    LinkedIn
-                  </a>
-                </p>
+                <p className={styles.testimonialRole}>{t('founder_role')}</p>
               </div>
             </div>
           </div>
@@ -615,6 +598,8 @@ export default function UploadView() {
             <Link to="/privacy" className={styles.footerLink}>{t('footer_privacy')}</Link>
             <span className={styles.footerDivider}>·</span>
             <Link to="/terms" className={styles.footerLink}>{t('footer_terms')}</Link>
+            <span className={styles.footerDivider}>·</span>
+            <Link to="/refunds" className={styles.footerLink}>Refunds</Link>
             <span className={styles.footerDivider}>·</span>
             <a href="mailto:hello@getshortlisted.fyi" className={styles.footerLink}>hello@getshortlisted.fyi</a>
           </div>

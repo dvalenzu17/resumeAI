@@ -25,9 +25,9 @@ export default function RefundView() {
 
           <h2>Who processes your payment</h2>
           <p>
-            Payments are processed by Paddle, who acts as the Merchant of Record for all Shortlisted
-            purchases. Your payment is made to Paddle, and refunds are issued by Paddle back to your
-            original payment method.
+            Payments are processed by Lemon Squeezy, who acts as the Merchant of Record for all
+            Shortlisted purchases. Your payment is made to Lemon Squeezy, and refunds are issued by
+            Lemon Squeezy back to your original payment method.
           </p>
 
           <h2>Eligibility</h2>
@@ -55,7 +55,7 @@ export default function RefundView() {
           </ul>
           <p>
             We aim to respond within 24 hours on business days. Once approved, refunds are
-            processed by Paddle and typically appear on your statement within <strong>5 to 10
+            processed by Lemon Squeezy and typically appear on your statement within <strong>5 to 10
             business days</strong>, depending on your bank or card issuer.
           </p>
 

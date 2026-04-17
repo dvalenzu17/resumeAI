@@ -26,9 +26,9 @@ const translations = {
     hero_reject_source: 'linkedin.com · just now',
     hero_reject_quote: '"After careful consideration, we\'ve decided to move forward with other candidates."',
     hero_reject_caption: 'The recruiter never read your resume. The ATS filtered it out in under a second.',
-    hero_headline_line1: 'Stop losing to',
-    hero_headline_line2: 'an algorithm',
-    hero_headline_accent: "you can't even see.",
+    hero_headline_line1: 'Stop sending resumes',
+    hero_headline_line2: 'the ATS ignores.',
+    hero_headline_accent: 'Get shortlisted.',
     hero_sub: 'We score your resume against the job description, find every keyword the ATS is penalising you for, and tell you exactly what to fix.',
     hero_cta: 'Get My Free Score',
     stat1_num: '75%',
@@ -93,7 +93,7 @@ const translations = {
     tier_basic_desc: 'Everything wrong with your resume, and exactly how to fix it.',
     tier_full_name: 'The Glow-Up',
     tier_full_desc: 'Not just the analysis. A fully rewritten CV, tailored to the job. Ready to submit.',
-    tier_most_popular: 'Most popular',
+    tier_most_popular: 'Most complete',
 
     // FAQ
     faq_heading: 'Questions',
@@ -234,9 +234,9 @@ const translations = {
     hero_reject_source: 'linkedin.com · ahora mismo',
     hero_reject_quote: '"Despues de una cuidadosa consideracion, hemos decidido avanzar con otros candidatos."',
     hero_reject_caption: 'El reclutador nunca leyo tu CV. El ATS lo filtro en menos de un segundo.',
-    hero_headline_line1: 'Deja de perder contra',
-    hero_headline_line2: 'un algoritmo',
-    hero_headline_accent: 'que ni siquiera puedes ver.',
+    hero_headline_line1: 'Deja de enviar CVs',
+    hero_headline_line2: 'que el ATS ignora.',
+    hero_headline_accent: 'Consigue entrevistas.',
     hero_sub: 'Evaluamos tu CV contra la descripcion del puesto, encontramos cada palabra clave que el ATS te penaliza y te decimos exactamente que corregir.',
     hero_cta: 'Obtener mi puntuacion gratis',
     stat1_num: '75%',
@@ -301,7 +301,7 @@ const translations = {
     tier_basic_desc: 'Todo lo que esta mal en tu CV, y exactamente como corregirlo.',
     tier_full_name: 'The Glow-Up',
     tier_full_desc: 'No solo el analisis. Un CV completamente reescrito, adaptado al puesto. Listo para enviar.',
-    tier_most_popular: 'Mas popular',
+    tier_most_popular: 'Mas completo',
 
     // FAQ
     faq_heading: 'Preguntas',
