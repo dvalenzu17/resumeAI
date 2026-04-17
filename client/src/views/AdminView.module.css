@@ -4,35 +4,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
+  background: #f8f8f7;
   padding: 24px;
 }
 
 .gateCard {
   width: 100%;
   max-width: 360px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
   padding: 36px 32px;
   text-align: center;
 }
 
 .gateLogo {
-  font-family: var(--font-display);
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  color: var(--text);
+  color: #111827;
   margin: 0 0 28px;
 }
+
+.logoAccent { color: #E8571A; }
 
 .gateAdmin {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-subtle);
+  color: #9ca3af;
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -46,179 +47,345 @@
 .gateInput {
   width: 100%;
   padding: 12px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 8px;
+  color: #111827;
   font-size: 15px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .gateInput:focus {
-  border-color: var(--accent);
+  border-color: #E8571A;
 }
 
 .gateBtn {
   padding: 12px;
-  background: var(--accent);
+  background: #E8571A;
   color: #fff;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 8px;
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.gateBtn:hover { background: var(--accent-hover); }
+.gateBtn:hover { background: #c94815; }
 
 .gateError {
   margin: 12px 0 0;
   font-size: 13px;
-  color: var(--error);
+  color: #dc2626;
 }
 
-/* ── Shell ─────────────────────────────────────────────────────────────────── */
+/* ── Loading ────────────────────────────────────────────────────────────────── */
 .loading {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: #9ca3af;
   font-size: 15px;
-  background: var(--bg);
+  background: #f8f8f7;
 }
 
-.page {
+/* ── Shell (sidebar + content) ─────────────────────────────────────────────── */
+.shell {
+  display: flex;
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
+  background: #f8f8f7;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #111827;
 }
 
-.header {
+/* ── Sidebar overlay (mobile backdrop) ─────────────────────────────────────── */
+.sidebarOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 99;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid #eeede9;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  padding: 16px 32px;
-  border-bottom: 1px solid var(--border);
-  gap: 16px;
+  z-index: 100;
+  transform: translateX(0);
+  transition: transform 0.22s ease;
 }
 
-.logo {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text);
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.logoAccent { color: var(--accent); }
-
-.adminBadge {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-  margin-left: 10px;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: 9999px;
-}
-
-.headerRight {
+.sidebarLogo {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #eeede9;
 }
 
-.genAt {
-  font-size: 12px;
-  color: var(--text-subtle);
+.sidebarBrand {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: #111827;
 }
 
-.refreshBtn {
-  padding: 7px 16px;
+.sidebarAdminBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  padding: 2px 6px;
+  border: 1px solid #eeede9;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.navItem:hover {
+  background: #f8f8f7;
+  color: #111827;
+}
+
+.navItemActive {
+  background: #fff4f0;
+  color: #E8571A;
+  font-weight: 600;
+}
+
+.navIcon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.sidebarBottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 14px;
+  border-top: 1px solid #eeede9;
+}
+
+.updatedAt {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.sidebarRefreshBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: transparent;
+  border: 1px solid #eeede9;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
+  width: fit-content;
 }
 
-.refreshBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.sidebarRefreshBtn:hover {
+  border-color: #E8571A;
+  color: #E8571A;
 }
 
-.body {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 32px 64px;
+/* ── Content area ───────────────────────────────────────────────────────────── */
+.content {
+  margin-left: 220px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────────── */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #eeede9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.menuBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: 1px solid #eeede9;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pageTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+}
+
+.pageDate {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ── Page body ──────────────────────────────────────────────────────────────── */
+.pageBody {
+  padding: 28px 28px 64px;
   display: flex;
   flex-direction: column;
   gap: 40px;
+  max-width: 1100px;
 }
 
-/* ── Section ───────────────────────────────────────────────────────────────── */
+/* ── Section group (Finance / Marketing / Tech) ─────────────────────────────── */
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sectionGroupLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eeede9;
+}
+
+.sectionGroupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Section ────────────────────────────────────────────────────────────────── */
 .section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .sectionTitle {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-subtle);
+  color: #9ca3af;
   margin: 0;
 }
 
-/* ── Cards ─────────────────────────────────────────────────────────────────── */
-.cardGrid {
+/* ── Card grids ─────────────────────────────────────────────────────────────── */
+.cardGrid5 {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 
+.cardGrid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.cardGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px 20px 18px;
-}
-
-.cardValue {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.75px;
-  color: var(--text);
-  margin-bottom: 4px;
-  line-height: 1.1;
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
+  padding: 18px 18px 16px;
 }
 
 .cardLabel {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.cardValue {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #111827;
+  line-height: 1.15;
 }
 
 .cardSub {
   font-size: 11px;
-  color: var(--text-subtle);
+  color: #9ca3af;
   margin-top: 4px;
 }
 
-/* ── Table ─────────────────────────────────────────────────────────────────── */
+/* ── Table ──────────────────────────────────────────────────────────────────── */
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid #eeede9;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .table {
@@ -234,21 +401,27 @@
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-subtle);
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
+  color: #9ca3af;
+  background: #f8f8f7;
+  border-bottom: 1px solid #eeede9;
   white-space: nowrap;
 }
 
 .table td {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
+  border-bottom: 1px solid #eeede9;
+  color: #111827;
   white-space: nowrap;
 }
 
 .table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: var(--bg-subtle); }
+.table tr:hover td { background: #fafaf9; }
+
+.rowAlt td { background: #f8f8f7; }
+.rowAlt:hover td { background: #f3f3f1; }
+
+.rowHighlight td { background: #fff4f0; }
+.rowHighlight:hover td { background: #ffe8dc; }
 
 .mono {
   font-family: 'Courier New', monospace;
@@ -259,128 +432,248 @@
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-muted);
+  color: #6b7280;
 }
 
-.statusTag {
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-/* ── Bar chart ─────────────────────────────────────────────────────────────── */
+/* ── Area chart ─────────────────────────────────────────────────────────────── */
 .chartWrap {
   position: relative;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--bg-subtle);
-  padding: 24px 16px 32px;
-}
-
-.chart {
-  height: 140px;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-}
-
-.barCol {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  position: relative;
-}
-
-.bar {
-  width: 100%;
-  background: var(--accent);
-  border-radius: 2px 2px 0 0;
-  min-height: 2px;
-  opacity: 0.85;
-  transition: opacity 0.1s;
-}
-
-.bar:hover { opacity: 1; }
-
-.barLabel {
-  position: absolute;
-  bottom: -22px;
-  font-size: 10px;
-  color: var(--text-subtle);
-  white-space: nowrap;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 24px 16px 36px;
 }
 
 .chartAxisMax {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: 10px;
+  right: 16px;
   font-size: 11px;
-  color: var(--text-subtle);
+  color: #9ca3af;
 }
 
-/* ── Funnel ────────────────────────────────────────────────────────────────── */
-.funnel {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex-wrap: wrap;
-  gap: 8px;
+.areaSvg {
+  display: block;
+  width: 100%;
+  height: 160px;
 }
 
-.funnelWrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.chartXAxis {
+  position: absolute;
+  bottom: 10px;
+  left: 16px;
+  right: 16px;
+  height: 20px;
 }
 
-.funnelStep {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  text-align: center;
-  min-width: 120px;
+.chartXLabel {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #9ca3af;
+  white-space: nowrap;
 }
 
-.funnelCount {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.75px;
-  color: var(--text);
-}
-
-.funnelLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.funnelArrow {
+/* ── Cost breakdown (horizontal bars) ─────────────────────────────────────── */
+.costBreakdown {
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  gap: 14px;
 }
 
-.funnelRate {
+.costRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.costRowLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
+.costDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.costRowLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.costRowMeta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+
+.costRowBarWrap {
+  flex: 1;
+  height: 8px;
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.costRowBarFill {
+  height: 100%;
+  border-radius: 9999px;
+  min-width: 2px;
+  transition: width 0.3s ease;
+  opacity: 0.85;
+}
+
+.costRowAmt {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  min-width: 68px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.costRowPct {
+  font-size: 11px;
+  color: #9ca3af;
+  min-width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.costSummaryRow {
+  display: flex;
+  gap: 24px;
+  padding-top: 14px;
+  border-top: 1px solid #eeede9;
+  font-size: 13px;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+/* ── Funnel step rows ───────────────────────────────────────────────────────── */
+.funnelList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.funnelStepRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 10px;
+}
+
+.funnelStepLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  flex-shrink: 0;
+}
+
+.funnelStepNum {
+  font-family: 'Courier New', monospace;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
+  color: #9ca3af;
+  min-width: 16px;
 }
 
-.funnelChevron {
-  font-size: 18px;
-  color: var(--border);
+.funnelStepName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
 }
 
+.funnelStepSource {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  padding: 2px 6px;
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.funnelStepBarWrap {
+  flex: 1;
+  height: 8px;
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.funnelStepBar {
+  height: 100%;
+  background: #E8571A;
+  border-radius: 9999px;
+  min-width: 2px;
+  opacity: 0.75;
+  transition: width 0.3s ease;
+}
+
+.funnelStepRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.funnelStepCount {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  min-width: 48px;
+  text-align: right;
+}
+
+.funnelStepDrop {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* ── Status chips (funnel breakdown) ───────────────────────────────────────── */
 .statusGrid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .statusChip {
@@ -388,8 +681,8 @@
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #eeede9;
   border-radius: 9999px;
   font-size: 12px;
 }
@@ -401,225 +694,14 @@
   flex-shrink: 0;
 }
 
-.statusName { color: var(--text-muted); }
-.statusCount { font-weight: 700; color: var(--text); }
+.statusName { color: #6b7280; }
+.statusCount { font-weight: 700; color: #111827; }
 
-/* ── Costs ─────────────────────────────────────────────────────────────────── */
-.costGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.costCard {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-}
-
-.costTitle {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-  margin-bottom: 8px;
-}
-
-.costAmount {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text);
-  margin-bottom: 6px;
-  font-family: 'Courier New', monospace;
-}
-
-.costMeta {
-  font-size: 11px;
-  color: var(--text-subtle);
-  margin-top: 2px;
-}
-
-.costSummary {
-  font-size: 13px;
-  color: var(--text-muted);
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
-}
-
-/* ── Tabs ──────────────────────────────────────────────────────────────────── */
-.tabs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 3px;
-}
-
-.tabBtn {
-  padding: 6px 14px;
-  background: transparent;
-  border: none;
-  border-radius: calc(var(--radius) - 2px);
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.tabBtn:hover {
-  color: var(--text);
-}
-
-.tabActive {
-  background: var(--bg);
-  color: var(--text);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-}
-
-/* ── Leakage Funnel table ──────────────────────────────────────────────────── */
-.funnelTable {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.funnelRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.funnelStep2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 260px;
-}
-
-.funnelStepNum {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-subtle);
-  min-width: 16px;
-}
-
-.funnelStepName {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.funnelSource {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-  padding: 2px 6px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 9999px;
-}
-
-.funnelBar2Wrap {
-  flex: 1;
-  height: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.funnelBar2 {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 9999px;
-  min-width: 2px;
-  transition: width 0.3s ease;
-  opacity: 0.8;
-}
-
-.funnelCount2 {
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  min-width: 48px;
-  text-align: right;
-}
-
-.funnelDrop {
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  font-weight: 700;
-  min-width: 52px;
-  text-align: right;
-}
-
+/* ── Empty state ────────────────────────────────────────────────────────────── */
 .empty {
-  color: var(--text-muted);
+  color: #9ca3af;
   font-size: 14px;
   padding: 12px 0;
-}
-
-/* ── Department ────────────────────────────────────────────────────────────── */
-.dept {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.deptHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-}
-
-.deptIcon {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--accent);
-  font-family: 'Courier New', monospace;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-radius: 6px;
-}
-
-.deptLabel {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-
-.deptBody {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 28px 24px;
 }
 
 /* ── P&L Simulator ─────────────────────────────────────────────────────────── */
@@ -633,9 +715,9 @@
 .simInputCard {
   flex: 1;
   min-width: 200px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
   padding: 20px 20px 16px;
   display: flex;
   flex-direction: column;
@@ -643,9 +725,9 @@
 }
 
 .simTotalCard {
-  background: var(--bg-subtle);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 2px solid #E8571A;
+  border-radius: 12px;
   padding: 20px 28px 16px;
   display: flex;
   flex-direction: column;
@@ -659,31 +741,31 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-subtle);
+  color: #9ca3af;
 }
 
 .simTotalAmount {
   font-size: 36px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -1px;
-  color: var(--accent);
+  color: #E8571A;
 }
 
 .simTotalJobs {
   font-size: 12px;
-  color: var(--text-muted);
+  color: #6b7280;
 }
 
 .simInputLabel {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text);
+  color: #111827;
 }
 
 .simPrice {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
+  color: #E8571A;
   margin-left: 6px;
 }
 
@@ -696,10 +778,10 @@
 .simBtn {
   width: 36px;
   height: 36px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 8px;
+  color: #111827;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -709,32 +791,31 @@
   flex-shrink: 0;
   transition: border-color 0.15s, color 0.15s;
 }
-.simBtn:hover { border-color: var(--accent); color: var(--accent); }
+.simBtn:hover { border-color: #E8571A; color: #E8571A; }
 
 .simInput {
   flex: 1;
   padding: 8px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
+  border-radius: 8px;
+  color: #111827;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
   outline: none;
   width: 0;
 }
-.simInput:focus { border-color: var(--accent); }
+.simInput:focus { border-color: #E8571A; }
 .simInput::-webkit-outer-spin-button,
 .simInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .simSubtotal {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #6b7280;
   font-family: 'Courier New', monospace;
 }
 
-/* Per-job cards */
 .simJobGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -742,19 +823,19 @@
 }
 
 .simJobCard {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid #eeede9;
+  border-radius: 12px;
   padding: 20px;
 }
 
 .simJobTitle {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text);
+  color: #111827;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #eeede9;
 }
 
 .simJobRows {
@@ -772,16 +853,17 @@
 
 .simJobRowTotal {
   padding-top: 8px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #eeede9;
   font-weight: 700;
 }
 
-.simJobLabel { color: var(--text-muted); }
+.simJobLabel { color: #6b7280; }
 
 .simJobVal {
   font-family: 'Courier New', monospace;
   font-size: 12px;
   font-weight: 700;
+  color: #111827;
 }
 
 .simJobMargin {
@@ -792,7 +874,6 @@
   margin-top: 4px;
 }
 
-/* Where the money goes */
 .simDestStack {
   display: flex;
   flex-direction: column;
@@ -811,7 +892,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text);
+  color: #111827;
   min-width: 180px;
 }
 
@@ -825,8 +906,8 @@
 .simDestBarWrap {
   flex: 1;
   height: 12px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
+  background: #f8f8f7;
+  border: 1px solid #eeede9;
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -849,7 +930,7 @@
 }
 
 .simDestPct {
-  color: var(--text-subtle);
+  color: #9ca3af;
   font-size: 11px;
   min-width: 40px;
   text-align: right;
@@ -861,20 +942,20 @@
   align-items: center;
   margin-top: 16px;
   padding: 16px 20px;
-  background: var(--bg-subtle);
+  background: #f8f8f7;
   border: 2px solid;
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
 }
 
 .simNetLabel {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #6b7280;
 }
 
 .simNetAmt {
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.5px;
   font-family: 'Courier New', monospace;
 }
@@ -886,21 +967,54 @@
 
 .simNote {
   font-size: 12px;
-  color: var(--text-subtle);
+  color: #9ca3af;
   margin: 8px 0 0;
 }
 
-/* ── Responsive ────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .body { padding: 20px 16px 48px; }
-  .header { padding: 14px 16px; flex-wrap: wrap; gap: 12px; }
-  .headerRight { flex-wrap: wrap; }
-  .tabs { width: 100%; }
-  .funnel { flex-direction: column; align-items: flex-start; }
-  .funnelArrow { flex-direction: row; transform: rotate(90deg); }
-  .funnelRow { flex-wrap: wrap; }
-  .funnelStep2 { min-width: 100%; }
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cardGrid5 { grid-template-columns: repeat(3, 1fr); }
+  .cardGrid4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 700px) {
+  /* Hide sidebar off-screen; show only when .sidebarOpen */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  /* Content takes full width */
+  .content {
+    margin-left: 0;
+  }
+
+  /* Show hamburger */
+  .menuBtn {
+    display: flex;
+  }
+
+  .pageBody { padding: 18px 16px 48px; }
+  .pageHeader { padding: 12px 16px; }
+
+  .cardGrid5 { grid-template-columns: repeat(2, 1fr); }
+  .cardGrid4 { grid-template-columns: repeat(2, 1fr); }
+  .cardGrid3 { grid-template-columns: repeat(2, 1fr); }
+
+  .funnelStepLeft { min-width: 100%; }
+  .funnelStepRow { flex-wrap: wrap; }
+
   .simJobGrid { grid-template-columns: 1fr; }
   .simDestLabel { min-width: 120px; font-size: 12px; }
   .simNetBanner { flex-direction: column; gap: 8px; text-align: center; }
+
+  .costRowLeft { min-width: 140px; }
+}
+
+@media (max-width: 480px) {
+  .cardGrid5,
+  .cardGrid4,
+  .cardGrid3 { grid-template-columns: 1fr 1fr; }
 }
