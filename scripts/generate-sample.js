@@ -99,7 +99,8 @@ Benefits: Health insurance, hybrid schedule (3 days office), professional develo
 // ── Hardcoded realistic output (Daniel's CV vs Data Analyst JD) ───────────────
 
 const ANALYSIS = {
-  ats_score: 74,
+  shortlist_match_rate: 74,
+  score_breakdown: { hard_skill_score: 24, job_title_score: 14, parseability_score: 13, section_completeness_score: 12, soft_skill_score: 7, experience_score: 4 },
   human_score: 61,
   human_score_notes: 'Bullet points describe responsibilities rather than achievements. Recruiters want to see measurable impact, not a list of duties.',
   experience_match: 78,

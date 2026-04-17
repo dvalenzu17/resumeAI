@@ -39,8 +39,55 @@ Use actual local market rates for the detected location. Express amounts in the 
 
 Analyse the resume against the job description and return ONLY a JSON object. No markdown, no explanation, no preamble:
 
+SHORTLIST MATCH RATE ALGORITHM — compute the following sub-scores, then derive the final rate:
+
+1. HARD SKILL MATCHING (35% weight, max 35 pts):
+   - Extract all technical skills from the JD. For each, check the resume for:
+     * Exact match → 1.0 weight
+     * Acronym/expansion match (e.g. "AI" ↔ "Artificial Intelligence") → 0.9 weight
+     * Semantic synonym match → 0.7 weight
+   - Skills found in the resume summary or job titles get a 1.5x placement multiplier.
+   - Score = (weighted_matches / total_skills) × 35, capped at 35.
+
+2. JOB TITLE ALIGNMENT (20% weight, max 20 pts):
+   - Extract target job title from JD. Compare to the candidate's most recent 2 roles.
+   - Exact title match = 20 pts. Senior/junior variant = 14 pts. Adjacent role = 8 pts. Unrelated = 0.
+
+3. PARSEABILITY SCORE (15% weight, max 15 pts):
+   - Single-column layout detected: +5
+   - Standard section headers present (EXPERIENCE, EDUCATION, SKILLS or equivalents): +4
+   - No tables or text boxes detected: +3
+   - Contact info appears in the body (not a header/footer region): +3
+
+4. SECTION COMPLETENESS (15% weight, max 15 pts):
+   - Contact info present: +3
+   - Professional summary present: +3
+   - Experience section with dates: +3
+   - Education with dates: +3
+   - Skills section: +3
+
+5. SOFT SKILL MATCHING (10% weight, max 10 pts):
+   - Same matching logic as hard skills. Communication, leadership, collaboration, etc.
+   - Score = (weighted_matches / total_soft_skills_in_jd) × 10, capped at 10.
+
+6. EXPERIENCE MATCH (5% weight, max 5 pts):
+   - Compare years of experience on resume vs. JD minimum.
+   - Within ±1 year = 5 pts. Within ±2 years = 3 pts. Further = 1 pt.
+
+FINAL shortlist_match_rate = sum of all sub-scores, capped at 95 (never 100 — no resume is a perfect match).
+
+PARSEABILITY GATE: if the resume text appears to be from a scanned/image PDF (very short, garbled, or no recognisable structure), reduce the final score by up to 20 pts and note this in weaknesses.
+
 {
-  "ats_score": <integer 0-100, overall ATS keyword and formatting compatibility>,
+  "shortlist_match_rate": <integer 0-95, computed using the weighted algorithm above>,
+  "score_breakdown": {
+    "hard_skill_score": <integer 0-35>,
+    "job_title_score": <integer 0-20>,
+    "parseability_score": <integer 0-15>,
+    "section_completeness_score": <integer 0-15>,
+    "soft_skill_score": <integer 0-10>,
+    "experience_score": <integer 0-5>
+  },
   "human_score": <integer 0-100, how compelling this resume is to a human recruiter with 7 seconds. Considers narrative clarity, achievement specificity, absence of filler language, career story coherence>,
   "human_score_notes": <string, 1-2 sentences on what most hurts human appeal>,
   "experience_match": <integer 0-100, how well the candidate's experience level matches role requirements>,
@@ -123,7 +170,7 @@ ${jobDescription}
 
 ANALYSIS:
 ${JSON.stringify({
-  ats_score: analysisResult.ats_score,
+  shortlist_match_rate: analysisResult.shortlist_match_rate,
   experience_match: analysisResult.experience_match,
   keyword_gaps: analysisResult.keyword_gaps,
   keyword_matches: analysisResult.keyword_matches,
@@ -265,7 +312,8 @@ export async function runAnalysis(resumeText, jobDescription, userLocation = nul
   if (MOCK) {
     logger.warn('MOCK_CLAUDE=true — returning mock analysis');
     return { inputTokens: 0, outputTokens: 0, result: {
-      ats_score: 72,
+      shortlist_match_rate: 72,
+      score_breakdown: { hard_skill_score: 22, job_title_score: 14, parseability_score: 12, section_completeness_score: 12, soft_skill_score: 7, experience_score: 5 },
       human_score: 61,
       human_score_notes: 'Bullet points list responsibilities rather than achievements. Recruiters want to see impact, not a job description.',
       experience_match: 65,
@@ -494,11 +542,11 @@ export async function runCvRewrite(resumeText, jobDescription, analysisResult, r
 }
 
 function validateAnalysis(obj) {
-  const required = ['ats_score', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
+  const required = ['shortlist_match_rate', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
   for (const key of required) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
-  if (typeof obj.ats_score !== 'number') throw new Error('ats_score must be a number');
+  if (typeof obj.shortlist_match_rate !== 'number') throw new Error('shortlist_match_rate must be a number');
   if (!Array.isArray(obj.keyword_gaps)) throw new Error('keyword_gaps must be an array');
   if (!Array.isArray(obj.keyword_matches)) throw new Error('keyword_matches must be an array');
   if (!Array.isArray(obj.weaknesses)) throw new Error('weaknesses must be an array');

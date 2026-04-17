@@ -13,8 +13,8 @@ export function trackResumeSubmitted({ tier }) {
 }
 
 // Called when the preview page loads with real data
-export function trackPreviewViewed({ ats_score, tier }) {
-  gtag('event', 'preview_viewed', { ats_score, tier });
+export function trackPreviewViewed({ shortlist_match_rate, tier }) {
+  gtag('event', 'preview_viewed', { shortlist_match_rate, tier });
 }
 
 // Called when the user switches tier on the preview page

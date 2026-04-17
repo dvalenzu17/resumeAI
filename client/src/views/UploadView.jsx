@@ -71,7 +71,7 @@ function ResultsPreview() {
                 </svg>
                 <div className={styles.mockupRingInner}>
                   <span className={styles.mockupScore} style={{ color: scoreColor }}>{mockScore}</span>
-                  <span className={styles.mockupScoreLabel}>ATS Score</span>
+                  <span className={styles.mockupScoreLabel}>Shortlist Match</span>
                 </div>
               </div>
               <div className={styles.mockupRing}>

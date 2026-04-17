@@ -75,16 +75,16 @@ export default function PreviewView() {
         setTier(data.tier);
         setSelectedTier(data.tier);
         if (data.email) setEmail(data.email);
-        trackPreviewViewed({ ats_score: data.preview?.ats_score, tier: data.tier });
+        trackPreviewViewed({ shortlist_match_rate: data.preview?.shortlist_match_rate, tier: data.tier });
         previewLoadedAt.current = Date.now();
-        track('preview_loaded', { ats_score: data.preview?.ats_score, gap_count: data.preview?.gap_count }, jobId);
+        track('preview_loaded', { shortlist_match_rate: data.preview?.shortlist_match_rate, gap_count: data.preview?.gap_count }, jobId);
       })
       .catch(() => setError('Could not load your preview.'));
   }, [jobId, navigate]);
 
   useEffect(() => {
     if (!preview || !paywallRef.current) return;
-    return trackOnce(paywallRef.current, 'scroll_to_paywall', { ats_score: preview.ats_score }, jobId);
+    return trackOnce(paywallRef.current, 'scroll_to_paywall', { shortlist_match_rate: preview.shortlist_match_rate }, jobId);
   }, [preview, jobId]);
 
   useEffect(() => {
@@ -155,9 +155,9 @@ export default function PreviewView() {
   const price = selectedTier === 'FULL' ? '$29' : '$12';
   const tierLabel = selectedTier === 'FULL' ? 'The Glow-Up' : 'The Audit';
   const scoreVerdict =
-    preview.ats_score >= 75
+    preview.shortlist_match_rate >= 75
       ? t('preview_verdict_high')
-      : preview.ats_score >= 50
+      : preview.shortlist_match_rate >= 50
       ? t('preview_verdict_mid')
       : t('preview_verdict_low');
 
@@ -173,9 +173,9 @@ export default function PreviewView() {
         <div className={styles.header}>
           <div className={styles.headerPill}>{t('preview_score_header')}</div>
           <h1 className={styles.heading}>
-            {preview.ats_score >= 75
+            {preview.shortlist_match_rate >= 75
               ? <>{t('preview_heading_high')}<br /><span className={styles.headingAccent}>{t('preview_heading_high_accent')}</span></>
-              : preview.ats_score >= 50
+              : preview.shortlist_match_rate >= 50
               ? <>{t('preview_heading_mid')}<br /><span className={styles.headingAccent}>{t('preview_heading_mid_accent')}</span></>
               : <>{t('preview_heading_low')}<br /><span className={styles.headingAccent}>{t('preview_heading_low_accent')}</span></>
             }
@@ -185,7 +185,7 @@ export default function PreviewView() {
 
         {/* Score rings */}
         <div className={styles.scores}>
-          <ScoreRing score={preview.ats_score} label="ATS Score" />
+          <ScoreRing score={preview.shortlist_match_rate} label="Shortlist Match Rate" />
           {preview.human_score != null && <ScoreRing score={preview.human_score} label="Human Readability" />}
           <ScoreRing score={preview.experience_match} label="Experience Match" />
         </div>

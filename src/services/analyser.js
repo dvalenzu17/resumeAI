@@ -45,7 +45,7 @@ export async function runTeaserAnalysis(jobId, userLocation = null) {
 
     const t0 = Date.now();
     const { result: analysis, inputTokens, outputTokens } = await runAnalysis(resumeText, jobDescription, userLocation);
-    logger.info({ jobId, ats_score: analysis.ats_score }, 'Teaser analysis complete');
+    logger.info({ jobId, shortlist_match_rate: analysis.shortlist_match_rate }, 'Teaser analysis complete');
 
     await db.job.update({
       where: { id: jobId },
@@ -59,7 +59,7 @@ export async function runTeaserAnalysis(jobId, userLocation = null) {
 
     logEvent('teaser_complete', {
       jobId,
-      properties: { ats_score: analysis.ats_score, durationMs: Date.now() - t0, tokensIn: inputTokens, tokensOut: outputTokens, gapCount: Array.isArray(analysis.keyword_gaps) ? analysis.keyword_gaps.length : 0 },
+      properties: { shortlist_match_rate: analysis.shortlist_match_rate, durationMs: Date.now() - t0, tokensIn: inputTokens, tokensOut: outputTokens, gapCount: Array.isArray(analysis.keyword_gaps) ? analysis.keyword_gaps.length : 0 },
     });
   } catch (err) {
     logger.error({ jobId, err }, 'runTeaserAnalysis failed');

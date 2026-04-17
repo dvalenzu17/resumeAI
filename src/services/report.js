@@ -36,7 +36,7 @@ const PDF_LABELS = {
   en: {
     report_title: 'Resume Analysis Report',
     generated_for: 'Generated for',
-    ats_compat: 'ATS Compatibility',
+    ats_compat: 'Shortlist Match Rate',
     human_read: 'Human Readability',
     exp_match: 'Experience Match',
     strong: 'Strong', fair: 'Fair', weak: 'Weak',
@@ -63,7 +63,7 @@ const PDF_LABELS = {
   es: {
     report_title: 'Informe de Análisis de CV',
     generated_for: 'Generado para',
-    ats_compat: 'Compatibilidad ATS',
+    ats_compat: 'Tasa de Preseleccion',
     human_read: 'Legibilidad Humana',
     exp_match: 'Afinidad con el Puesto',
     strong: 'Sólido', fair: 'Aceptable', weak: 'Débil',
@@ -90,7 +90,7 @@ const PDF_LABELS = {
   fr: {
     report_title: "Rapport d'Analyse de CV",
     generated_for: 'Généré pour',
-    ats_compat: 'Compatibilité ATS',
+    ats_compat: 'Taux de Presélection',
     human_read: 'Lisibilité Humaine',
     exp_match: "Adéquation au Poste",
     strong: 'Solide', fair: 'Correct', weak: 'Faible',
@@ -117,7 +117,7 @@ const PDF_LABELS = {
   pt: {
     report_title: 'Relatório de Análise de Currículo',
     generated_for: 'Gerado para',
-    ats_compat: 'Compatibilidade ATS',
+    ats_compat: 'Taxa de Pre-selecao',
     human_read: 'Legibilidade Humana',
     exp_match: 'Correspondência de Experiência',
     strong: 'Forte', fair: 'Razoável', weak: 'Fraco',
@@ -144,7 +144,7 @@ const PDF_LABELS = {
   de: {
     report_title: 'Lebenslauf-Analysebericht',
     generated_for: 'Erstellt für',
-    ats_compat: 'ATS-Kompatibilität',
+    ats_compat: 'Shortlist-Trefferquote',
     human_read: 'Menschliche Lesbarkeit',
     exp_match: 'Erfahrungsübereinstimmung',
     strong: 'Stark', fair: 'Angemessen', weak: 'Schwach',
@@ -171,7 +171,7 @@ const PDF_LABELS = {
   it: {
     report_title: 'Rapporto di Analisi del CV',
     generated_for: 'Generato per',
-    ats_compat: 'Compatibilità ATS',
+    ats_compat: 'Tasso di Preselezione',
     human_read: 'Leggibilità Umana',
     exp_match: 'Corrispondenza Esperienza',
     strong: 'Forte', fair: 'Accettabile', weak: 'Debole',
@@ -212,7 +212,7 @@ function getCvLabels(lang) { return CV_LABELS[lang] || CV_LABELS.en; }
 function buildHtml(job, analysis, rewrites, lang = 'en') {
   const L = getLabels(lang);
   const tier = job.tier;
-  const score = analysis.ats_score;
+  const score = analysis.shortlist_match_rate;
   const humanScore = analysis.human_score ?? null;
   const expMatch = analysis.experience_match;
 

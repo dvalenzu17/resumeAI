@@ -49,7 +49,7 @@ LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID_BASIC, LEMONSQUEEZY_VARIANT_ID_FU
 RESEND_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, APP_URL
 
 ## Prompt chain
-- Call 1 (both tiers): analysis JSON — ats_score, keyword_gaps, keyword_matches, weaknesses, strengths, linkedin_headline
+- Call 1 (both tiers): analysis JSON — shortlist_match_rate (weighted 7-factor score, max 95), score_breakdown, keyword_gaps, keyword_matches, weaknesses, strengths, linkedin_headline
 - Call 2 (full tier only): rewrite JSON — rewritten_bullets (top 5), summary_rewrite, skills_section
 
 ## Pricing logic

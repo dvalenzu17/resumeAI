@@ -528,7 +528,7 @@ adminRouter.get('/niche', requireAdminSecret, async (req, res) => {
 
     const scoreBuckets = { '0-25': 0, '26-50': 0, '51-75': 0, '76-100': 0 };
     for (const job of jobs) {
-      const score = job.analysisResult?.ats_score;
+      const score = job.analysisResult?.shortlist_match_rate;
       if (typeof score !== 'number') continue;
       if (score <= 25) scoreBuckets['0-25']++;
       else if (score <= 50) scoreBuckets['26-50']++;

@@ -16,7 +16,8 @@ const job = {
 };
 
 const analysis = {
-  ats_score: 62,
+  shortlist_match_rate: 62,
+  score_breakdown: { hard_skill_score: 18, job_title_score: 14, parseability_score: 12, section_completeness_score: 9, soft_skill_score: 6, experience_score: 3 },
   human_score: 55,
   human_score_notes: 'Bullet points describe responsibilities rather than achievements. Recruiters want to see measurable impact, not a list of duties.',
   experience_match: 70,

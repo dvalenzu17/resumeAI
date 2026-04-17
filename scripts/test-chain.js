@@ -106,7 +106,7 @@ async function testResume(name, resumeText) {
   console.log('\n[Call 1] Running analysis...');
   const analysis = await runAnalysis(resumeText, JOB_DESCRIPTION);
   console.log('✓ Analysis result:');
-  console.log(`  ATS Score:         ${analysis.ats_score}`);
+  console.log(`  Shortlist Match Rate: ${analysis.shortlist_match_rate}`);
   console.log(`  Experience Match:  ${analysis.experience_match}`);
   console.log(`  Keyword Matches:   ${analysis.keyword_matches?.length ?? 0} items`);
   console.log(`  Keyword Gaps:      ${analysis.keyword_gaps?.length ?? 0} items`);

@@ -40,13 +40,13 @@ cronRouter.post('/followups', async (req, res) => {
     for (const job of needsNudge) {
       try {
         const analysis = job.analysisResult;
-        const atsScore = analysis?.ats_score ?? null;
+        const shortlistMatchRate = analysis?.shortlist_match_rate ?? null;
         const firstGap = Array.isArray(analysis?.keyword_gaps) ? analysis.keyword_gaps[0] : null;
-        if (atsScore !== null) {
-          await sendPreviewNudgeEmail(job.email, job.id, env.APP_URL, atsScore, firstGap);
+        if (shortlistMatchRate !== null) {
+          await sendPreviewNudgeEmail(job.email, job.id, env.APP_URL, shortlistMatchRate, firstGap);
           await db.job.update({ where: { id: job.id }, data: { previewNudgeSentAt: now } });
           sentNudge++;
-          logger.info({ jobId: job.id, atsScore }, 'Preview nudge sent');
+          logger.info({ jobId: job.id, shortlistMatchRate }, 'Preview nudge sent');
         }
       } catch (err) {
         logger.error({ jobId: job.id, err }, 'Failed to send preview nudge');

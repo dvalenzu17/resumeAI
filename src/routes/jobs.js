@@ -197,7 +197,7 @@ jobsRouter.get('/:id/status', async (req, res, next) => {
       const weaknesses = Array.isArray(a.weaknesses) ? a.weaknesses : [];
 
       response.preview = {
-        ats_score: a.ats_score,
+        shortlist_match_rate: a.shortlist_match_rate,
         human_score: a.human_score,
         experience_match: a.experience_match,
         gap_count: gaps.length,
