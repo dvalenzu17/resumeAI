@@ -190,6 +190,40 @@ export default function PreviewView() {
           <ScoreRing score={preview.experience_match} label="Experience Match" />
         </div>
 
+        {/* Score breakdown — weakest component callout */}
+        {preview.score_breakdown && (() => {
+          const bd = preview.score_breakdown;
+          const components = [
+            { label: 'Hard Skills Match', val: bd.hard_skill_score, max: 35 },
+            { label: 'Job Title Alignment', val: bd.job_title_score, max: 20 },
+            { label: 'Resume Parseability', val: bd.parseability_score, max: 15 },
+            { label: 'Section Completeness', val: bd.section_completeness_score, max: 15 },
+            { label: 'Soft Skills Match', val: bd.soft_skill_score, max: 10 },
+            { label: 'Experience Match', val: bd.experience_score, max: 5 },
+          ];
+          const weakest = components.reduce((a, b) => (a.val / a.max < b.val / b.max ? a : b));
+          return (
+            <div className={styles.breakdownCallout}>
+              {components.map(c => (
+                <div key={c.label} className={styles.breakdownRow}>
+                  <span className={styles.breakdownLabel}>{c.label}</span>
+                  <div className={styles.breakdownBarWrap}>
+                    <div
+                      className={styles.breakdownBarFill}
+                      style={{
+                        width: `${Math.round((c.val / c.max) * 100)}%`,
+                        background: c.val / c.max >= 0.7 ? '#16a34a' : c.val / c.max >= 0.4 ? '#d97706' : '#dc2626',
+                      }}
+                    />
+                  </div>
+                  <span className={styles.breakdownVal}>{c.val}<span className={styles.breakdownMax}>/{c.max}</span></span>
+                </div>
+              ))}
+              <p className={styles.breakdownHint}>Biggest gap: <strong>{weakest.label}</strong> ({weakest.val}/{weakest.max})</p>
+            </div>
+          );
+        })()}
+
         {/* Keyword gaps — 2 visible, rest blurred */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>

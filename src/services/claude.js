@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../lib/logger.js';
 import { env } from '../lib/env.js';
 import { logEvent } from './analytics.js';
+import { analyseTextStructure, computeShortlistMatchRate } from '../lib/parseability.js';
 
 const MOCK = env.MOCK_CLAUDE;
 const client = MOCK ? null : new Anthropic({ maxRetries: 0 }); // We handle retries ourselves
@@ -16,12 +17,12 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]);
 }
 
-function buildAnalysisPrompt(resumeText, jobDescription, userLocation = null) {
+function buildAnalysisPrompt(resumeText, jobDescription, userLocation = null, parseabilityScore = 0, sectionCompletenessScore = 0) {
   const gpsLine = userLocation
     ? `5. If location still cannot be determined from the JD or resume, use the user's GPS coordinates (lat ${userLocation.lat}, lng ${userLocation.lng}) to infer the nearest city and country, and use that market as the basis.`
     : `5. If location cannot be determined from either document, use US remote-worker market rates and note the assumption.`;
 
-  return `You are an expert ATS analyst, resume coach, and career strategist operating globally.
+  return `You are an expert resume coach and career strategist operating globally.
 
 LANGUAGE RULE: Detect the primary language of the RESUME TEXT. Write ALL narrative string values (notes, strengths, weaknesses, summaries, tips, headlines, red flags) in that same language. Technical terms, tool names, and proper nouns stay in their original form regardless of language. JSON field names remain in English.
 
@@ -37,60 +38,28 @@ SALARY RULE: Determine the job market using this priority order:
 ${gpsLine}
 Use actual local market rates for the detected location. Express amounts in the currency most natural for that market (USD for Panama and US roles, GBP for UK, EUR for EU, etc.). In salary_range.notes, state the detected location, the source of that detection (JD, resume, GPS, or assumed), and the currency basis.
 
+SCORING CONTEXT — pre-computed from resume text structure analysis. Do not modify these values:
+- parseability_score: ${parseabilityScore}/15
+- section_completeness_score: ${sectionCompletenessScore}/15
+
+Your task: assess the 4 semantic scoring components below. These will be combined with the pre-computed values in code to produce the final Shortlist Match Rate. Use judgment — do not do arithmetic or try to replicate any formula.
+
+SEMANTIC SCORING GUIDELINES:
+- hard_skill_score (0–35): How well does the resume's technical skill set match the JD requirements? Consider exact skill matches highest, then acronym/expansion equivalents (e.g. "ML" and "Machine Learning"), then close semantic synonyms. Give extra weight if a matched skill appears in the candidate's summary or a job title rather than just a skills list. A score of 35 means every required skill is clearly present and prominent. A score of 0 means no meaningful overlap.
+- job_title_score (0–20): Compare the JD's target role to the candidate's most recent 2 job titles. Exact or near-identical match = 18–20. Same function, different seniority level (Senior/Junior/Lead/Staff) = 12–15. Adjacent or transferable role in a related function = 6–10. Unrelated field = 0–3.
+- soft_skill_score (0–10): How well does the resume evidence the soft skills called out in the JD (communication, leadership, collaboration, problem-solving, etc.)? 10 = all mentioned and clearly evidenced through achievements. 0 = none present.
+- experience_score (0–5): Compare total years of relevant experience on the resume to the JD minimum requirement. Meets or slightly exceeds = 5. Within 2 years under = 3. Significantly under or far over-qualified = 1.
+
 Analyse the resume against the job description and return ONLY a JSON object. No markdown, no explanation, no preamble:
 
-SHORTLIST MATCH RATE ALGORITHM — compute the following sub-scores, then derive the final rate:
-
-1. HARD SKILL MATCHING (35% weight, max 35 pts):
-   - Extract all technical skills from the JD. For each, check the resume for:
-     * Exact match → 1.0 weight
-     * Acronym/expansion match (e.g. "AI" ↔ "Artificial Intelligence") → 0.9 weight
-     * Semantic synonym match → 0.7 weight
-   - Skills found in the resume summary or job titles get a 1.5x placement multiplier.
-   - Score = (weighted_matches / total_skills) × 35, capped at 35.
-
-2. JOB TITLE ALIGNMENT (20% weight, max 20 pts):
-   - Extract target job title from JD. Compare to the candidate's most recent 2 roles.
-   - Exact title match = 20 pts. Senior/junior variant = 14 pts. Adjacent role = 8 pts. Unrelated = 0.
-
-3. PARSEABILITY SCORE (15% weight, max 15 pts):
-   - Single-column layout detected: +5
-   - Standard section headers present (EXPERIENCE, EDUCATION, SKILLS or equivalents): +4
-   - No tables or text boxes detected: +3
-   - Contact info appears in the body (not a header/footer region): +3
-
-4. SECTION COMPLETENESS (15% weight, max 15 pts):
-   - Contact info present: +3
-   - Professional summary present: +3
-   - Experience section with dates: +3
-   - Education with dates: +3
-   - Skills section: +3
-
-5. SOFT SKILL MATCHING (10% weight, max 10 pts):
-   - Same matching logic as hard skills. Communication, leadership, collaboration, etc.
-   - Score = (weighted_matches / total_soft_skills_in_jd) × 10, capped at 10.
-
-6. EXPERIENCE MATCH (5% weight, max 5 pts):
-   - Compare years of experience on resume vs. JD minimum.
-   - Within ±1 year = 5 pts. Within ±2 years = 3 pts. Further = 1 pt.
-
-FINAL shortlist_match_rate = sum of all sub-scores, capped at 95 (never 100 — no resume is a perfect match).
-
-PARSEABILITY GATE: if the resume text appears to be from a scanned/image PDF (very short, garbled, or no recognisable structure), reduce the final score by up to 20 pts and note this in weaknesses.
-
 {
-  "shortlist_match_rate": <integer 0-95, computed using the weighted algorithm above>,
-  "score_breakdown": {
-    "hard_skill_score": <integer 0-35>,
-    "job_title_score": <integer 0-20>,
-    "parseability_score": <integer 0-15>,
-    "section_completeness_score": <integer 0-15>,
-    "soft_skill_score": <integer 0-10>,
-    "experience_score": <integer 0-5>
-  },
+  "hard_skill_score": <integer 0-35, your semantic judgment per the guidelines above>,
+  "job_title_score": <integer 0-20, your semantic judgment per the guidelines above>,
+  "soft_skill_score": <integer 0-10, your semantic judgment per the guidelines above>,
+  "experience_score": <integer 0-5, your semantic judgment per the guidelines above>,
   "human_score": <integer 0-100, how compelling this resume is to a human recruiter with 7 seconds. Considers narrative clarity, achievement specificity, absence of filler language, career story coherence>,
   "human_score_notes": <string, 1-2 sentences on what most hurts human appeal>,
-  "experience_match": <integer 0-100, how well the candidate's experience level matches role requirements>,
+  "experience_match": <integer 0-100, holistic assessment of how well the candidate's overall experience fits this role — considers relevance, industry, seniority, and trajectory, not just years>,
   "experience_match_notes": <string, 1-2 sentences explaining the experience match rating>,
   "keyword_gaps": <string array, important keywords/skills in JD missing from resume>,
   "keyword_matches": <string array, JD keywords already present in resume>,
@@ -314,6 +283,7 @@ export async function runAnalysis(resumeText, jobDescription, userLocation = nul
     return { inputTokens: 0, outputTokens: 0, result: {
       shortlist_match_rate: 72,
       score_breakdown: { hard_skill_score: 22, job_title_score: 14, parseability_score: 12, section_completeness_score: 12, soft_skill_score: 7, experience_score: 5 },
+      hard_skill_score: 22, job_title_score: 14, soft_skill_score: 7, experience_score: 5,
       human_score: 61,
       human_score_notes: 'Bullet points list responsibilities rather than achievements. Recruiters want to see impact, not a job description.',
       experience_match: 65,
@@ -351,17 +321,36 @@ export async function runAnalysis(resumeText, jobDescription, userLocation = nul
     } };
   }
 
-  const prompt = buildAnalysisPrompt(resumeText, jobDescription, userLocation);
+  // Step 1: deterministic pre-scoring — runs on raw text, no Claude needed
+  const preScores = analyseTextStructure(resumeText);
+  logger.debug({ parseabilityScore: preScores.parseability.score, sectionScore: preScores.sectionCompleteness.score }, 'Pre-Claude text analysis complete');
+
+  const prompt = buildAnalysisPrompt(resumeText, jobDescription, userLocation, preScores.parseability.score, preScores.sectionCompleteness.score);
+
+  const attachFinalScores = (result) => {
+    // Step 3: compute final score in JS — Claude never does arithmetic
+    result.shortlist_match_rate = computeShortlistMatchRate(preScores, result);
+    result.score_breakdown = {
+      hard_skill_score: result.hard_skill_score,
+      job_title_score: result.job_title_score,
+      parseability_score: preScores.parseability.score,
+      section_completeness_score: preScores.sectionCompleteness.score,
+      soft_skill_score: result.soft_skill_score,
+      experience_score: result.experience_score,
+    };
+    return result;
+  };
+
   try {
     const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000);
     validateAnalysis(result);
-    return { result, inputTokens, outputTokens };
+    return { result: attachFinalScores(result), inputTokens, outputTokens };
   } catch (err) {
     logger.warn({ err }, 'Claude analysis call 1 failed, retrying with stricter instruction');
     const { result, inputTokens, outputTokens } = await callClaude(prompt, 3000, true);
     logEvent('claude_retry', { properties: { call: 1, reason: 'json_parse_error' } });
     validateAnalysis(result);
-    return { result, inputTokens, outputTokens };
+    return { result: attachFinalScores(result), inputTokens, outputTokens };
   }
 }
 
@@ -542,11 +531,16 @@ export async function runCvRewrite(resumeText, jobDescription, analysisResult, r
 }
 
 function validateAnalysis(obj) {
-  const required = ['shortlist_match_rate', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
+  const required = ['hard_skill_score', 'job_title_score', 'soft_skill_score', 'experience_score', 'human_score', 'keyword_gaps', 'keyword_matches', 'weaknesses', 'strengths', 'linkedin_headline', 'experience_match', 'experience_match_notes', 'jd_red_flags', 'salary_range', 'negotiation_tips'];
   for (const key of required) {
     if (obj[key] === undefined) throw new Error(`Missing field: ${key}`);
   }
-  if (typeof obj.shortlist_match_rate !== 'number') throw new Error('shortlist_match_rate must be a number');
+  if (typeof obj.hard_skill_score !== 'number') throw new Error('hard_skill_score must be a number');
+  if (obj.hard_skill_score < 0 || obj.hard_skill_score > 35) throw new Error(`hard_skill_score out of range: ${obj.hard_skill_score}`);
+  if (typeof obj.job_title_score !== 'number') throw new Error('job_title_score must be a number');
+  if (obj.job_title_score < 0 || obj.job_title_score > 20) throw new Error(`job_title_score out of range: ${obj.job_title_score}`);
+  if (typeof obj.soft_skill_score !== 'number') throw new Error('soft_skill_score must be a number');
+  if (typeof obj.experience_score !== 'number') throw new Error('experience_score must be a number');
   if (!Array.isArray(obj.keyword_gaps)) throw new Error('keyword_gaps must be an array');
   if (!Array.isArray(obj.keyword_matches)) throw new Error('keyword_matches must be an array');
   if (!Array.isArray(obj.weaknesses)) throw new Error('weaknesses must be an array');

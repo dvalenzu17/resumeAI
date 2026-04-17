@@ -198,6 +198,7 @@ jobsRouter.get('/:id/status', async (req, res, next) => {
 
       response.preview = {
         shortlist_match_rate: a.shortlist_match_rate,
+        score_breakdown: a.score_breakdown ?? null,
         human_score: a.human_score,
         experience_match: a.experience_match,
         gap_count: gaps.length,

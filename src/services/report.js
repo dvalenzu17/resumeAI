@@ -40,6 +40,13 @@ const PDF_LABELS = {
     human_read: 'Human Readability',
     exp_match: 'Experience Match',
     strong: 'Strong', fair: 'Fair', weak: 'Weak',
+    breakdown_title: 'Score Breakdown',
+    breakdown_hard: 'Hard Skills Match',
+    breakdown_title_align: 'Job Title Alignment',
+    breakdown_parse: 'Resume Parseability',
+    breakdown_sections: 'Section Completeness',
+    breakdown_soft: 'Soft Skills Match',
+    breakdown_exp: 'Experience Match',
     linkedin: 'LinkedIn Headline Suggestion',
     strengths: 'Strengths',
     weaknesses: 'Weaknesses',
@@ -67,6 +74,13 @@ const PDF_LABELS = {
     human_read: 'Legibilidad Humana',
     exp_match: 'Afinidad con el Puesto',
     strong: 'Sólido', fair: 'Aceptable', weak: 'Débil',
+    breakdown_title: 'Desglose de Puntuacion',
+    breakdown_hard: 'Habilidades Tecnicas',
+    breakdown_title_align: 'Alineacion de Titulo',
+    breakdown_parse: 'Legibilidad del CV',
+    breakdown_sections: 'Completitud de Secciones',
+    breakdown_soft: 'Habilidades Blandas',
+    breakdown_exp: 'Experiencia',
     linkedin: 'Titular de LinkedIn Sugerido',
     strengths: 'Fortalezas',
     weaknesses: 'Áreas de Mejora',
@@ -94,6 +108,13 @@ const PDF_LABELS = {
     human_read: 'Lisibilité Humaine',
     exp_match: "Adéquation au Poste",
     strong: 'Solide', fair: 'Correct', weak: 'Faible',
+    breakdown_title: 'Détail du Score',
+    breakdown_hard: 'Compétences Techniques',
+    breakdown_title_align: 'Alignement du Titre',
+    breakdown_parse: 'Lisibilité du CV',
+    breakdown_sections: 'Complétude des Sections',
+    breakdown_soft: 'Compétences Interpersonnelles',
+    breakdown_exp: 'Expérience',
     linkedin: 'Titre LinkedIn Suggéré',
     strengths: 'Points Forts',
     weaknesses: "Points d'Amélioration",
@@ -121,6 +142,13 @@ const PDF_LABELS = {
     human_read: 'Legibilidade Humana',
     exp_match: 'Correspondência de Experiência',
     strong: 'Forte', fair: 'Razoável', weak: 'Fraco',
+    breakdown_title: 'Detalhes da Pontuacao',
+    breakdown_hard: 'Competencias Tecnicas',
+    breakdown_title_align: 'Alinhamento de Titulo',
+    breakdown_parse: 'Legibilidade do CV',
+    breakdown_sections: 'Integridade das Secoes',
+    breakdown_soft: 'Competencias Interpessoais',
+    breakdown_exp: 'Experiencia',
     linkedin: 'Título do LinkedIn Sugerido',
     strengths: 'Pontos Fortes',
     weaknesses: 'Pontos de Melhoria',
@@ -148,6 +176,13 @@ const PDF_LABELS = {
     human_read: 'Menschliche Lesbarkeit',
     exp_match: 'Erfahrungsübereinstimmung',
     strong: 'Stark', fair: 'Angemessen', weak: 'Schwach',
+    breakdown_title: 'Score-Aufschlüsselung',
+    breakdown_hard: 'Technische Fähigkeiten',
+    breakdown_title_align: 'Jobtitel-Übereinstimmung',
+    breakdown_parse: 'CV-Lesbarkeit',
+    breakdown_sections: 'Vollständigkeit der Abschnitte',
+    breakdown_soft: 'Soft Skills',
+    breakdown_exp: 'Berufserfahrung',
     linkedin: 'Vorgeschlagener LinkedIn-Titel',
     strengths: 'Stärken',
     weaknesses: 'Verbesserungsbereiche',
@@ -175,6 +210,13 @@ const PDF_LABELS = {
     human_read: 'Leggibilità Umana',
     exp_match: 'Corrispondenza Esperienza',
     strong: 'Forte', fair: 'Accettabile', weak: 'Debole',
+    breakdown_title: 'Dettaglio del Punteggio',
+    breakdown_hard: 'Competenze Tecniche',
+    breakdown_title_align: 'Allineamento del Titolo',
+    breakdown_parse: 'Leggibilita del CV',
+    breakdown_sections: 'Completezza delle Sezioni',
+    breakdown_soft: 'Soft Skills',
+    breakdown_exp: 'Esperienza',
     linkedin: 'Titolo LinkedIn Suggerito',
     strengths: 'Punti di Forza',
     weaknesses: 'Aree di Miglioramento',
@@ -376,6 +418,13 @@ function buildHtml(job, analysis, rewrites, lang = 'en') {
   .salary-bar-dot { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: #1a1a1a; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
   .salary-notes { font-size: 12px; color: #6b7280; margin-top: 10px; }
   .salary-monthly { font-size: 11px; color: #9ca3af; font-weight: 400; }
+  .breakdown { margin: 16px 0 4px; }
+  .breakdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+  .breakdown-label { font-size: 11px; color: #374151; min-width: 160px; }
+  .breakdown-bar-wrap { flex: 1; height: 6px; background: #f3f4f6; border-radius: 9999px; overflow: hidden; }
+  .breakdown-bar-fill { height: 100%; border-radius: 9999px; background: #1a1a1a; transition: width 0s; }
+  .breakdown-value { font-size: 11px; color: #6b7280; min-width: 36px; text-align: right; }
+  .breakdown-max { font-size: 10px; color: #9ca3af; }
   .cover-letter-section { page-break-before: always; }
   .cover-letter-body {
     background: #f9fafb;
@@ -437,6 +486,31 @@ function buildHtml(job, analysis, rewrites, lang = 'en') {
       <div class="score-notes">${esc(analysis.experience_match_notes || '')}</div>
     </div>
   </div>
+
+  ${(() => {
+    const bd = analysis.score_breakdown;
+    if (!bd) return '';
+    const row = (label, val, max) => {
+      const pct = Math.round((val / max) * 100);
+      const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+      return `<div class="breakdown-row">
+        <span class="breakdown-label">${label}</span>
+        <div class="breakdown-bar-wrap"><div class="breakdown-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="breakdown-value">${val}<span class="breakdown-max">/${max}</span></span>
+      </div>`;
+    };
+    return `<section>
+      <h2>${L.breakdown_title}</h2>
+      <div class="breakdown">
+        ${row(L.breakdown_hard, bd.hard_skill_score, 35)}
+        ${row(L.breakdown_title_align, bd.job_title_score, 20)}
+        ${row(L.breakdown_parse, bd.parseability_score, 15)}
+        ${row(L.breakdown_sections, bd.section_completeness_score, 15)}
+        ${row(L.breakdown_soft, bd.soft_skill_score, 10)}
+        ${row(L.breakdown_exp, bd.experience_score, 5)}
+      </div>
+    </section>`;
+  })()}
 
   <section>
     <h2>${L.linkedin}</h2>
