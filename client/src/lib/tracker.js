@@ -40,14 +40,20 @@ export function getClientCountry() {
   return null;
 }
 
+// Returns IANA timezone string, e.g. "America/New_York" — city-level location signal.
+function getTimezone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; }
+}
+
 export function track(event, properties = {}, jobId = null) {
   const sessionId = getSessionId();
   const utm = getUtm();
   const clientCountry = getClientCountry();
+  const timezone = getTimezone();
   fetch('/api/analytics/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event, jobId: jobId || undefined, sessionId, properties, utm, referrer: document.referrer || undefined, clientCountry }),
+    body: JSON.stringify({ event, jobId: jobId || undefined, sessionId, properties: { ...properties, timezone }, utm, referrer: document.referrer || undefined, clientCountry }),
     keepalive: true,
   }).catch(() => {});
 }

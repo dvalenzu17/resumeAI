@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard, TrendingDown, Search, Activity,
   Calculator, Globe, RefreshCw, Menu,
 } from 'lucide-react';
+import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import styles from './AdminView.module.css';
+
+const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 const SECRET_KEY = 'adminSecret';
 
@@ -231,93 +234,130 @@ function FunnelStepRow({ num, label, source, count, maxCount, dropRate }) {
   );
 }
 
-// ── World tile heatmap (light theme) ──────────────────────────────────────────
-const WORLD_TILES = [
-  ['CA','Canada',2,2],['US','United States',2,3],['MX','Mexico',2,5],
-  ['CU','Cuba',3,5],['PA','Panama',2,6],['CO','Colombia',2,7],
-  ['VE','Venezuela',3,7],['EC','Ecuador',2,8],['PE','Peru',2,9],
-  ['BR','Brazil',4,8],['BO','Bolivia',3,9],['PY','Paraguay',4,10],
-  ['CL','Chile',2,11],['AR','Argentina',3,11],['UY','Uruguay',4,11],
-  ['IS','Iceland',7,1],['NO','Norway',8,1],['SE','Sweden',9,1],
-  ['FI','Finland',10,1],['EE','Estonia',11,1],
-  ['IE','Ireland',7,2],['GB','United Kingdom',8,2],['NL','Netherlands',9,2],
-  ['DK','Denmark',10,2],['LV','Latvia',11,2],['LT','Lithuania',12,2],
-  ['RU','Russia',14,2],
-  ['FR','France',8,3],['BE','Belgium',9,3],['PL','Poland',10,3],
-  ['BY','Belarus',11,3],['UA','Ukraine',12,3],
-  ['PT','Portugal',7,4],['ES','Spain',8,4],['DE','Germany',9,4],
-  ['CZ','Czechia',10,4],['SK','Slovakia',11,4],['RO','Romania',12,4],
-  ['MD','Moldova',13,4],['GE','Georgia',14,4],['AZ','Azerbaijan',15,4],['KZ','Kazakhstan',16,4],
-  ['CH','Switzerland',8,5],['AT','Austria',9,5],['SI','Slovenia',10,5],
-  ['HU','Hungary',11,5],['RS','Serbia',12,5],['BG','Bulgaria',13,5],['TR','Turkey',14,5],
-  ['IT','Italy',9,6],['HR','Croatia',10,6],['GR','Greece',11,6],
-  ['CY','Cyprus',12,6],['IQ','Iraq',14,6],['IR','Iran',15,5],['AF','Afghanistan',16,5],
-  ['MA','Morocco',8,6],['DZ','Algeria',9,7],['TN','Tunisia',10,7],
-  ['LY','Libya',11,7],['EG','Egypt',12,7],['IL','Israel',13,7],['JO','Jordan',14,7],
-  ['SA','Saudi Arabia',14,8],['AE','UAE',15,8],['YE','Yemen',15,9],
-  ['PK','Pakistan',16,7],
-  ['NG','Nigeria',10,9],['ET','Ethiopia',13,9],['KE','Kenya',14,10],
-  ['TZ','Tanzania',13,11],['ZM','Zambia',12,12],['MZ','Mozambique',13,12],
-  ['ZA','South Africa',12,13],
-  ['NP','Nepal',17,6],['IN','India',17,7],['BD','Bangladesh',18,7],
-  ['CN','China',18,5],['JP','Japan',21,5],['KR','South Korea',20,5],
-  ['TH','Thailand',18,8],['VN','Vietnam',19,8],['MY','Malaysia',19,9],
-  ['SG','Singapore',19,10],['ID','Indonesia',20,10],['PH','Philippines',20,8],
-  ['LK','Sri Lanka',17,9],
-  ['AU','Australia',20,12],['NZ','New Zealand',21,13],
-];
+// ── ISO numeric → alpha-2 lookup (world-atlas uses numeric IDs) ───────────────
+const NUM_TO_A2 = {
+  4:'AF',8:'AL',12:'DZ',24:'AO',32:'AR',36:'AU',40:'AT',50:'BD',56:'BE',64:'BT',
+  68:'BO',76:'BR',100:'BG',116:'KH',120:'CM',124:'CA',152:'CL',156:'CN',170:'CO',
+  178:'CG',180:'CD',188:'CR',192:'CU',196:'CY',203:'CZ',208:'DK',218:'EC',818:'EG',
+  231:'ET',246:'FI',250:'FR',276:'DE',288:'GH',300:'GR',320:'GT',332:'HT',340:'HN',
+  348:'HU',356:'IN',360:'ID',364:'IR',368:'IQ',372:'IE',376:'IL',380:'IT',388:'JM',
+  392:'JP',400:'JO',398:'KZ',404:'KE',410:'KR',414:'KW',418:'LA',422:'LB',434:'LY',
+  458:'MY',484:'MX',504:'MA',508:'MZ',524:'NP',528:'NL',540:'NC',554:'NZ',566:'NG',
+  578:'NO',586:'PK',591:'PA',604:'PE',608:'PH',616:'PL',620:'PT',630:'PR',634:'QA',
+  642:'RO',643:'RU',682:'SA',686:'SN',694:'SL',703:'SK',706:'SO',710:'ZA',724:'ES',
+  144:'LK',729:'SD',752:'SE',756:'CH',760:'SY',764:'TH',788:'TN',792:'TR',800:'UG',
+  804:'UA',784:'AE',826:'GB',840:'US',858:'UY',862:'VE',704:'VN',887:'YE',894:'ZM',
+  716:'ZW',12:'DZ',51:'AM',31:'AZ',112:'BY',70:'BA',104:'MM',60:'BM',84:'BZ',
+  204:'BJ',44:'BS',48:'BH',262:'DJ',214:'DO',231:'ET',266:'GA',270:'GM',324:'GN',
+  328:'GY',426:'LS',430:'LR',466:'ML',478:'MR',516:'NA',562:'NE',598:'PG',275:'PS',
+  174:'KM',834:'TZ',768:'TG',795:'TM',860:'UZ',548:'VU',887:'YE',
+};
 
-const HEAT_COLORS = ['#1e3a5f','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe'];
-
-function getHeatColor(count, max) {
-  if (!count || !max) return null;
-  const ratio = count / max;
-  const idx = Math.min(HEAT_COLORS.length - 1, Math.floor(ratio * HEAT_COLORS.length));
-  return HEAT_COLORS[HEAT_COLORS.length - 1 - idx];
+// Color scale for completions
+function completionColor(completions, maxCompletions) {
+  if (!completions) return null;
+  const t = maxCompletions > 0 ? completions / maxCompletions : 0;
+  // Interpolate from #1d4ed8 (low) to #6366f1 → #a21caf (high)
+  if (t < 0.2)  return '#1d4ed8';
+  if (t < 0.4)  return '#2563eb';
+  if (t < 0.6)  return '#4f46e5';
+  if (t < 0.8)  return '#7c3aed';
+  return '#a21caf';
 }
 
-function WorldHeatmap({ countries }) {
-  const countMap = {};
-  let maxCount = 0;
-  for (const { country, count } of countries) {
-    countMap[country] = count;
-    if (count > maxCount) maxCount = count;
+function ChoroplethMap({ countries }) {
+  const [tooltip, setTooltip] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const wrapRef = useRef(null);
+
+  const dataMap = {};
+  let maxCompletions = 0;
+  for (const c of countries) {
+    dataMap[c.country] = c;
+    if (c.completions > maxCompletions) maxCompletions = c.completions;
   }
+
   return (
-    <div>
-      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+    <div ref={wrapRef} style={{ position: 'relative', userSelect: 'none' }}>
+      <ComposableMap
+        projectionConfig={{ scale: 140, center: [10, 10] }}
+        style={{ width: '100%', height: 'auto', maxHeight: 420 }}
+      >
+        <Geographies geography={GEO_URL}>
+          {({ geographies }) =>
+            geographies.map((geo) => {
+              const a2 = NUM_TO_A2[Number(geo.id)];
+              const d = a2 ? dataMap[a2] : null;
+              const hasCompletions = d && d.completions > 0;
+              const hasScans = d && d.scans > 0;
+              const fill = hasCompletions
+                ? completionColor(d.completions, maxCompletions)
+                : hasScans
+                  ? '#1e3a5f'
+                  : '#1f2937';
+              return (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill={fill}
+                  stroke="#111827"
+                  strokeWidth={0.4}
+                  style={{
+                    default: { outline: 'none' },
+                    hover:   { outline: 'none', fill: hasCompletions || hasScans ? '#f59e0b' : '#374151', cursor: hasCompletions || hasScans ? 'pointer' : 'default' },
+                    pressed: { outline: 'none' },
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!d) return;
+                    const rect = wrapRef.current?.getBoundingClientRect();
+                    setTooltipPos({ x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) });
+                    setTooltip({ name: geo.properties.name, ...d });
+                  }}
+                  onMouseMove={(e) => {
+                    if (!d) return;
+                    const rect = wrapRef.current?.getBoundingClientRect();
+                    setTooltipPos({ x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) });
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              );
+            })
+          }
+        </Geographies>
+      </ComposableMap>
+
+      {tooltip && (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(22, 26px)',
-          gridTemplateRows: 'repeat(13, 26px)',
-          gap: 3, width: 'fit-content', margin: '0 auto',
+          position: 'absolute',
+          left: tooltipPos.x + 12,
+          top: tooltipPos.y + 12,
+          background: '#1f2937',
+          border: '1px solid #374151',
+          borderRadius: 8,
+          padding: '8px 12px',
+          fontSize: 12,
+          color: '#f9fafb',
+          pointerEvents: 'none',
+          zIndex: 10,
+          minWidth: 160,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
         }}>
-          {WORLD_TILES.map(([code, name, col, row]) => {
-            const count = countMap[code] || 0;
-            const bg = count > 0 ? getHeatColor(count, maxCount) : '#e5e7eb';
-            const isActive = count > 0;
-            return (
-              <div key={code} title={`${name}: ${count} event${count !== 1 ? 's' : ''}`}
-                style={{
-                  gridColumn: col, gridRow: row, background: bg, borderRadius: 3,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 7, fontWeight: 700,
-                  color: isActive ? '#fff' : '#9ca3af',
-                  border: isActive ? `1px solid ${bg}` : '1px solid #d1d5db',
-                  letterSpacing: 0, lineHeight: 1, userSelect: 'none',
-                }}>
-                {code}
-              </div>
-            );
-          })}
+          <p style={{ fontWeight: 700, marginBottom: 4, color: '#e5e7eb' }}>{tooltip.name}</p>
+          <p style={{ color: '#9ca3af', margin: '2px 0' }}>Scans: <span style={{ color: '#f9fafb', fontWeight: 600 }}>{fmtN(tooltip.scans)}</span></p>
+          <p style={{ color: '#9ca3af', margin: '2px 0' }}>Completions: <span style={{ color: tooltip.completions > 0 ? '#6366f1' : '#f9fafb', fontWeight: 600 }}>{fmtN(tooltip.completions)}</span></p>
+          {tooltip.completions > 0 && (
+            <>
+              <p style={{ color: '#9ca3af', margin: '2px 0' }}>Revenue: <span style={{ color: '#10b981', fontWeight: 600 }}>{fmt$(tooltip.revenue)}</span></p>
+              <p style={{ color: '#9ca3af', margin: '2px 0' }}>Conv. rate: <span style={{ color: '#f9fafb', fontWeight: 600 }}>{tooltip.conversionRate}%</span></p>
+            </>
+          )}
         </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>Less</span>
-        {[...HEAT_COLORS].reverse().map(c => (
-          <div key={c} style={{ width: 14, height: 14, borderRadius: 2, background: c }} />
-        ))}
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>More</span>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8, flexWrap: 'wrap', fontSize: 11, color: '#9ca3af' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: '#1f2937', border: '1px solid #374151', display: 'inline-block' }} /> No data</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: '#1e3a5f', display: 'inline-block' }} /> Scans only</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: '#1d4ed8', display: 'inline-block' }} /><span style={{ width: 12, height: 12, borderRadius: 2, background: '#a21caf', display: 'inline-block' }} /> Completions (low/high)</span>
       </div>
     </div>
   );
@@ -912,31 +952,28 @@ export default function AdminView() {
           {/* ── GEOGRAPHY ─────────────────────────────────────────────────── */}
           {activeTab === 'geo' && (
             <>
-              <Section title={`World heatmap — ${geoData ? `${geoData.total.toLocaleString()} events across ${geoData.countries.length} countries` : 'Loading...'}`}>
+              <Section title={`Choropleth map — ${geoData ? `${geoData.total.completions} paid across ${geoData.countryCount} countries` : 'Loading...'}`}>
                 {!geoData ? <p className={styles.empty}>Loading...</p> :
                   geoData.countries.length === 0 ? (
-                    <p className={styles.empty}>No country data yet. Country is detected from visitor browser locale and stored on each analytics event.</p>
+                    <p className={styles.empty}>No country data yet. Country is detected from the browser locale on job submission.</p>
                   ) : (
-                    <WorldHeatmap countries={geoData.countries} />
+                    <ChoroplethMap countries={geoData.countries} />
                   )}
               </Section>
               {geoData && geoData.countries.length > 0 && (
                 <Section title="Top countries">
                   <div className={styles.tableWrap}>
                     <table className={styles.table}>
-                      <thead><tr><th>#</th><th>Country</th><th>Events</th><th>Share</th><th></th></tr></thead>
+                      <thead><tr><th>#</th><th>Country</th><th>Scans</th><th>Paid</th><th>Conv.</th><th>Revenue</th></tr></thead>
                       <tbody>
                         {geoData.countries.slice(0, 30).map((c, i) => (
                           <tr key={c.country} className={i % 2 === 1 ? styles.rowAlt : ''}>
                             <td className={styles.mono}>{i + 1}</td>
                             <td>{c.country}</td>
-                            <td className={styles.mono}>{fmtN(c.count)}</td>
-                            <td className={styles.mono}>{geoData.total > 0 ? Math.round(c.count / geoData.total * 100) : 0}%</td>
-                            <td style={{ width: 120 }}>
-                              <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', background: '#3b82f6', borderRadius: 3, width: `${geoData.total > 0 ? Math.min(100, Math.round(c.count / geoData.countries[0].count * 100)) : 0}%` }} />
-                              </div>
-                            </td>
+                            <td className={styles.mono}>{fmtN(c.scans)}</td>
+                            <td className={styles.mono} style={{ color: c.completions > 0 ? '#6366f1' : undefined }}>{fmtN(c.completions)}</td>
+                            <td className={styles.mono}>{c.conversionRate}%</td>
+                            <td className={styles.mono} style={{ color: c.revenue > 0 ? '#10b981' : undefined }}>{c.revenue > 0 ? fmt$(c.revenue) : '-'}</td>
                           </tr>
                         ))}
                       </tbody>

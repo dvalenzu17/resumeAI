@@ -708,19 +708,64 @@ adminRouter.get('/simulate', requireAdminSecret, async (req, res) => {
 });
 
 // GET /api/admin/geo
-// Country breakdown from analytics events — powers the admin heatmap
+// Per-country breakdown: scans (all jobs) + completions (paid) + revenue.
+// Only jobs created with a country-tagged analytics event are counted.
 adminRouter.get('/geo', requireAdminSecret, async (req, res) => {
   try {
-    const rows = await db.analyticsEvent.groupBy({
-      by: ['country'],
-      _count: { id: true },
-      where: { country: { not: null } },
-      orderBy: { _count: { id: 'desc' } },
-    });
-    const countries = rows
-      .filter(r => r.country && /^[A-Z]{2,3}$/.test(r.country.toUpperCase()))
-      .map(r => ({ country: r.country.toUpperCase(), count: r._count.id }));
-    res.json({ countries, total: countries.reduce((s, c) => s + c.count, 0) });
+    const [jobCreatedEvents, completeJobs, allCountryEvents] = await Promise.all([
+      // job_created events tell us which country each job came from
+      db.analyticsEvent.findMany({
+        where: { event: 'job_created', country: { not: null }, jobId: { not: null } },
+        select: { jobId: true, country: true, properties: true },
+      }),
+      db.job.findMany({
+        where: { status: 'COMPLETE' },
+        select: { id: true, tier: true },
+      }),
+      // Fallback: all-events country totals for countries with no job_created data
+      db.analyticsEvent.groupBy({
+        by: ['country'],
+        _count: { id: true },
+        where: { country: { not: null } },
+        orderBy: { _count: { id: 'desc' } },
+      }),
+    ]);
+
+    const completedByJobId = new Map(completeJobs.map(j => [j.id, j]));
+
+    // Build per-country stats from job_created events
+    const countryMap = {};
+    for (const evt of jobCreatedEvents) {
+      const code = evt.country?.toUpperCase();
+      if (!code || !/^[A-Z]{2,3}$/.test(code)) continue;
+      if (!countryMap[code]) countryMap[code] = { country: code, scans: 0, completions: 0, revenue: 0, city: null };
+      countryMap[code].scans++;
+      // Capture city from properties if available
+      const city = evt.properties?.city;
+      if (city && !countryMap[code].city) countryMap[code].city = city;
+      const job = completedByJobId.get(evt.jobId);
+      if (job) {
+        countryMap[code].completions++;
+        countryMap[code].revenue += job.tier === 'FULL' ? FULL_PRICE : BASIC_PRICE;
+      }
+    }
+
+    // Add conversion rate
+    const countries = Object.values(countryMap)
+      .map(c => ({
+        ...c,
+        revenue: r2(c.revenue),
+        conversionRate: c.scans > 0 ? Math.round(c.completions / c.scans * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.completions - a.completions || b.scans - a.scans);
+
+    const total = {
+      scans: countries.reduce((s, c) => s + c.scans, 0),
+      completions: countries.reduce((s, c) => s + c.completions, 0),
+      revenue: r2(countries.reduce((s, c) => s + c.revenue, 0)),
+    };
+
+    res.json({ countries, total, countryCount: countries.length });
   } catch (err) {
     logger.error({ err }, 'Admin geo query failed');
     res.status(500).json({ error: 'Geo query failed' });

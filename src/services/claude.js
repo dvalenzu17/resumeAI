@@ -77,7 +77,10 @@ Analyse the resume against the job description and return ONLY a JSON object. No
   },
   "negotiation_tips": <string array of exactly 3 specific, actionable salary negotiation tips tailored to this role and JD. Reference actual signals from the posting where possible>,
   "sample_weak_bullet": <string, copy one real bullet point verbatim from the resume that most reads like a duty rather than an achievement. The weakest, most passive bullet you can find. If no bullet points exist, return empty string>,
-  "detected_language": <string, ISO 639-1 code of the resume's primary language — "en", "es", "fr", "pt", "de", "it", "nl", "zh", "ar", "ja", "ko", etc. Default "en" if unclear>
+  "detected_language": <string, ISO 639-1 code of the resume's primary language — "en", "es", "fr", "pt", "de", "it", "nl", "zh", "ar", "ja", "ko", etc. Default "en" if unclear>,
+  "detected_company": <string, the hiring company's name extracted from the job description. Return null if no company name is mentioned>,
+  "detected_industry": <string, single industry label — e.g. "Software", "Finance", "Healthcare", "Marketing", "Education", "Legal", "Engineering", "Sales", "Design", "Data", "Operations", "Other">,
+  "detected_role_seniority": <string, applicant target seniority inferred from the JD — "Intern", "Junior", "Mid", "Senior", "Lead", "Manager", "Director", "VP", "C-Level">
 }
 
 RESUME:
