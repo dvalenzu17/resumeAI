@@ -246,11 +246,12 @@ export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
     <h1 style="font-size:20px;font-weight:700;margin:0 0 12px;color:#dc2626;">Webhook silence alert</h1>
     <p style="line-height:1.75;margin:0 0 16px;color:#374151;">
       ${stuckJobs.length} job${stuckJobs.length !== 1 ? 's' : ''} ha${stuckJobs.length !== 1 ? 've' : 's'} been in
-      <strong>PENDING_PAYMENT</strong> for more than 90 minutes. Lemon Squeezy may not be delivering webhooks.
+      <strong>PENDING_PAYMENT</strong> for more than 90 minutes. PayPal may not be delivering webhooks,
+      or customers abandoned after approval without the capture completing.
     </p>
     <p style="line-height:1.75;margin:0 0 20px;color:#374151;">
-      Check the Lemon Squeezy dashboard → Webhooks → Recent deliveries. If deliveries are failing,
-      customers have paid but received nothing.
+      Check PayPal merchant dashboard for completed payments with no matching report.
+      If customers paid but received nothing, issue refunds manually.
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
       <thead><tr style="background:#f3f4f6;">
@@ -346,6 +347,7 @@ export async function sendFailureEmail(to, jobId) {
   await resend.emails.send({
     from: FROM,
     to,
+    reply_to: 'hello@getshortlisted.fyi',
     subject: 'Something went wrong — full refund on us',
     html: EMAIL_BASE(content),
   });

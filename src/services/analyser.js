@@ -4,8 +4,9 @@ import { logger } from '../lib/logger.js';
 import { runAnalysis, runRewrites, runCvRewrite } from './claude.js';
 import { generateReport, generateCv } from './report.js';
 import { uploadReport, uploadCv } from './storage.js';
-import { sendReportEmail, sendFailureEmail } from './email.js';
+import { sendReportEmail, sendFailureEmail, sendPreviewNudgeEmail } from './email.js';
 import { logEvent } from './analytics.js';
+import { env } from '../lib/env.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -61,6 +62,14 @@ export async function runTeaserAnalysis(jobId, userLocation = null) {
       jobId,
       properties: { shortlist_match_rate: analysis.shortlist_match_rate, durationMs: Date.now() - t0, tokensIn: inputTokens, tokensOut: outputTokens, gapCount: Array.isArray(analysis.keyword_gaps) ? analysis.keyword_gaps.length : 0 },
     });
+
+    // Send preview nudge immediately if email was captured at upload — no need to wait for cron
+    if (job.email && !job.marketingOptOut) {
+      const firstGap = Array.isArray(analysis.keyword_gaps) ? analysis.keyword_gaps[0] : null;
+      sendPreviewNudgeEmail(job.email, jobId, env.APP_URL, analysis.shortlist_match_rate, firstGap)
+        .then(() => db.job.update({ where: { id: jobId }, data: { previewNudgeSentAt: new Date() } }))
+        .catch((err) => logger.warn({ jobId, err }, 'Immediate preview nudge failed — cron will retry'));
+    }
   } catch (err) {
     logger.error({ jobId, err }, 'runTeaserAnalysis failed');
     Sentry.captureException(err, { extra: { jobId, phase: 'teaser' } });

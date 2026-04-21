@@ -100,8 +100,8 @@ cronRouter.post('/followups', async (req, res) => {
       }
     }
 
-    // Webhook silence detector: jobs stuck in PENDING_PAYMENT for 90+ minutes
-    // means Lemon Squeezy is not delivering webhooks — customers have paid but got nothing.
+    // Webhook silence detector: jobs stuck in PENDING_PAYMENT for 90+ minutes.
+    // Could mean PayPal webhook not firing, or user abandoned after approval without capture completing.
     const stuckJobs = await db.job.findMany({
       where: {
         status: 'PENDING_PAYMENT',
