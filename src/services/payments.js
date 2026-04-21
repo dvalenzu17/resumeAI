@@ -48,6 +48,7 @@ export async function createCheckoutSession({ jobId, tier }) {
             return_url: `${env.APP_URL}/success?jobId=${jobId}&tier=${tier}`,
             cancel_url: `${env.APP_URL}/preview?jobId=${jobId}`,
             user_action: 'PAY_NOW',
+            landing_page: 'BILLING',
           },
         },
       },
