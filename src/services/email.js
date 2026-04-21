@@ -260,8 +260,8 @@ export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <a href="https://app.lemonsqueezy.com" style="background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;display:inline-block;font-size:14px;">
-      Check Lemon Squeezy →
+    <a href="https://www.paypal.com/merchant" style="background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;display:inline-block;font-size:14px;">
+      Check PayPal →
     </a>`;
 
   await resend.emails.send({

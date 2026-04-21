@@ -14,11 +14,9 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().default(''),
   // Payment — only required when SKIP_PAYMENT=false
-  LEMONSQUEEZY_API_KEY: z.string().default(''),
-  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().default(''),
-  LEMONSQUEEZY_STORE_ID: z.string().default(''),
-  LEMONSQUEEZY_VARIANT_ID_BASIC: z.string().default(''),
-  LEMONSQUEEZY_VARIANT_ID_FULL: z.string().default(''),
+  PAYPAL_CLIENT_ID: z.string().default(''),
+  PAYPAL_CLIENT_SECRET: z.string().default(''),
+  PAYPAL_WEBHOOK_ID: z.string().default(''),
   // Email — optional until ready
   RESEND_API_KEY: z.string().default(''),
   RESEND_WEBHOOK_SECRET: z.string().default(''),

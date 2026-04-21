@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import crypto from 'crypto';
 import { Webhook } from 'svix';
 import { runFullReport } from '../services/analyser.js';
+import { getPayPalAccessToken } from '../services/payments.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import { db } from '../lib/db.js';
@@ -9,25 +9,13 @@ import { logEvent } from '../services/analytics.js';
 
 export const webhooksRouter = Router();
 
-// Lemon Squeezy sends raw body — rawBody middleware must be applied before this route.
-// Signature is HMAC-SHA256 of the raw body using LEMONSQUEEZY_WEBHOOK_SECRET.
-webhooksRouter.post('/lemonsqueezy', async (req, res) => {
-  const sig = req.headers['x-signature'];
+const PAYPAL_BASE = env.NODE_ENV === 'production'
+  ? 'https://api-m.paypal.com'
+  : 'https://api-m.sandbox.paypal.com';
 
-  if (!sig) {
-    logger.warn('Lemon Squeezy webhook missing x-signature header');
-    return res.status(400).send('Missing signature');
-  }
-
-  const hmac = crypto.createHmac('sha256', env.LEMONSQUEEZY_WEBHOOK_SECRET);
-  hmac.update(req.rawBody);
-  const digest = hmac.digest('hex');
-
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(digest))) {
-    logger.warn('Lemon Squeezy webhook signature mismatch');
-    return res.status(400).send('Invalid signature');
-  }
-
+// PayPal sends raw body — rawBody middleware must be applied before this route.
+// Signature is verified via PayPal's verify-webhook-signature API when PAYPAL_WEBHOOK_ID is set.
+webhooksRouter.post('/paypal', async (req, res) => {
   let payload;
   try {
     payload = JSON.parse(req.rawBody);
@@ -35,48 +23,79 @@ webhooksRouter.post('/lemonsqueezy', async (req, res) => {
     return res.status(400).send('Invalid JSON');
   }
 
-  const eventName = payload.meta?.event_name;
-  logger.info({ eventName }, 'Lemon Squeezy webhook received');
+  // Verify signature using PayPal's verification endpoint
+  if (env.PAYPAL_WEBHOOK_ID) {
+    const transmissionId   = req.headers['paypal-transmission-id'];
+    const transmissionTime = req.headers['paypal-transmission-time'];
+    const certUrl          = req.headers['paypal-cert-url'];
+    const authAlgo         = req.headers['paypal-auth-algo'];
+    const transmissionSig  = req.headers['paypal-transmission-sig'];
 
-  if (eventName === 'order_created') {
-    const jobId = payload.meta?.custom_data?.job_id;
-    const email = payload.data?.attributes?.user_email ?? '';
+    if (!transmissionId || !transmissionSig || !certUrl || !authAlgo || !transmissionTime) {
+      logger.warn('PayPal webhook missing required headers');
+      return res.status(400).send('Missing PayPal headers');
+    }
+
+    try {
+      const accessToken = await getPayPalAccessToken();
+      const verifyRes = await fetch(`${PAYPAL_BASE}/v1/notifications/verify-webhook-signature`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auth_algo: authAlgo,
+          cert_url: certUrl,
+          transmission_id: transmissionId,
+          transmission_sig: transmissionSig,
+          transmission_time: transmissionTime,
+          webhook_id: env.PAYPAL_WEBHOOK_ID,
+          webhook_event: payload,
+        }),
+      });
+      const verifyData = await verifyRes.json();
+      if (verifyData.verification_status !== 'SUCCESS') {
+        logger.warn({ status: verifyData.verification_status }, 'PayPal webhook signature verification failed');
+        return res.status(400).send('Invalid signature');
+      }
+    } catch (err) {
+      logger.error({ err }, 'PayPal webhook verification error');
+      return res.status(500).send('Verification error');
+    }
+  }
+
+  const eventType = payload.event_type;
+  logger.info({ eventType }, 'PayPal webhook received');
+
+  if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+    const jobId = payload.resource?.custom_id;
 
     if (jobId) {
-      // Stamp email first (awaited), then fire report — prevents race where
-      // runFullReport reads job.email before the update commits
       const kickoff = async () => {
         const job = await db.job.findUnique({ where: { id: jobId }, select: { status: true } }).catch(() => null);
         if (job && (job.status === 'PROCESSING' || job.status === 'COMPLETE')) {
-          logger.info({ jobId, status: job.status }, 'Webhook duplicate — report already running or done, skipping');
+          logger.info({ jobId, status: job.status }, 'PayPal webhook duplicate — report already running or done, skipping');
           return;
-        }
-        if (email) {
-          await db.job.update({ where: { id: jobId }, data: { email } }).catch((err) => {
-            logger.error({ jobId, err }, 'Failed to update job email from webhook');
-          });
         }
         runFullReport(jobId).catch((err) => {
           logger.error({ jobId, err }, 'runFullReport uncaught error');
         });
-        logEvent('payment_completed', { jobId, properties: { tier: payload.data?.attributes?.first_order_item?.variant_name || null } });
+        logEvent('payment_completed', {
+          jobId,
+          properties: { amount: payload.resource?.amount?.value ?? null },
+        });
       };
       kickoff();
     } else {
-      logger.warn({ payload }, 'order_created webhook missing job_id in custom_data');
+      logger.warn({ payload }, 'PAYMENT.CAPTURE.COMPLETED webhook missing custom_id');
     }
   }
 
-  if (eventName === 'order_refunded') {
-    const jobId = payload.meta?.custom_data?.job_id ?? null;
+  if (eventType === 'PAYMENT.CAPTURE.REFUNDED') {
+    const jobId = payload.resource?.custom_id ?? null;
     logEvent('refund_issued', {
       jobId,
-      properties: {
-        amount: payload.data?.attributes?.refund_amount ?? null,
-        reason: payload.data?.attributes?.notes ?? null,
-      },
+      properties: { amount: payload.resource?.amount?.value ?? null },
     });
-    logger.info({ jobId }, 'Refund event logged');
+    logger.info({ jobId }, 'PayPal refund event logged');
   }
 
   res.json({ received: true });

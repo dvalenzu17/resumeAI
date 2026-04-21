@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { trackPurchaseComplete } from '../lib/analytics.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
@@ -8,12 +8,52 @@ export default function SuccessView() {
   const [params] = useSearchParams();
   const jobId = params.get('jobId');
   const tier = params.get('tier') ?? 'FULL';
+  const orderId = params.get('token'); // PayPal passes the order ID as ?token=
 
   const { t } = useT();
+  const [captureError, setCaptureError] = useState(null);
+  const [captured, setCaptured] = useState(!orderId); // no token = already captured or SKIP_PAYMENT
 
   useEffect(() => {
-    trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
+    if (!orderId || !jobId) return;
+
+    fetch(`/api/jobs/${jobId}/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => { throw new Error(d.error || 'Capture failed'); });
+        return res.json();
+      })
+      .then(() => {
+        setCaptured(true);
+        trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
+      })
+      .catch((err) => {
+        setCaptureError(err.message);
+        setCaptured(true); // still show the page
+      });
   }, []);
+
+  useEffect(() => {
+    if (!orderId) trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
+  }, []);
+
+  if (!captured) {
+    return (
+      <div className={styles.page}>
+        <nav className={styles.nav}>
+          <Link to="/" className={styles.logo}>short<span className={styles.logoAccent}>listed</span></Link>
+        </nav>
+        <main className={styles.main}>
+          <div className={styles.card} style={{ textAlign: 'center' }}>
+            <p style={{ color: '#9ca3af', fontSize: '15px' }}>Confirming your payment...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -24,6 +64,11 @@ export default function SuccessView() {
 
       <main className={styles.main}>
         <div className={styles.card}>
+          {captureError && (
+            <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '12px', padding: '10px 14px', background: '#1f0a0a', borderRadius: '8px', border: '1px solid #7f1d1d' }}>
+              Payment confirmation failed: {captureError}. If you were charged, email us at hello@getshortlisted.fyi with your Job ID.
+            </p>
+          )}
           <div className={styles.iconWrap}>
             <svg viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>

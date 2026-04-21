@@ -3,7 +3,7 @@ import multer from 'multer';
 import { db } from '../lib/db.js';
 import { AppError } from '../lib/errors.js';
 import { extractText } from '../services/pdf.js';
-import { createCheckoutSession } from '../services/payments.js';
+import { createCheckoutSession, capturePayPalOrder } from '../services/payments.js';
 import { runTeaserAnalysis, runFullReport } from '../services/analyser.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
@@ -109,8 +109,8 @@ jobsRouter.post('/', upload.single('resume'), async (req, res, next) => {
 });
 
 // POST /api/jobs/:id/checkout
-// Called from the preview page when the user clicks "Unlock". Creates a Lemon Squeezy
-// checkout session for an existing PREVIEW_READY job.
+// Called from the preview page when the user clicks "Unlock". Creates a PayPal order
+// for an existing PREVIEW_READY job and returns the approve URL.
 jobsRouter.post('/:id/checkout', async (req, res, next) => {
   try {
     const job = await db.job.findUnique({ where: { id: req.params.id } });
@@ -164,6 +164,61 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
 
     logger.info({ jobId: job.id }, 'Checkout session created');
     res.json({ jobId: job.id, checkoutUrl: session.url });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/jobs/:id/capture
+// Called from the success page after PayPal redirects back with ?token=ORDER_ID.
+// Captures the PayPal order and fires the full report. Idempotent.
+jobsRouter.post('/:id/capture', async (req, res, next) => {
+  try {
+    const { orderId } = req.body;
+    if (!orderId || typeof orderId !== 'string') {
+      throw AppError.badRequest('orderId is required', 'MISSING_ORDER_ID');
+    }
+
+    const job = await db.job.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, status: true, checkoutSessionId: true },
+    });
+
+    if (!job) throw AppError.notFound('Job not found');
+
+    // Already processing or complete — nothing to do
+    if (job.status === 'PROCESSING' || job.status === 'COMPLETE') {
+      return res.json({ jobId: job.id, status: job.status });
+    }
+
+    if (job.status !== 'PENDING_PAYMENT') {
+      throw AppError.badRequest(`Job is not awaiting payment (current status: ${job.status})`, 'INVALID_JOB_STATE');
+    }
+
+    // Validate orderId matches what was stored at checkout
+    if (job.checkoutSessionId && job.checkoutSessionId !== orderId) {
+      throw AppError.badRequest('orderId does not match this job', 'ORDER_MISMATCH');
+    }
+
+    if (env.SKIP_PAYMENT) {
+      runFullReport(job.id).catch((err) => {
+        logger.error({ jobId: job.id, err }, 'runFullReport uncaught error');
+      });
+      return res.json({ jobId: job.id, status: 'PROCESSING' });
+    }
+
+    const capture = await capturePayPalOrder(orderId);
+
+    if (capture.status !== 'COMPLETED') {
+      throw AppError.badRequest(`PayPal capture not completed (status: ${capture.status})`, 'CAPTURE_INCOMPLETE');
+    }
+
+    runFullReport(job.id).catch((err) => {
+      logger.error({ jobId: job.id, err }, 'runFullReport uncaught error');
+    });
+
+    logger.info({ jobId: job.id, orderId }, 'PayPal order captured, full report started');
+    res.json({ jobId: job.id, status: 'PROCESSING' });
   } catch (err) {
     next(err);
   }
