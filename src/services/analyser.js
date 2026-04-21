@@ -119,7 +119,22 @@ export async function runFullReport(jobId) {
     let tokensOut3 = 0;
     const t0 = Date.now();
     if (job.tier === 'FULL') {
-      const { result: rewriteResult, inputTokens: in2, outputTokens: out2 } = await runRewrites(resumeText, jobDescription, analysis, job.coverLetterContext ?? null);
+      // Wait up to 15s for the user to submit post-payment personalisation context
+      // from the success page. The success page form POSTs to /context within this window.
+      let coverLetterContext = job.coverLetterContext ?? null;
+      if (!coverLetterContext) {
+        for (let i = 0; i < 3; i++) {
+          await sleep(5000);
+          const fresh = await db.job.findUnique({ where: { id: jobId }, select: { coverLetterContext: true } });
+          if (fresh?.coverLetterContext) {
+            coverLetterContext = fresh.coverLetterContext;
+            logger.info({ jobId }, 'Post-payment cover letter context received');
+            break;
+          }
+        }
+      }
+
+      const { result: rewriteResult, inputTokens: in2, outputTokens: out2 } = await runRewrites(resumeText, jobDescription, analysis, coverLetterContext);
       rewrites = rewriteResult;
       tokensIn2 = in2;
       tokensOut2 = out2;

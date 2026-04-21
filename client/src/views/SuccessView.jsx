@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { trackPurchaseComplete } from '../lib/analytics.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
@@ -8,11 +8,15 @@ export default function SuccessView() {
   const [params] = useSearchParams();
   const jobId = params.get('jobId');
   const tier = params.get('tier') ?? 'FULL';
-  const orderId = params.get('token'); // PayPal passes the order ID as ?token=
+  const orderId = params.get('token'); // PayPal passes the order ID as ?token= (legacy redirect flow)
 
   const { t } = useT();
   const [captureError, setCaptureError] = useState(null);
-  const [captured, setCaptured] = useState(!orderId); // no token = already captured or SKIP_PAYMENT
+  const [captured, setCaptured] = useState(!orderId); // no token = SDK flow, already captured
+  const [clContext, setClContext] = useState({ companyWhy: '', topAchievement: '', uniqueAngle: '' });
+  const [contextSaved, setContextSaved] = useState(false);
+  const [contextLoading, setContextLoading] = useState(false);
+  const contextSubmitted = useRef(false);
 
   useEffect(() => {
     if (!orderId || !jobId) return;
@@ -39,6 +43,22 @@ export default function SuccessView() {
   useEffect(() => {
     if (!orderId) trackPurchaseComplete({ tier, price: tier === 'FULL' ? 29 : 12 });
   }, []);
+
+  const handleContextSubmit = async (e) => {
+    e.preventDefault();
+    if (contextSubmitted.current || !jobId) return;
+    contextSubmitted.current = true;
+    setContextLoading(true);
+    try {
+      await fetch(`/api/jobs/${jobId}/context`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clContext),
+      });
+    } catch { /* non-critical, report generates fine without it */ }
+    setContextSaved(true);
+    setContextLoading(false);
+  };
 
   if (!captured) {
     return (
@@ -106,6 +126,77 @@ export default function SuccessView() {
             </Link>
             {' '}using your Job ID and email.
           </p>
+
+          {tier === 'FULL' && !contextSaved && (
+            <div style={{ margin: '24px 0', padding: '20px', background: '#111827', borderRadius: '12px', border: '1px solid #1f2937' }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#f9fafb', marginBottom: '4px' }}>
+                Personalise your cover letter (optional)
+              </p>
+              <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>
+                Takes 60 seconds. Fill this in while your report generates and we'll tailor the cover letter specifically to you.
+              </p>
+              <form onSubmit={handleContextSubmit}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                    What do you know about this company or role that makes you want it specifically?
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={clContext.companyWhy}
+                    onChange={(e) => setClContext((c) => ({ ...c, companyWhy: e.target.value }))}
+                    placeholder="e.g. They just raised Series B, I follow their blog, or I used their product for 3 years..."
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f9fafb', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                    What's your most relevant achievement for this role? Include numbers if you can.
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={clContext.topAchievement}
+                    onChange={(e) => setClContext((c) => ({ ...c, topAchievement: e.target.value }))}
+                    placeholder="e.g. Led a team of 5, reduced churn by 18% in 6 months, shipped X that generated Y..."
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f9fafb', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                    What makes you a non-obvious choice that doesn't show up clearly on your resume?
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={clContext.uniqueAngle}
+                    onChange={(e) => setClContext((c) => ({ ...c, uniqueAngle: e.target.value }))}
+                    placeholder="e.g. I built a side project in this exact space, I speak the language of their target market..."
+                    style={{ width: '100%', background: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f9fafb', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button
+                    type="submit"
+                    disabled={contextLoading}
+                    style={{ padding: '8px 18px', background: 'var(--accent, #6366f1)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: contextLoading ? 0.7 : 1 }}
+                  >
+                    {contextLoading ? 'Saving...' : 'Personalise my report'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { contextSubmitted.current = true; setContextSaved(true); }}
+                    style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                  >
+                    Skip
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {tier === 'FULL' && contextSaved && (
+            <p style={{ fontSize: '13px', color: '#059669', textAlign: 'center', margin: '16px 0', padding: '10px', background: '#052e16', borderRadius: '8px' }}>
+              Context saved. Your cover letter will be personalised.
+            </p>
+          )}
 
           <p className={styles.body2}>
             Go touch grass. You've done the hard part.

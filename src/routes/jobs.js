@@ -126,7 +126,6 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
 
     // Accept tier override from preview page (user may switch tiers before paying)
     const chosenTier = ['BASIC', 'FULL'].includes(req.body?.tier) ? req.body.tier : job.tier;
-    const coverLetterContext = req.body?.coverLetterContext ?? null;
     const userEmail = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
 
     if (userEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
@@ -137,12 +136,12 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
       logger.info({ jobId: job.id }, 'SKIP_PAYMENT=true, skipping checkout');
       await db.job.update({
         where: { id: job.id },
-        data: { status: 'PENDING_PAYMENT', tier: chosenTier, email: env.DEV_EMAIL, ...(coverLetterContext ? { coverLetterContext } : {}) },
+        data: { status: 'PENDING_PAYMENT', tier: chosenTier, email: env.DEV_EMAIL },
       });
       runFullReport(job.id).catch((err) => {
         logger.error({ jobId: job.id, err }, 'runFullReport uncaught error');
       });
-      return res.json({ jobId: job.id, checkoutUrl: null });
+      return res.json({ jobId: job.id, orderId: null, clientId: null });
     }
 
     // Save email before checkout so abandonment can be tracked even if user doesn't complete payment
@@ -150,7 +149,7 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
       await db.job.update({ where: { id: job.id }, data: { email: userEmail } });
     }
 
-    const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier, email: userEmail || job.email });
+    const session = await createCheckoutSession({ jobId: job.id, tier: chosenTier });
 
     logEvent('checkout_initiated', {
       jobId: job.id,
@@ -159,11 +158,11 @@ jobsRouter.post('/:id/checkout', async (req, res, next) => {
 
     await db.job.update({
       where: { id: job.id },
-      data: { checkoutSessionId: session.id, status: 'PENDING_PAYMENT', tier: chosenTier, ...(coverLetterContext ? { coverLetterContext } : {}) },
+      data: { checkoutSessionId: session.id, status: 'PENDING_PAYMENT', tier: chosenTier },
     });
 
     logger.info({ jobId: job.id }, 'Checkout session created');
-    res.json({ jobId: job.id, checkoutUrl: session.url });
+    res.json({ jobId: job.id, orderId: session.id, clientId: env.PAYPAL_CLIENT_ID });
   } catch (err) {
     next(err);
   }
@@ -219,6 +218,40 @@ jobsRouter.post('/:id/capture', async (req, res, next) => {
 
     logger.info({ jobId: job.id, orderId }, 'PayPal order captured, full report started');
     res.json({ jobId: job.id, status: 'PROCESSING' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/jobs/:id/context
+// Called from the success page after payment. Saves optional cover-letter personalisation
+// context to the job. runFullReport polls for this for up to 15s before running Call 2.
+jobsRouter.post('/:id/context', async (req, res, next) => {
+  try {
+    const job = await db.job.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, status: true, tier: true },
+    });
+
+    if (!job) throw AppError.notFound('Job not found');
+
+    // Only meaningful for FULL tier jobs that are in a post-payment state
+    if (job.tier !== 'FULL') return res.json({ saved: false });
+
+    const allowed = ['PROCESSING', 'PENDING_PAYMENT'];
+    if (!allowed.includes(job.status)) return res.json({ saved: false });
+
+    const { companyWhy, topAchievement, uniqueAngle } = req.body ?? {};
+    const coverLetterContext = {
+      companyWhy: typeof companyWhy === 'string' ? companyWhy.slice(0, 500) : null,
+      topAchievement: typeof topAchievement === 'string' ? topAchievement.slice(0, 500) : null,
+      uniqueAngle: typeof uniqueAngle === 'string' ? uniqueAngle.slice(0, 500) : null,
+    };
+
+    await db.job.update({ where: { id: job.id }, data: { coverLetterContext } });
+
+    logger.info({ jobId: job.id }, 'Post-payment context saved');
+    res.json({ saved: true });
   } catch (err) {
     next(err);
   }

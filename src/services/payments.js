@@ -32,6 +32,8 @@ export async function createCheckoutSession({ jobId, tier }) {
 
   logger.info({ jobId, tier, price }, 'Creating PayPal order');
 
+  // No payment_source — the PayPal JS SDK handles payment method selection
+  // (shows both PayPal wallet and Debit/Credit Card options).
   const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -42,16 +44,6 @@ export async function createCheckoutSession({ jobId, tier }) {
         description: `Shortlisted - ${label}`,
         amount: { currency_code: 'USD', value: price },
       }],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            return_url: `${env.APP_URL}/success?jobId=${jobId}&tier=${tier}`,
-            cancel_url: `${env.APP_URL}/preview?jobId=${jobId}`,
-            user_action: 'PAY_NOW',
-            landing_page: 'BILLING',
-          },
-        },
-      },
     }),
   });
 
@@ -62,15 +54,8 @@ export async function createCheckoutSession({ jobId, tier }) {
   }
 
   const data = await res.json();
-  const approveLink = data.links?.find((l) => l.rel === 'payer-action')?.href;
-
-  if (!approveLink) {
-    logger.error({ jobId, links: data.links }, 'PayPal order missing approve link');
-    throw new Error('PayPal order missing approve link');
-  }
-
   logger.info({ jobId, orderId: data.id }, 'PayPal order created');
-  return { id: data.id, url: approveLink };
+  return { id: data.id };
 }
 
 export async function capturePayPalOrder(orderId) {

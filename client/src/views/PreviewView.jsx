@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted } from '../lib/analytics.js';
+import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted, trackPurchaseComplete } from '../lib/analytics.js';
 import { track, trackOnce } from '../lib/tracker.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './PreviewView.module.css';
@@ -44,6 +44,22 @@ function BlurredBadge({ text }) {
   );
 }
 
+// Loads the PayPal JS SDK script and resolves when ready.
+function loadPayPalSDK(clientId) {
+  return new Promise((resolve, reject) => {
+    if (window.paypal) { resolve(); return; }
+    const existing = document.getElementById('paypal-sdk');
+    if (existing) { existing.addEventListener('load', resolve); return; }
+    const script = document.createElement('script');
+    script.id = 'paypal-sdk';
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&disable-funding=venmo,paylater&intent=capture`;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
 export default function PreviewView() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -54,12 +70,14 @@ export default function PreviewView() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState('FULL');
-  const [step, setStep] = useState('preview'); // 'preview' | 'personalise'
-  const [clContext, setClContext] = useState({ companyWhy: '', topAchievement: '', uniqueAngle: '' });
   const [email, setEmail] = useState('');
+  // 'idle' | 'preparing' | 'ready' — controls whether PayPal buttons are shown
+  const [checkoutStep, setCheckoutStep] = useState('idle');
+  const [orderId, setOrderId] = useState(null);
   const paywallRef = useRef(null);
   const tierTrackedRef = useRef(false);
   const previewLoadedAt = useRef(null);
+  const paypalRendered = useRef(false);
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -100,38 +118,78 @@ export default function PreviewView() {
       return;
     }
 
-    // For FULL tier, show personalisation step first
-    if (selectedTier === 'FULL' && step === 'preview') {
-      setStep('personalise');
-      return;
-    }
-
     setLoading(true);
     setError('');
     trackCheckoutStarted({ tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 });
-    try {
-      const coverLetterContext = selectedTier === 'FULL'
-        ? { companyWhy: clContext.companyWhy || null, topAchievement: clContext.topAchievement || null, uniqueAngle: clContext.uniqueAngle || null }
-        : null;
 
+    try {
       const res = await fetch(`/api/jobs/${jobId}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: selectedTier, coverLetterContext, email }),
+        body: JSON.stringify({ tier: selectedTier, email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
+      // SKIP_PAYMENT mode (dev/test) — no PayPal needed
+      if (!data.orderId) {
         navigate(`/processing?jobId=${jobId}`);
+        return;
       }
+
+      await loadPayPalSDK(data.clientId);
+      paypalRendered.current = false;
+      setOrderId(data.orderId);
+      setCheckoutStep('ready');
+      setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
   };
+
+  // Render PayPal Buttons once order is ready and SDK is loaded
+  useEffect(() => {
+    if (checkoutStep !== 'ready' || !orderId || paypalRendered.current) return;
+    if (!window.paypal) return;
+    paypalRendered.current = true;
+
+    window.paypal.Buttons({
+      createOrder: () => orderId,
+      onApprove: async (data) => {
+        setLoading(true);
+        setError('');
+        try {
+          const res = await fetch(`/api/jobs/${jobId}/capture`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: data.orderID }),
+          });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            throw new Error(d.error || 'Capture failed');
+          }
+          trackPurchaseComplete({ tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 });
+          navigate(`/success?jobId=${jobId}&tier=${selectedTier}`);
+        } catch (err) {
+          setError(`Payment received but we had a technical error. Email hello@getshortlisted.fyi with Job ID: ${jobId}`);
+          setLoading(false);
+        }
+      },
+      onCancel: () => {
+        setCheckoutStep('idle');
+        setOrderId(null);
+        paypalRendered.current = false;
+      },
+      onError: () => {
+        setError('Payment failed. Please try again.');
+        setCheckoutStep('idle');
+        setOrderId(null);
+        paypalRendered.current = false;
+      },
+      style: { layout: 'vertical', shape: 'rect', label: 'pay' },
+    }).render('#paypal-buttons');
+  }, [checkoutStep, orderId]);
 
   if (error) {
     return (
@@ -331,7 +389,7 @@ export default function PreviewView() {
             </h2>
             <p className={styles.paywallSub}>{t('preview_paywall_sub')}</p>
 
-            {step === 'preview' && (
+            {checkoutStep === 'idle' && (
               <>
                 <div className={styles.tierPicker}>
                   <button
@@ -373,7 +431,7 @@ export default function PreviewView() {
                 {error && <p className={styles.errorMsg}>{error}</p>}
 
                 <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? t('preview_redirecting') : `${t('preview_unlock_btn')} ${tierLabel} ${t('preview_unlock_for')} ${price}`}
+                  {loading ? 'Preparing checkout...' : `${t('preview_unlock_btn')} ${tierLabel} ${t('preview_unlock_for')} ${price}`}
                 </button>
                 <p className={styles.guarantee}>
                   Not happy with the report? Full refund, no questions. Email us.
@@ -386,76 +444,22 @@ export default function PreviewView() {
               </>
             )}
 
-            {step === 'personalise' && (
+            {checkoutStep === 'ready' && (
               <>
-                <div className={styles.personaliseHeader}>
-                  <p className={styles.personaliseTitle}>{t('preview_personalise_title')} <em>{t('preview_personalise_you')}</em></p>
-                  <p className={styles.personaliseNote}>{t('preview_personalise_note')}</p>
-                </div>
-                <div className={styles.personaliseForm}>
-                  <label className={styles.personaliseLabel}>
-                    {preview.personalise_prompts?.q1 || t('preview_cl_q1')}
-                    <textarea
-                      className={styles.personaliseInput}
-                      rows={2}
-                      placeholder={t('preview_cl_q1_ph')}
-                      value={clContext.companyWhy}
-                      onChange={(e) => setClContext((c) => ({ ...c, companyWhy: e.target.value }))}
-                    />
-                  </label>
-                  <label className={styles.personaliseLabel}>
-                    {preview.personalise_prompts?.q2 || t('preview_cl_q2')}
-                    <textarea
-                      className={styles.personaliseInput}
-                      rows={2}
-                      placeholder={t('preview_cl_q2_ph')}
-                      value={clContext.topAchievement}
-                      onChange={(e) => setClContext((c) => ({ ...c, topAchievement: e.target.value }))}
-                    />
-                  </label>
-                  <label className={styles.personaliseLabel}>
-                    {preview.personalise_prompts?.q3 || t('preview_cl_q3')}
-                    <textarea
-                      className={styles.personaliseInput}
-                      rows={2}
-                      placeholder={t('preview_cl_q3_ph')}
-                      value={clContext.uniqueAngle}
-                      onChange={(e) => setClContext((c) => ({ ...c, uniqueAngle: e.target.value }))}
-                    />
-                  </label>
-                </div>
-
+                <p style={{ textAlign: 'center', fontSize: '14px', color: '#9ca3af', marginBottom: '12px' }}>
+                  Paying {price} for {tierLabel}. Choose your payment method:
+                </p>
                 {error && <p className={styles.errorMsg}>{error}</p>}
-
-                <button className={styles.unlockBtn} onClick={handleUnlock} disabled={loading}>
-                  {loading ? t('preview_redirecting') : t('preview_continue_checkout')}
-                </button>
-                <p style={{ textAlign: 'center', marginTop: '12px' }}>
+                <div id="paypal-buttons" style={{ maxWidth: '400px', margin: '0 auto' }} />
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>
                   <button
                     type="button"
-                    onClick={async () => {
-                      track('personalise_skipped', { tier: selectedTier }, jobId);
-                      setLoading(true);
-                      setError('');
-                      try {
-                        const res = await fetch(`/api/jobs/${jobId}/checkout`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ tier: selectedTier, coverLetterContext: null, email }),
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-                        if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
-                        else { navigate(`/processing?jobId=${jobId}`); }
-                      } catch (err) { setError(err.message); setLoading(false); }
-                    }}
-                    disabled={loading}
+                    onClick={() => { setCheckoutStep('idle'); setOrderId(null); paypalRendered.current = false; }}
                     style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                   >
-                    Skip, generate without personalisation
+                    Back
                   </button>
                 </p>
-                <p className={styles.paywallNote}>{t('preview_sending_to')} {email} · {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a></p>
               </>
             )}
           </div>
