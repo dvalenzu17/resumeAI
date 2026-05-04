@@ -1,33 +1,101 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://getshortlisted.fyi/</loc>
-    <changefreq>weekly</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+    <lastmod>2025-05-04</lastmod>
   </url>
   <url>
     <loc>https://getshortlisted.fyi/blog</loc>
-    <changefreq>weekly</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+
+  <!-- Blog articles — English -->
+  <url>
+    <loc>https://getshortlisted.fyi/blog/what-is-ats</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/resume-keywords-missing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/how-to-beat-ats</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/tailor-resume-job-description</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/ats-resume-format</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/ats-resume-keywords</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/ats-score-meaning</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/ats-resume-checker-free</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+  <url>
+    <loc>https://getshortlisted.fyi/blog/jobscan-alternative</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
   </url>
   <url>
     <loc>https://getshortlisted.fyi/blog/how-ats-systems-work</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.7</priority>
     <lastmod>2025-04-13</lastmod>
   </url>
   <url>
     <loc>https://getshortlisted.fyi/blog/resume-keywords</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.7</priority>
     <lastmod>2025-04-13</lastmod>
   </url>
   <url>
     <loc>https://getshortlisted.fyi/blog/software-engineer-resume</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.7</priority>
     <lastmod>2025-04-13</lastmod>
   </url>
+
+  <!-- Blog articles — Spanish -->
+  <url>
+    <loc>https://getshortlisted.fyi/blog/es/como-pasar-el-ats</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-05-04</lastmod>
+  </url>
+
+  <!-- Legal pages -->
   <url>
     <loc>https://getshortlisted.fyi/privacy</loc>
     <changefreq>yearly</changefreq>
