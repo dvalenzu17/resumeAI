@@ -42,7 +42,8 @@
       "Bash(ls /tmp/*.js)",
       "Bash(head -30 grep -oP '.{200}how-ats-systems-work.{200}' /tmp/bundle.js)",
       "Bash(ls C:/dev/ResumeAI/client/public/sample*.pdf)",
-      "Bash(railway redeploy:*)"
+      "Bash(railway redeploy:*)",
+      "Bash(find /c/dev/ResumeAI -maxdepth 2 -not -path */node_modules/* -not -path */.git/* -type d)"
     ]
   }
 }
