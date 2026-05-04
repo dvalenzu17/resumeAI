@@ -42,10 +42,40 @@
   margin: 0 auto;
 }
 
+.articleMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.metaDot {
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
 .date {
   font-size: 13px;
   color: var(--text-subtle);
-  margin-bottom: 12px;
+}
+
+.authorBlock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.authorLabel {
+  color: var(--text-subtle);
+}
+
+.authorName {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .title {
