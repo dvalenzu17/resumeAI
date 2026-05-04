@@ -246,11 +246,11 @@ export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
     <h1 style="font-size:20px;font-weight:700;margin:0 0 12px;color:#dc2626;">Webhook silence alert</h1>
     <p style="line-height:1.75;margin:0 0 16px;color:#374151;">
       ${stuckJobs.length} job${stuckJobs.length !== 1 ? 's' : ''} ha${stuckJobs.length !== 1 ? 've' : 's'} been in
-      <strong>PENDING_PAYMENT</strong> for more than 90 minutes. PayPal may not be delivering webhooks,
-      or customers abandoned after approval without the capture completing.
+      <strong>PENDING_PAYMENT</strong> for more than 90 minutes. Lemon Squeezy may not be delivering webhooks,
+      or customers abandoned the checkout before completing payment.
     </p>
     <p style="line-height:1.75;margin:0 0 20px;color:#374151;">
-      Check PayPal merchant dashboard for completed payments with no matching report.
+      Check the Lemon Squeezy dashboard for completed orders with no matching report.
       If customers paid but received nothing, issue refunds manually.
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
@@ -261,8 +261,8 @@ export async function sendWebhookAlertEmail(adminEmail, stuckJobs) {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <a href="https://www.paypal.com/merchant" style="background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;display:inline-block;font-size:14px;">
-      Check PayPal →
+    <a href="https://app.lemonsqueezy.com/sales" style="background:#dc2626;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;display:inline-block;font-size:14px;">
+      Check Lemon Squeezy →
     </a>`;
 
   await resend.emails.send({

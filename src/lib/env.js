@@ -13,10 +13,12 @@ const schema = z.object({
   DEV_EMAIL: z.string().default('dev@localhost'),
   DATABASE_URL: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().default(''),
-  // Payment — only required when SKIP_PAYMENT=false
-  PAYPAL_CLIENT_ID: z.string().default(''),
-  PAYPAL_CLIENT_SECRET: z.string().default(''),
-  PAYPAL_WEBHOOK_ID: z.string().default(''),
+  // Lemon Squeezy — only required when SKIP_PAYMENT=false
+  LS_API_KEY:        z.string().default(''),
+  LS_WEBHOOK_SECRET: z.string().default(''),
+  LS_STORE_ID:       z.string().default(''),
+  LS_VARIANT_BASIC:  z.string().default(''),
+  LS_VARIANT_FULL:   z.string().default(''),
   // Email — optional until ready
   RESEND_API_KEY: z.string().default(''),
   RESEND_WEBHOOK_SECRET: z.string().default(''),

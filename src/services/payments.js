@@ -1,88 +1,69 @@
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 
-const PAYPAL_BASE = env.NODE_ENV === 'production'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+const LS_API_BASE = 'https://api.lemonsqueezy.com/v1';
 
-const TIER_PRICES = { BASIC: '12.00', FULL: '29.00' };
+const VARIANT_IDS = {
+  BASIC: env.LS_VARIANT_BASIC,
+  FULL:  env.LS_VARIANT_FULL,
+};
 
-export async function getPayPalAccessToken() {
-  const creds = Buffer.from(`${env.PAYPAL_CLIENT_ID}:${env.PAYPAL_CLIENT_SECRET}`).toString('base64');
-  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+/**
+ * Creates a Lemon Squeezy hosted checkout and returns the checkout URL.
+ * The user is redirected to this URL to complete payment.
+ * On success, LS redirects back to successUrl and fires an order_created webhook.
+ */
+export async function createCheckoutSession({ jobId, tier, email, successUrl }) {
+  const variantId = VARIANT_IDS[tier] ?? VARIANT_IDS.BASIC;
+
+  logger.info({ jobId, tier, variantId }, 'Creating Lemon Squeezy checkout');
+
+  const res = await fetch(`${LS_API_BASE}/checkouts`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${creds}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Bearer ${env.LS_API_KEY}`,
+      'Content-Type': 'application/vnd.api+json',
+      Accept: 'application/vnd.api+json',
     },
-    body: 'grant_type=client_credentials',
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`PayPal auth failed (${res.status}): ${text}`);
-  }
-  const { access_token } = await res.json();
-  return access_token;
-}
-
-export async function createCheckoutSession({ jobId, tier }) {
-  const token = await getPayPalAccessToken();
-  const price = TIER_PRICES[tier] ?? TIER_PRICES.BASIC;
-  const label = tier === 'FULL' ? 'The Glow-Up' : 'The Audit';
-
-  logger.info({ jobId, tier, price }, 'Creating PayPal order');
-
-  // No payment_source — the PayPal JS SDK handles payment method selection
-  // (shows both PayPal wallet and Debit/Credit Card options).
-  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      intent: 'CAPTURE',
-      purchase_units: [{
-        custom_id: jobId,
-        description: `Shortlisted - ${label}`,
-        amount: { currency_code: 'USD', value: price },
-      }],
+      data: {
+        type: 'checkouts',
+        attributes: {
+          checkout_data: {
+            ...(email ? { email } : {}),
+            // custom is forwarded verbatim to webhook meta.custom_data
+            custom: { job_id: jobId, tier },
+          },
+          product_options: {
+            redirect_url: successUrl,
+            receipt_link_url: successUrl,
+          },
+          checkout_options: {
+            button_color: '#e85d04',
+          },
+        },
+        relationships: {
+          store:   { data: { type: 'stores',   id: String(env.LS_STORE_ID) } },
+          variant: { data: { type: 'variants', id: String(variantId) } },
+        },
+      },
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    logger.error({ jobId, tier, status: res.status, errText }, 'PayPal order creation failed');
-    throw new Error('PayPal order creation failed');
+    logger.error({ jobId, tier, status: res.status, errText }, 'Lemon Squeezy checkout creation failed');
+    throw new Error('Checkout creation failed');
   }
 
   const data = await res.json();
-  logger.info({ jobId, orderId: data.id }, 'PayPal order created');
-  return { id: data.id };
-}
+  const checkoutUrl = data.data?.attributes?.url;
+  const checkoutId  = data.data?.id ?? null;
 
-export async function capturePayPalOrder(orderId) {
-  const token = await getPayPalAccessToken();
-
-  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderId}/capture`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-
-  // 422 ORDER_ALREADY_CAPTURED means a webhook already captured it — treat as success
-  if (res.status === 422) {
-    const body = await res.json().catch(() => ({}));
-    const alreadyCaptured = body.details?.some((d) => d.issue === 'ORDER_ALREADY_CAPTURED');
-    if (alreadyCaptured) {
-      logger.info({ orderId }, 'PayPal order already captured — idempotent OK');
-      return { status: 'COMPLETED' };
-    }
+  if (!checkoutUrl) {
+    throw new Error('No checkout URL in Lemon Squeezy response');
   }
 
-  if (!res.ok) {
-    const errText = await res.text();
-    logger.error({ orderId, status: res.status, errText }, 'PayPal capture failed');
-    throw new Error('PayPal capture failed');
-  }
-
-  const data = await res.json();
-  logger.info({ orderId, status: data.status }, 'PayPal order captured');
-  return data;
+  logger.info({ jobId, checkoutId }, 'Lemon Squeezy checkout created');
+  return { url: checkoutUrl, id: checkoutId };
 }

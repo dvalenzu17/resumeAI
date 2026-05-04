@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted, trackPurchaseComplete } from '../lib/analytics.js';
+import { trackPreviewViewed, trackTierSelected, trackCheckoutStarted } from '../lib/analytics.js';
 import { track, trackOnce } from '../lib/tracker.js';
 import { useT, LangSwitcher } from '../lib/i18n.jsx';
 import styles from './PreviewView.module.css';
@@ -44,22 +44,6 @@ function BlurredBadge({ text }) {
   );
 }
 
-// Loads the PayPal JS SDK script and resolves when ready.
-function loadPayPalSDK(clientId) {
-  return new Promise((resolve, reject) => {
-    if (window.paypal) { resolve(); return; }
-    const existing = document.getElementById('paypal-sdk');
-    if (existing) { existing.addEventListener('load', resolve); return; }
-    const script = document.createElement('script');
-    script.id = 'paypal-sdk';
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&disable-funding=venmo,paylater&intent=capture`;
-    script.async = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
 export default function PreviewView() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -71,13 +55,9 @@ export default function PreviewView() {
   const [loading, setLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState('FULL');
   const [email, setEmail] = useState('');
-  // 'idle' | 'preparing' | 'ready' — controls whether PayPal buttons are shown
-  const [checkoutStep, setCheckoutStep] = useState('idle');
-  const [orderId, setOrderId] = useState(null);
   const paywallRef = useRef(null);
   const tierTrackedRef = useRef(false);
   const previewLoadedAt = useRef(null);
-  const paypalRendered = useRef(false);
 
   useEffect(() => {
     if (!jobId) { setError('Missing job ID.'); return; }
@@ -131,65 +111,19 @@ export default function PreviewView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
-      // SKIP_PAYMENT mode (dev/test) — no PayPal needed
-      if (!data.orderId) {
+      // SKIP_PAYMENT mode (dev/test) — no checkout needed
+      if (!data.checkoutUrl) {
         navigate(`/processing?jobId=${jobId}`);
         return;
       }
 
-      await loadPayPalSDK(data.clientId);
-      paypalRendered.current = false;
-      setOrderId(data.orderId);
-      setCheckoutStep('ready');
-      setLoading(false);
+      // Redirect to Lemon Squeezy hosted checkout
+      window.location.href = data.checkoutUrl;
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
   };
-
-  // Render PayPal Buttons once order is ready and SDK is loaded
-  useEffect(() => {
-    if (checkoutStep !== 'ready' || !orderId || paypalRendered.current) return;
-    if (!window.paypal) return;
-    paypalRendered.current = true;
-
-    window.paypal.Buttons({
-      createOrder: () => orderId,
-      onApprove: async (data) => {
-        setLoading(true);
-        setError('');
-        try {
-          const res = await fetch(`/api/jobs/${jobId}/capture`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: data.orderID }),
-          });
-          if (!res.ok) {
-            const d = await res.json().catch(() => ({}));
-            throw new Error(d.error || 'Capture failed');
-          }
-          trackPurchaseComplete({ tier: selectedTier, price: selectedTier === 'FULL' ? 29 : 12 });
-          navigate(`/success?jobId=${jobId}&tier=${selectedTier}`);
-        } catch (err) {
-          setError(`Payment received but we had a technical error. Email hello@getshortlisted.fyi with Job ID: ${jobId}`);
-          setLoading(false);
-        }
-      },
-      onCancel: () => {
-        setCheckoutStep('idle');
-        setOrderId(null);
-        paypalRendered.current = false;
-      },
-      onError: () => {
-        setError('Payment failed. Please try again.');
-        setCheckoutStep('idle');
-        setOrderId(null);
-        paypalRendered.current = false;
-      },
-      style: { layout: 'vertical', shape: 'rect', label: 'pay' },
-    }).render('#paypal-buttons');
-  }, [checkoutStep, orderId]);
 
   if (error) {
     return (
@@ -389,7 +323,7 @@ export default function PreviewView() {
             </h2>
             <p className={styles.paywallSub}>{t('preview_paywall_sub')}</p>
 
-            {checkoutStep === 'idle' && (
+            {true && (
               <>
                 <div className={styles.tierPicker}>
                   <button
@@ -440,25 +374,6 @@ export default function PreviewView() {
                   {t('preview_paywall_note')} <a href="mailto:hello@getshortlisted.fyi" className={styles.paywallContact}>{t('preview_refunds')}</a>
                   {' · '}<Link to="/terms" className={styles.paywallContact}>Terms</Link>
                   {' · '}<Link to="/privacy" className={styles.paywallContact}>Privacy</Link>
-                </p>
-              </>
-            )}
-
-            {checkoutStep === 'ready' && (
-              <>
-                <p style={{ textAlign: 'center', fontSize: '14px', color: '#9ca3af', marginBottom: '12px' }}>
-                  Paying {price} for {tierLabel}. Choose your payment method:
-                </p>
-                {error && <p className={styles.errorMsg}>{error}</p>}
-                <div id="paypal-buttons" style={{ maxWidth: '400px', margin: '0 auto' }} />
-                <p style={{ textAlign: 'center', marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setCheckoutStep('idle'); setOrderId(null); paypalRendered.current = false; }}
-                    style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-                  >
-                    Back
-                  </button>
                 </p>
               </>
             )}

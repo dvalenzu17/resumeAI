@@ -1,7 +1,7 @@
+import crypto from 'crypto';
 import { Router } from 'express';
 import { Webhook } from 'svix';
 import { runFullReport } from '../services/analyser.js';
-import { getPayPalAccessToken } from '../services/payments.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import { db } from '../lib/db.js';
@@ -9,13 +9,38 @@ import { logEvent } from '../services/analytics.js';
 
 export const webhooksRouter = Router();
 
-const PAYPAL_BASE = env.NODE_ENV === 'production'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+// ── Lemon Squeezy ─────────────────────────────────────────────────────────────
+// Respond 200 immediately — never await analysis in the handler.
+// rawBody middleware is applied to /api/webhooks in index.js.
+webhooksRouter.post('/lemonsqueezy', async (req, res) => {
+  const signature = req.headers['x-signature'];
 
-// PayPal sends raw body — rawBody middleware must be applied before this route.
-// Signature is verified via PayPal's verify-webhook-signature API when PAYPAL_WEBHOOK_ID is set.
-webhooksRouter.post('/paypal', async (req, res) => {
+  if (!signature || !env.LS_WEBHOOK_SECRET) {
+    logger.warn('Lemon Squeezy webhook missing signature or secret not configured');
+    return res.status(400).send('Missing signature');
+  }
+
+  // Verify HMAC-SHA256 signature
+  const digest = crypto
+    .createHmac('sha256', env.LS_WEBHOOK_SECRET)
+    .update(req.rawBody)
+    .digest('hex');
+
+  let signatureValid = false;
+  try {
+    signatureValid = crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(digest, 'hex'),
+    );
+  } catch {
+    // Buffer lengths differ — invalid signature format
+  }
+
+  if (!signatureValid) {
+    logger.warn('Lemon Squeezy webhook signature verification failed');
+    return res.status(400).send('Invalid signature');
+  }
+
   let payload;
   try {
     payload = JSON.parse(req.rawBody);
@@ -23,56 +48,21 @@ webhooksRouter.post('/paypal', async (req, res) => {
     return res.status(400).send('Invalid JSON');
   }
 
-  // Verify signature using PayPal's verification endpoint
-  if (env.PAYPAL_WEBHOOK_ID) {
-    const transmissionId   = req.headers['paypal-transmission-id'];
-    const transmissionTime = req.headers['paypal-transmission-time'];
-    const certUrl          = req.headers['paypal-cert-url'];
-    const authAlgo         = req.headers['paypal-auth-algo'];
-    const transmissionSig  = req.headers['paypal-transmission-sig'];
+  const eventName = payload.meta?.event_name;
+  logger.info({ eventName }, 'Lemon Squeezy webhook received');
 
-    if (!transmissionId || !transmissionSig || !certUrl || !authAlgo || !transmissionTime) {
-      logger.warn('PayPal webhook missing required headers');
-      return res.status(400).send('Missing PayPal headers');
-    }
+  // Respond before any async work — LS expects 200 in < 5s
+  res.json({ received: true });
 
-    try {
-      const accessToken = await getPayPalAccessToken();
-      const verifyRes = await fetch(`${PAYPAL_BASE}/v1/notifications/verify-webhook-signature`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          auth_algo: authAlgo,
-          cert_url: certUrl,
-          transmission_id: transmissionId,
-          transmission_sig: transmissionSig,
-          transmission_time: transmissionTime,
-          webhook_id: env.PAYPAL_WEBHOOK_ID,
-          webhook_event: payload,
-        }),
-      });
-      const verifyData = await verifyRes.json();
-      if (verifyData.verification_status !== 'SUCCESS') {
-        logger.warn({ status: verifyData.verification_status }, 'PayPal webhook signature verification failed');
-        return res.status(400).send('Invalid signature');
-      }
-    } catch (err) {
-      logger.error({ err }, 'PayPal webhook verification error');
-      return res.status(500).send('Verification error');
-    }
-  }
-
-  const eventType = payload.event_type;
-  logger.info({ eventType }, 'PayPal webhook received');
-
-  if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
-    const jobId = payload.resource?.custom_id;
+  if (eventName === 'order_created') {
+    const jobId  = payload.meta?.custom_data?.job_id ?? null;
+    const amount = payload.data?.attributes?.total ?? null; // in cents
 
     if (jobId) {
       const kickoff = async () => {
         const job = await db.job.findUnique({ where: { id: jobId }, select: { status: true } }).catch(() => null);
         if (job && (job.status === 'PROCESSING' || job.status === 'COMPLETE')) {
-          logger.info({ jobId, status: job.status }, 'PayPal webhook duplicate — report already running or done, skipping');
+          logger.info({ jobId, status: job.status }, 'LS webhook duplicate — report already running or done, skipping');
           return;
         }
         runFullReport(jobId).catch((err) => {
@@ -80,30 +70,29 @@ webhooksRouter.post('/paypal', async (req, res) => {
         });
         logEvent('payment_completed', {
           jobId,
-          properties: { amount: payload.resource?.amount?.value ?? null },
+          properties: { amount: amount !== null ? amount / 100 : null, provider: 'lemonsqueezy' },
         });
       };
       kickoff();
     } else {
-      logger.warn({ payload }, 'PAYMENT.CAPTURE.COMPLETED webhook missing custom_id');
+      logger.warn({ meta: payload.meta }, 'LS order_created webhook missing job_id in custom_data');
     }
   }
 
-  if (eventType === 'PAYMENT.CAPTURE.REFUNDED') {
-    const jobId = payload.resource?.custom_id ?? null;
+  if (eventName === 'order_refunded') {
+    const jobId  = payload.meta?.custom_data?.job_id ?? null;
+    const amount = payload.data?.attributes?.total ?? null;
     logEvent('refund_issued', {
       jobId,
-      properties: { amount: payload.resource?.amount?.value ?? null },
+      properties: { amount: amount !== null ? amount / 100 : null, provider: 'lemonsqueezy' },
     });
-    logger.info({ jobId }, 'PayPal refund event logged');
+    logger.info({ jobId }, 'LS refund event logged');
   }
-
-  res.json({ received: true });
 });
 
-// Resend email event webhooks — opens, clicks, bounces, spam complaints.
+// ── Resend email events ────────────────────────────────────────────────────────
+// Opens, clicks, bounces, spam complaints.
 // Requires RESEND_WEBHOOK_SECRET from Resend dashboard → Webhooks → Signing secret.
-// rawBody middleware is applied to /api/webhooks in index.js.
 const RESEND_EVENT_MAP = {
   'email.opened':         'email_opened',
   'email.clicked':        'email_clicked',

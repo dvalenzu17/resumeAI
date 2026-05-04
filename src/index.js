@@ -42,7 +42,7 @@ app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: false, // CSP would break inline scripts and Google Fonts
-  crossOriginEmbedderPolicy: false, // would break PayPal checkout redirect
+  crossOriginEmbedderPolicy: false, // would break Lemon Squeezy checkout redirect
 }));
 
 // Rate limiter for job creation only — 5 submissions per IP per 10 minutes
@@ -62,7 +62,7 @@ const statsRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-// PayPal webhook needs raw body before JSON parsing
+// Webhook routes need raw body before JSON parsing (LS + Resend signature verification)
 app.use('/api/webhooks', rawBody);
 app.use('/api/webhooks', webhooksRouter);
 

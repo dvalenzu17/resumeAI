@@ -9,7 +9,7 @@ Two tiers: The Audit ($12) and The Glow-Up ($29). No accounts. Email delivery of
 - **Backend:** Node.js + Express, TypeScript
 - **Database:** PostgreSQL via Prisma ORM
 - **AI:** Anthropic Claude API (claude-sonnet-4-6) — two-call prompt chain
-- **Payments:** PayPal Orders API v2 (one-time, no subscriptions in v1)
+- **Payments:** Lemon Squeezy (hosted checkout, one-time, no subscriptions in v1)
 - **PDF parsing:** pdf-parse
 - **PDF generation:** Puppeteer → HTML template → PDF
 - **File storage:** Cloudflare R2 (S3-compatible)
@@ -44,7 +44,7 @@ resumeai/
 pending_payment → processing → complete | failed
 
 ## Environment variables required
-DATABASE_URL, ANTHROPIC_API_KEY, PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_WEBHOOK_ID,
+DATABASE_URL, ANTHROPIC_API_KEY, LS_API_KEY, LS_WEBHOOK_SECRET, LS_STORE_ID, LS_VARIANT_BASIC, LS_VARIANT_FULL,
 RESEND_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, APP_URL
 
 ## Prompt chain
