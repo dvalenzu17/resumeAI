@@ -85,6 +85,7 @@ Mathematics Teacher — Lincoln High School (2016 – 2024)
 - Presented at 3 regional education conferences on technology integration in the classroom
 
 Software Engineering Bootcamp Graduate — Code Academy (2024)
+
 - Built a full-stack project tracking app using React, Node.js, Express, and PostgreSQL
 - Deployed applications to AWS EC2 with basic CI/CD using GitHub Actions
 - Completed 800+ hours of JavaScript, React, Node.js, and SQL coursework
